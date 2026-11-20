@@ -16,7 +16,7 @@ from import_csv import DataError
 
 def adapter_hash():
     return digest(b''.join((ROOT/'scripts'/name).read_bytes() for name in
-                          ('batch_import.py','historical.py','compact_brackets.py','ttscore.py','import_csv.py')))
+                          ('batch_import.py','historical.py','compact_brackets.py','group_identities.py','ttscore.py','import_csv.py')))
 
 
 def atomic_json(path, value):

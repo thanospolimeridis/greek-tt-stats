@@ -13,6 +13,7 @@ import re
 from ttscore import BASE, ROOT, Client, Document, Node, Importer, SourceAccessError, clean, digest, options, schedule_rows
 from import_csv import DataError, TYPES, build, parse_games
 from compact_brackets import compact_games, bracket_byes
+from group_identities import score_matrices, resolve_group
 
 
 def game_score(cells):
@@ -150,7 +151,7 @@ class History(Importer):
                 result[ident].update(player=self.player(p.get('AM'),clean(str(p['LastName'] or '')+' '+str(p['FirstName'] or '')),event+'-'+ident,key),club=self.club(p.get('clubname')))
         return result
 
-    def import_schedule(self,event,phase,category,group,mapping,participants,bindings=None):
+    def import_schedule(self,event,phase,category,group,mapping,participants,bindings=None,matrix=None):
         url=f'/rounds_schedule2.php?group={group}&customer=24'
         body,key=self.client.get(url)
         type_match=re.search(r'refreshScheduleTable\((\d)\)',body)
@@ -168,6 +169,11 @@ class History(Importer):
                     self.issue(event,phase,exc,game=game,source_id=key)
             return
         rows=schedule_rows(body)
+        registrations=[participants.get(ident,{}).get('player') for ident in mapping]
+        matrix_ids={}
+        if (discipline==0 and matrix and all(registrations)
+                and len(registrations)==len(set(registrations))):
+            matrix_ids=resolve_group(rows,mapping,matrix,game_score,getattr(self,'result_cutoff',None))
         for game,cells in rows:
             try:
                 result=game_score(cells)
@@ -189,8 +195,11 @@ class History(Importer):
                     ids=(bindings or {}).get(game)
                     if not ids or None in ids:
                         candidates=[(a,b) for a,an in mapping.items() for b,bn in mapping.items() if a!=b and cells[3]==an+' - '+bn]
-                        if len(candidates)!=1:raise DataError('ambiguous_or_missing_player_mapping')
-                        ids=candidates[0]
+                        if len(candidates)==1:ids=candidates[0]
+                        elif game in matrix_ids:
+                            ids=matrix_ids[game]
+                            self.counts['matrix_identity_resolutions']=self.counts.get('matrix_identity_resolutions',0)+1
+                        else:raise DataError('ambiguous_or_missing_player_mapping')
                     p1,p2=[participants[i] for i in ids]
                     if p1['team']!=0 or p2['team']!=0:raise DataError('participant_discipline_mismatch')
                     self.put('matches',{**common,'player1_id':p1['player'],'player2_id':p2['player'],
@@ -230,13 +239,15 @@ class History(Importer):
             compact=compact_games(body) if series and getattr(self,'compact_brackets',False) else {}
             byes=bracket_byes(body) if series and getattr(self,'skip_bracket_byes',False) else {}
             scoped_players={} if series else group_players(body)
+            ambiguous_groups={g for g,names in scoped_players.items() if len(set(names.values()))<len(names)}
+            matrices={g:scores for g,scores in score_matrices(body).items() if g in ambiguous_groups} if ambiguous_groups else {}
             if not groups and body.strip():
                 self.issue(event,phase,'no_groups_in_response',category=label,source_id=key)
             for group,bindings in groups.items():
                 if self.skip_bracket_bye(byes.get(group),bindings,participants):
                     pass
                 elif not self.import_compact(event,phase,label,group,compact.get(group),bindings,participants,key,BASE+path):
-                    self.import_schedule(event,phase,label,group,mapping if series else scoped_players.get(group,{}),participants,bindings)
+                    self.import_schedule(event,phase,label,group,mapping if series else scoped_players.get(group,{}),participants,bindings,matrices.get(group))
                 self.counts['groups_visited']+=1
             links=re.findall(r"nextPage\('([^']+)'",body)
             if not links:break
