@@ -87,6 +87,8 @@ def batch_coverage(base, plan):
     # and the first observed identity exactly during an offline release replay.
     order=base.coverage.get('batch',{}).get('processed_order',[])
     order=[i for i in order if i in attempted]+[i for i in attempted if i not in order]
+    positions={ident:position for position,ident in enumerate(order)}
+    base.coverage['issues'].sort(key=lambda issue:positions.get(issue.get('event'),-1))
     failures=[i for i in attempted if events[i].get('status') in ('source_access_failed','validation_failed')]
     base.coverage['batch']={'runner':'ttscore-batch-v1','plan_sha256':digest((json.dumps(plan,sort_keys=True,ensure_ascii=False,indent=2)+'\n').encode()),
         'as_of':plan['as_of'],'eligible':len(ids),'attempted':len(attempted),'pending':len(ids)-len(attempted),

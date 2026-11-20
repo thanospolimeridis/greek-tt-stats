@@ -23,9 +23,10 @@ class PlanTests(unittest.TestCase):
         imp=History(Client())
         for ident in ('3','1','3'):
             batch_coverage(imp,plan)
-            merge_event(imp,{'data':{},'requests':{},'coverage':{'events':{ident:{}},'issues':[]},'adapter_sha256':'v1'},ident)
+            merge_event(imp,{'data':{},'requests':{},'coverage':{'events':{ident:{}},'issues':[{'event':ident,'reason':'explicit source gap'}]},'adapter_sha256':'v1'},ident)
         self.assertEqual(batch_coverage(imp,plan)['processed_order'],['3','1'])
         self.assertEqual(batch_coverage(imp,plan)['pending_events'],['2'])
+        self.assertEqual([issue['event'] for issue in imp.coverage['issues']],['3','1'])
     def test_interrupted_managed_export_recovers_without_overwriting_unmanaged_data(self):
         import contextlib
         import io
