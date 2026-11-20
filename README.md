@@ -2,16 +2,16 @@
 
 Free, open-source Greek table tennis statistics: **Python ingestion + a static, offline-ready website**. No database server, paid APIs, subscriptions or frontend dependencies. Independent project, not an official ΕΦΟΕπΑ service.
 
-## Current coverage — 20 November 2026
+## Current coverage — 21 November 2026
 
 - **518 publicly listed TTScore events**, reconciled across 2018–19 through 2026–27.
 - **1 additional legacy event** retained from the original prototype, labelled absent from the current catalog (519 displayed total).
-- **45,969 completed singles matches, 595 doubles matches and 1,980 team fixtures**, from 236 competitions across all nine listed seasons.
-- **3,126 athletes**, linked by federation registration number where available, and **175 exact club names**.
+- **55,644 completed singles matches, 1,020 doubles matches and 3,192 team fixtures**, from 286 competitions across all nine listed seasons.
+- **3,225 athletes**, linked by federation registration number where available, and **181 exact club names**.
 - **4,909 ranking records**: men and women, 1 August and 1 October 2026.
-- **273 doubles matches identify all four members**; 322 preserve source pair labels without invented athlete links.
-- **3,731 source issues** are recorded, including walkovers, unresolved fixtures and inconsistent scores. Coverage reports retain exclusion reasons and unplayed/bye counts.
-- The current resumable batch has checked **238 of 502 additional eligible competitions**. **264 remain queued**, and 5 listings remain explicitly deferred; the coverage report gives their reasons. Results from active or undated events are limited to explicit, validated scores dated on or before 20 November 2026 and remain partial snapshots.
+- **441 doubles matches identify all four members**; 579 preserve source pair labels without invented athlete links.
+- **4,212 source issues** are recorded, including walkovers, unresolved fixtures and inconsistent scores. Coverage reports retain exclusion reasons and unplayed/bye counts.
+- The current resumable batch has checked **288 of 502 additional eligible competitions**. **214 remain queued**, and 5 listings remain explicitly deferred; the coverage report gives their reasons. Results from active or undated events are limited to explicit, validated scores dated on or before 20 November 2026 and remain partial snapshots.
 
 **Historical results are incomplete.** Collection continues through the remaining queue, with validated checkpoints published periodically. Additional ranking snapshots also remain unimported. The season-by-season table on About shows the exact scope. No results are invented. Validation checks source consistency, not independent historical truth. The About page exposes scope and exclusions, with downloadable coverage and provenance reports.
 
