@@ -82,7 +82,10 @@ def build_site(root=ROOT):
     for row in data.get('rankings',[]):
         latest[row['category']]=max(latest.get(row['category'],''),row['date'])
     hosted={**data,'matches':[],'doubles':[],'fixtures':[],'meta':dict(data.get('meta',{})),
-            'rankings':[r for r in data.get('rankings',[]) if r['date']==latest[r['category']]]}
+            # Inline copy of the latest snapshot only, without fields the list pages never
+            # read; the full rows (with source ids) stay in the player and date files.
+            'rankings':[{k:v for k,v in r.items() if k not in ('id','source_id','club_id')}
+                        for r in data.get('rankings',[]) if r['date']==latest[r['category']]]}
     hosted['meta']['partitions']=partition_results(data,dist)
     dates_by_category={}
     for row in data.get('rankings',[]):

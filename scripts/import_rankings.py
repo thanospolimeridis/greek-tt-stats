@@ -15,6 +15,7 @@ Any HTTP or network failure stops the run before anything is written.
 import argparse
 import csv
 import json
+import re
 import shutil
 import sys
 import tempfile
@@ -64,17 +65,19 @@ def main():
     unknown = [c for c in args.category if c not in names]
     if unknown:
         raise SystemExit(f'Unknown ranking categories: {unknown}')
-    dates = sorted(v for v, _ in options(selector, 'select-date') if v != '0')
-    todo = [(c, d) for d in dates for c in args.category if d >= args.since and (names[c], d) not in have]
+    # The newest snapshot is offered only as "latest" (value 0); its label carries the date.
+    dates = sorted((re.search(r'\d{4}-\d{2}-\d{2}', label)[0], 'latest' if value == '0' else value)
+                   for value, label in options(selector, 'select-date'))
+    todo = [(c, d, request) for d, request in dates for c in args.category if d >= args.since and (names[c], d) not in have]
     if args.limit is not None:
         todo = todo[:args.limit]
     print(f'{len(todo)} snapshots to add', flush=True)
 
     rankings, players, clubs, coverage, rejected = {}, {}, {}, [], []
-    for category, date in todo:
+    for category, date, request in todo:
         snapshot = Importer(client)  # isolated, so a rejected snapshot leaves nothing behind
         try:
-            snapshot.ranking(category, date)
+            snapshot.ranking(category, request)
         except DataError as exc:
             rejected.append({'category': names[category], 'date': date, 'reason': str(exc)})
             print('Rejected', names[category], date, exc, flush=True)

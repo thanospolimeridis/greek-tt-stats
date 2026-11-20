@@ -134,6 +134,16 @@ chart.click('range-3m');check(points()===2,'Range is measured back from the late
 check(!chart.html.includes('rating'),'Official ranking points are never called a rating');
 const unscored=structuredClone(sample);for(const r of unscored.rankings)r.points=null;
 check(render('player/p1',unscored,'en').html.includes('Ranking position over time'),'Snapshots without points fall back to ranking position');
+const youth=structuredClone(sample);
+youth.rankings=[
+ {id:'y1',player_id:'p1',category:'Παίδες',date:'2026-01-03',rank:4,points:900,source_url:'https://app.ttscore.io/test'},
+ {id:'y2',player_id:'p1',category:'Έφηβοι',date:'2026-02-03',rank:2,points:950,source_url:'https://app.ttscore.io/test'},
+ {id:'y3',player_id:'p1',category:'Άνδρες',date:'2026-02-03',rank:120,points:950,source_url:'https://app.ttscore.io/test'}];
+const career=render('player/p1',youth,'en').html;
+check((career.match(/class="pt"/g)||[]).length===2&&!career.includes('id="chart-category"'),'Age categories share one points line per date');
+check(career.includes('<br>#120 · Άνδρες<br>#2 · Έφηβοι')&&career.includes('#120 Άνδρες · #2 Έφηβοι'),'Every category position is shown, senior category first');
+youth.rankings[2].points=990;
+check(render('player/p1',youth,'en').html.includes('id="chart-category"'),'Diverging points fall back to one category at a time');
 async function hostedChecks(){
  const hosted=structuredClone(sample);
  hosted.meta={...hosted.meta,verified_results:123,table_counts:{doubles:4},event_match_counts:{'ttscore-777':1},
