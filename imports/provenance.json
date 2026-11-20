@@ -1,0 +1,1627 @@
+{
+  "adapter": "ttscore-public-v1",
+  "coverage": {
+    "event_catalog": {
+      "count": 518,
+      "scope": "Only currently exposed customer 24 events; deleted/unlisted events unknown",
+      "seasons": [
+        "2026-27",
+        "2025-26",
+        "2024-25",
+        "2023-24",
+        "2022-23",
+        "2021-22",
+        "2020-21",
+        "2019-20",
+        "2018-19"
+      ],
+      "status": "reconciled_public_listing"
+    },
+    "historical_complete": false,
+    "issues": [
+      {
+        "event": "777",
+        "game": "244055",
+        "reason": "doubles_not_supported",
+        "row": "113237",
+        "source_id": "f2674eb3d3130961d597346904b7f6b547036f110249365b2833a3088172b5b6"
+      },
+      {
+        "event": "777",
+        "game": "244061",
+        "reason": "doubles_not_supported",
+        "row": "113279",
+        "source_id": "2d7a3947db497a9a3240c0359de60de74aa469c395530ee7a40844218e0b1546"
+      },
+      {
+        "event": "777",
+        "game": "244074",
+        "reason": "doubles_not_supported",
+        "row": "113370",
+        "source_id": "9d5b1b35f5c3389e1389f512185bf3ef53b2a525a3f50303d9954232dcb0f3d5"
+      },
+      {
+        "event": "777",
+        "game": "244103",
+        "reason": "doubles_not_supported",
+        "row": "113573",
+        "source_id": "c89078da0601bd34eaf5aeb689a84e3b0ce2dd08ad2e0e057509d578b62e566e"
+      }
+    ],
+    "leagues": {
+      "777": {
+        "excluded_rows": 132,
+        "fixtures_discovered": 56,
+        "fixtures_imported": 56,
+        "review_rows": 4,
+        "singles_imported": 260,
+        "status": "retrieved_public_league_rows",
+        "unused_rows": 128
+      }
+    },
+    "rankings": [
+      {
+        "category": "Άνδρες",
+        "date": "2026-08-01",
+        "rows": 1956,
+        "source_id": "d5f3740e7529bd619e0b729a02e34b9d09daeedde1601d86d4ec77cc31514987"
+      },
+      {
+        "category": "Γυναίκες",
+        "date": "2026-08-01",
+        "rows": 474,
+        "source_id": "390314de633e27697f42ea419674cf6e1dfa7ff49eeea5f220bffec11bb22a5f"
+      },
+      {
+        "category": "Άνδρες",
+        "date": "2026-10-01",
+        "rows": 1988,
+        "source_id": "a677cb7d7b4c2cc64edd79b45dd19730b3661c28bcb2c04b32aaab86b1ed227e"
+      },
+      {
+        "category": "Γυναίκες",
+        "date": "2026-10-01",
+        "rows": 491,
+        "source_id": "d7a21c72cb317c46cc88dc08a0c1d8a61cd13fc2ae2829a1ccd97049d1bc3281"
+      }
+    ]
+  },
+  "csv_sha256": {
+    "clubs.csv": "bcdec06b8a38afc6c4746b04579099fea711da3dd7c0ac956d77c2008b27713d",
+    "events.csv": "8e0c3bb4cc4743bbb20a9729ed83c02bae2adba635e70eab3397aa9938d71c02",
+    "fixtures.csv": "7d181812bff8f7b850d7a35dcfcdf560d7d9e6d71c7a5b539a0a8bb24cfb5f7d",
+    "matches.csv": "a77f89fad44b782800e652cff68a2e6d3e86ff7716845f2bb19a47582cc45954",
+    "players.csv": "8a678d24c4904f523514edfafe1e8b10a394701b9aac42dd76b9c6e81822858d",
+    "rankings.csv": "b201db2865c702b9bd366064a08e0dbf6d349cd3cc5a925989ce244f4470edb3"
+  },
+  "requests": {
+    "015c23f4805e395a662bd86d57340af224fd55636d90ece25c5a378ed7738472": {
+      "bytes": 8533,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244084&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:46+00:00",
+      "sha256": "3d1f5886b27e5dda6815b3b45ef3c609efc488c96d06458b1d2a60b49ac55dbf",
+      "status": 200
+    },
+    "01b33802387d9a52f5e0c2547bb46e337ec0a394008ca3c9fe86f81631dd453a": {
+      "bytes": 8530,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244101&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:18+00:00",
+      "sha256": "b49f3688b5be8488017b2cc11b3363387a47ee53609e93a584ed1d5690a0c54f",
+      "status": 200
+    },
+    "04cc1492d268b3d56fed4673337b02df2bbfc91ab053dd843c02379a54b98499": {
+      "bytes": 7452,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244063&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:11+00:00",
+      "sha256": "52a02fca6ba9d7ea09463f5ce8f5c887d3f305d4f70c5cd99ce0910a5af50797",
+      "status": 200
+    },
+    "05febe7e694f8c686502e503a378f6c4a043dca91fcf79b59f1e4f6d9eeaefb5": {
+      "bytes": 21136,
+      "request": {
+        "form": {
+          "customer": "24",
+          "getStats": "1",
+          "season": "13"
+        },
+        "method": "POST",
+        "url": "https://app.ttscore.io/customer_events.php"
+      },
+      "retrieved_at": "2026-11-20T10:33:32+00:00",
+      "sha256": "84b9f04f6e5ee3d886a296964d935ae1959747442fb9430b833b6e912a188268",
+      "status": 200
+    },
+    "08367269fad74c37129ca81dafda95d16362be0aff4993b517467b1e6067ea76": {
+      "bytes": 7570,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244072&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:25+00:00",
+      "sha256": "9b023e6941934f04cd88a01de1bd5b38fed81754cb6aa79330db4c48d831ddf9",
+      "status": 200
+    },
+    "09069b3e83078abaccc3b85b30b0e4b2112f5030694942fe9d5df9d623e716de": {
+      "bytes": 8514,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244083&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:44+00:00",
+      "sha256": "a21d33d67a3d4f9cfe2b4e6e3b342bc435d572d403d3e053e6fba206c060c633",
+      "status": 200
+    },
+    "0b2b74fa32124e1ffe439440dcf7a106a7600e69eb93b97ddaa148cd63dadc69": {
+      "bytes": 7001,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244092&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:05+00:00",
+      "sha256": "cb6bd50fdb836784468b4c75cea7e54fcd4e3dfa342d9a3fd0375d1974ac352d",
+      "status": 200
+    },
+    "0bf1aa2200474236c75fe67f1417d2ab05003a65f97056ce72dab42e75f7d038": {
+      "bytes": 7258,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244071&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:27+00:00",
+      "sha256": "479ea43fbb9421d144b364e33c6e0293d2ca145a6d860ee433d073fa63269ea7",
+      "status": 200
+    },
+    "0eec9dd937febca6f799f8f1fc0aab26ae4563d9c399ac44d7dabae6bda6bc25": {
+      "bytes": 8544,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244058&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:33:48+00:00",
+      "sha256": "a14c0f7b5f0d90d4cb04d6db3611d96757e61bfb340d046a6bf389b180e89945",
+      "status": 200
+    },
+    "1003dd4e740e8dd923ea7714e6f133a3fe31f38a082136fb9c1b289f3d852a52": {
+      "bytes": 8511,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244091&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:06+00:00",
+      "sha256": "e491d37ca6df0eedbea2bc9f3e13eb146f6f41fb51c34fdd8befbf22175bba56",
+      "status": 200
+    },
+    "11447942c08e6a891e30122dfd0e594ef127059700ff6651fbae05a36563d924": {
+      "bytes": 7502,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244089&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:55+00:00",
+      "sha256": "9268745e55684be118f6540074c397b6f1b3e73738dc5dfe2322c1cec9ca50b0",
+      "status": 200
+    },
+    "12113e050184b431ff9b8f3248ef1611801cdb9b9370c997affa943a7a6bbf9c": {
+      "bytes": 14342,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/tournament_groups_league.php?group=214221&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:33:39+00:00",
+      "sha256": "7ad6040879e1eae21605932663aa9d71030438efeaca2cba34a8a1c363827f83",
+      "status": 200
+    },
+    "12ba20bac58e7fafdbb97810f13d7deacea856b9efb9e428482a50c63c3b9cc9": {
+      "bytes": 8528,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244079&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:42+00:00",
+      "sha256": "a8552ea4927ca070c91c401f0cfefb91e53c5ac37e005a387d49bd23a1804393",
+      "status": 200
+    },
+    "16d331ba1a6517003a5ed3f617e9d02868fa4053b0ba24d896b99078292d389d": {
+      "bytes": 8528,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244090&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:52+00:00",
+      "sha256": "97de1b8719006462d188eedc34c311d77f4e8e326e15537a46812d45f38dfdde",
+      "status": 200
+    },
+    "1b0ce78e21dfaf1b790305eca9109ccef8e0f558e814ed48f2b34ba4cfb5b878": {
+      "bytes": 8504,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244057&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:33:50+00:00",
+      "sha256": "9410e33442bf5ffcd4150727ffd8465824fd7165b697c1f40c4a72be9ecec4fe",
+      "status": 200
+    },
+    "1e6f6145759a2133230f8475bd6cb0fcf8d5e57438033aa398c79c20d7b26a61": {
+      "bytes": 8514,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244055&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:33:54+00:00",
+      "sha256": "698318f4c1ce3d07ba581a15d47daf55b521c441eab9d545b3162f681225ed54",
+      "status": 200
+    },
+    "20c178300c6159da4179dde32fbdcfbad1516dd521826129c4b36a3aa9036787": {
+      "bytes": 8212,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244096&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:11+00:00",
+      "sha256": "1d0d0acc6cf5c3b5bf882ddf9a89d751ed5fce34649eb23ea6c9aea00a3666e6",
+      "status": 200
+    },
+    "21ac363a93fece901b43735f177cb4b716acd132c0e1d126d0fecf46905f0e4b": {
+      "bytes": 8544,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244086&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:50+00:00",
+      "sha256": "0a2d0aec02bb98ee28582d7ed71ffb2ce6750cb29e0be951dffb7caa64df02c2",
+      "status": 200
+    },
+    "229e7b71269d5915dd3d253843e4d0766a6fa2cf0a50e8a6f506cca97efc375c": {
+      "bytes": 8512,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244102&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:16+00:00",
+      "sha256": "ec19a3c1ddcd43d8428f818c5dc0f7afd130f0f8998230a093b330122da13df6",
+      "status": 200
+    },
+    "241cf6e4e0ab6ee5b3bc4be1a1773ecea648949a884b441a0fbe43798b9dc0b7": {
+      "bytes": 7191,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244070&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:19+00:00",
+      "sha256": "fbe2fc624e2168ae11b2aa53e684e0b7bb2f8e80913cbd36335b347b1aeaf6db",
+      "status": 200
+    },
+    "27296c2817c5c8c6f62e1b2c48e7a7dfc77cef197bf78d448a128591269e6569": {
+      "bytes": 7765,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244100&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:21+00:00",
+      "sha256": "afe8f16644f84e8c39842ec9b02bd65e2a7be416414a6eaf772c9ceeb2a7859b",
+      "status": 200
+    },
+    "27f276f1ed29d64938f174b544828d97333bab226a3bd87e778f7b66556c19fd": {
+      "bytes": 7305,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244083&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:45+00:00",
+      "sha256": "b05c368fc789c552f05cff62e3f9b16a414bb6b51ff92e9bf758a6e0af27e46a",
+      "status": 200
+    },
+    "2b3af9574911b8c69b2b062c9b6f613732444a394b94b5a96b989a5e4794a9d2": {
+      "bytes": 7800,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244052&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:33:43+00:00",
+      "sha256": "3b01f7df5f2984ef76ba1490b6f51e325f4c6620cf4e1d40fcace62e70061d54",
+      "status": 200
+    },
+    "2d7a3947db497a9a3240c0359de60de74aa469c395530ee7a40844218e0b1546": {
+      "bytes": 8163,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244061&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:01+00:00",
+      "sha256": "9b8bce211116ad75f913d51a53a35c0a984d602bfd496d8a4f557648e21564a4",
+      "status": 200
+    },
+    "30743b5c3f8a42cdc94725a565c54f2cadb08771a48a75b5b991635b68d64d5d": {
+      "bytes": 7927,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244056&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:33:53+00:00",
+      "sha256": "df40715b3407b0738b88170f6e2932f6e41b270c90eff5f8168f8f26897f8c36",
+      "status": 200
+    },
+    "33a0b1af1ccf12a0a61d1866b504f1826bcaa82db4f360cc14d8b057a2ae6f6b": {
+      "bytes": 7867,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244093&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:03+00:00",
+      "sha256": "7348a14c919c9f58ed3b6f37bcb7e25507e411b973b6ff4ebd3755bd0eb8054f",
+      "status": 200
+    },
+    "3643036c312d3fab0c6fd78a096921f4089ff4c026230a0f96b5cf8624944cdb": {
+      "bytes": 8506,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244094&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:00+00:00",
+      "sha256": "4ba77da07f795d8611ae311e36cc09f08576cb5477aef124ef404a3582f00eea",
+      "status": 200
+    },
+    "3831769479a347218fe3d7b5292acd05f7ebd286653f55e0d3a97acaeaf6114b": {
+      "bytes": 7670,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244101&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:19+00:00",
+      "sha256": "89359287f95a9a96ca350ca3486b84a76447d819d78dd77c86e772fa78893979",
+      "status": 200
+    },
+    "390314de633e27697f42ea419674cf6e1dfa7ff49eeea5f220bffec11bb22a5f": {
+      "bytes": 81486,
+      "request": {
+        "form": {
+          "agecategoryid": "10",
+          "customer": "24",
+          "getStats": "1",
+          "select-date": "2026-08-01"
+        },
+        "method": "POST",
+        "url": "https://app.ttscore.io/customer_ranking.php"
+      },
+      "retrieved_at": "2026-11-20T10:35:34+00:00",
+      "sha256": "f9263742a66520fb1b7f7fdf253b69d531b7f0dc7254f73679ef86697c433317",
+      "status": 200
+    },
+    "3d20a36c7e682f35156d2400cc0a23ded9b97fda82a0db35371ddc183e11ac34": {
+      "bytes": 7695,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244065&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:07+00:00",
+      "sha256": "ec249d1b61e734bc8c7fe57166ad0bfbc0ddd35d898599d3f7d0e492107223a2",
+      "status": 200
+    },
+    "3dbb6b1e9caddfc9fa771c1371229675d55ba22b595dda6f5783aa04af727688": {
+      "bytes": 28433,
+      "request": {
+        "form": {
+          "customer": "24",
+          "getStats": "1",
+          "season": "12"
+        },
+        "method": "POST",
+        "url": "https://app.ttscore.io/customer_events.php"
+      },
+      "retrieved_at": "2026-11-20T10:33:33+00:00",
+      "sha256": "b682346c44ff5d39cb261a25a0b33431d836bd9acf4751b53c364147d054d687",
+      "status": 200
+    },
+    "400095ff0ee1d9a1676d32fa2992d3f78aff692ab678dc8ab12194669a68dca1": {
+      "bytes": 11401,
+      "request": {
+        "form": {
+          "customer": "24",
+          "getStats": "1",
+          "season": "17"
+        },
+        "method": "POST",
+        "url": "https://app.ttscore.io/customer_events.php"
+      },
+      "retrieved_at": "2026-11-20T10:33:28+00:00",
+      "sha256": "af2c7d47fcb6d21ff10ccd63f142b05637423ab3fe642a8532450ab6d6b1bd31",
+      "status": 200
+    },
+    "40fb594e67be23432c97377ab8d4ec7840ab138685ad917d9c56fe259bcf4593": {
+      "bytes": 6747,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244104&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:27+00:00",
+      "sha256": "2d36e9d6b95310a42ae8c01057722602acfa40a29e38b909a8cd04e517aa6f0e",
+      "status": 200
+    },
+    "423f54ee2fc67959dd2643faf2840c45203e083f8b587941d90473d7d50ba876": {
+      "bytes": 6986,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244067&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:13+00:00",
+      "sha256": "eb28526d7c8183c230cafa810d51108e7000a66e2ac37dc10fc7722b11c71497",
+      "status": 200
+    },
+    "4247ec90e5be9b981aa3a67696cd88cfe3c8fc31fb9937a7ef3c6e23fea03576": {
+      "bytes": 7677,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244102&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:17+00:00",
+      "sha256": "b7c5d1d91f96b6cd227794bde55369b09ffb4aae882f672087d8f2fecf783f10",
+      "status": 200
+    },
+    "4ad0076aaf60b7e1cc76ac946e9b4a43a33ac78bcb73efc672aef97633c714f6": {
+      "bytes": 8542,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244106&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:30+00:00",
+      "sha256": "b55f6dddd3373113854f797b7f5d396c57b0549e9bcd308ba909b5086e890e5f",
+      "status": 200
+    },
+    "4b65ca4103401b7654819952b57902cfc81dd24e5f00ee87e94b44053f87e18b": {
+      "bytes": 7495,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244082&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:37+00:00",
+      "sha256": "d638f8d7aa24e8e127203cd01940b562514d80cf49d39dd47fa834362aad0ff6",
+      "status": 200
+    },
+    "4c77a0d50511be62300b7679afe23cda2f719b85b007db865bdb505e933c0d9d": {
+      "bytes": 7537,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244062&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:03+00:00",
+      "sha256": "c5a20e679e7685799865ecb4b441d0d45d4c1d30f3d5bfba3648262e137be7d3",
+      "status": 200
+    },
+    "4d2cba5baba6aa741eecd180034eb40c5897708a61478336fdf33a8ea7993198": {
+      "bytes": 7039,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244069&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:17+00:00",
+      "sha256": "aa044f464a243cfdc37fa4933e0e9700e939e601575ffaf14bbd170fa2e046ba",
+      "status": 200
+    },
+    "51abf2e3f8db2ea1a12b640313225e89bdccdbf36e38d82cf5ae549a2e64c7b5": {
+      "bytes": 8528,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244051&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:33:40+00:00",
+      "sha256": "c0ea5819ff0dd57fb095d3aa32c80a700b532ba96e4709deea105cb50fa9ff43",
+      "status": 200
+    },
+    "52071bc1fc7c0d442227e7c4065740aeff91f03a6bfbb0f81f6431160287ad79": {
+      "bytes": 24668,
+      "request": {
+        "form": {
+          "customer": "24",
+          "getStats": "1",
+          "season": "4"
+        },
+        "method": "POST",
+        "url": "https://app.ttscore.io/customer_events.php"
+      },
+      "retrieved_at": "2026-11-20T10:33:36+00:00",
+      "sha256": "2806dae4fae54ab93f63a670cc1c5c6761a73387a3d6dce0888b0511aec87f69",
+      "status": 200
+    },
+    "527256c48b9619816f52260a6c7b430ef2820461defd2dea357e5abd29205f13": {
+      "bytes": 8533,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244061&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:00+00:00",
+      "sha256": "dc96bfd02f14508f9ed7a5eb9c3dfe8c85375bf22e3ceb739eb8d19a165b613d",
+      "status": 200
+    },
+    "549eacc4e5ebe11943c13b32771e857ef63d1f633c4f5e560e499737fe91220f": {
+      "bytes": 2229,
+      "request": {
+        "form": {
+          "agecategoryid_league": "281",
+          "customer": "24",
+          "event": "777",
+          "getStats": "1"
+        },
+        "method": "POST",
+        "url": "https://app.ttscore.io/tournament_groups_league.php"
+      },
+      "retrieved_at": "2026-11-20T10:33:38+00:00",
+      "sha256": "a4a6cf0d783269aee23c9f6c03902abdd5f7a2fbfd3c35712886995286db04ad",
+      "status": 200
+    },
+    "5556273c4f14608360aecbb3413f8e13558fa6ef74e2747758d92442ac60dabf": {
+      "bytes": 8507,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244076&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:30+00:00",
+      "sha256": "01c39ff1e71a69302996d2da83a389130fdc7cfec5249a048e2cade4ff465a1b",
+      "status": 200
+    },
+    "58748b24a3aa48365371c707856f2e7d6706dbedf84bb2846cb892a43006a8f3": {
+      "bytes": 7957,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244058&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:33:49+00:00",
+      "sha256": "caf4947f98985b0bcbf5120da32d4a70a9e07afe4e3cce723e54a5ce5c6c27d0",
+      "status": 200
+    },
+    "59afc9ac59030264e94ac055f0c60861d01db453cbede41fb1dfd33a52e2e0b3": {
+      "bytes": 5029,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/tournament_groups_league.php?event=777&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:33:37+00:00",
+      "sha256": "ee05dfdf6f85e354e65db52fb3b58fa30eac05dbc9aa46a9106ef7a0d77f1ba4",
+      "status": 200
+    },
+    "59b2cea86a67c00b74e7b714cffdf4419b8cf1f16ffa035464d040bd1cf86607": {
+      "bytes": 7121,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244078&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:35+00:00",
+      "sha256": "ba3f9db3bd44f6dfdb88cf7f2c024ec46f2fe94ae5e5466ca03b1f5e4f9bf7aa",
+      "status": 200
+    },
+    "5f3cb14aa35e0b0befddcb9ee4ba98ea27662be5a457945ad7a728e880b4a06b": {
+      "bytes": 8504,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244053&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:33:44+00:00",
+      "sha256": "f9be20e7de9253dd1ee5d6b617f67b2f57007bd994b3925f00366f29591d77d3",
+      "status": 200
+    },
+    "60791e763d388bf159131857eb40226b570b115e4fdc02d35ae759359808a317": {
+      "bytes": 7367,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244090&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:53+00:00",
+      "sha256": "aa60c8601539a12bf4c0b4caaf21558eb0d2df653da84916573b31f4a6499483",
+      "status": 200
+    },
+    "61b219cf3c0c6abe55afc12031d12eea5fa7fc1587f147f79c022b4b72335708": {
+      "bytes": 7963,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244086&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:51+00:00",
+      "sha256": "e5a96941d1244b3a240a52ec039bb63d07d586644a29545a46c6cb44e61c5d69",
+      "status": 200
+    },
+    "61c364fc06bc627f4a9eaa9e8d9a3fb21d01efb0348193a682e4795cfea8d8d0": {
+      "bytes": 12390,
+      "request": {
+        "form": {
+          "customer": "24",
+          "getStats": "1",
+          "season": "11"
+        },
+        "method": "POST",
+        "url": "https://app.ttscore.io/customer_events.php"
+      },
+      "retrieved_at": "2026-11-20T10:33:34+00:00",
+      "sha256": "f02c6df2c7d3f0fe2da48ee78b3dacfe5f85043c56c074957ca6fc7ad4e64483",
+      "status": 200
+    },
+    "61db685bdc5aac955e2e1d2a598ba255280729e8dfcb89885cd21cab0a077294": {
+      "bytes": 7247,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244099&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:23+00:00",
+      "sha256": "570034a5dea80041ed4c9b543f93de9960c26f0f41648a9ef10577b465c1ee42",
+      "status": 200
+    },
+    "621062fd0a248d98092c7e1258a0d7b7ceddcb6a67233c4e2fc0c022a1e7f93b": {
+      "bytes": 8519,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244075&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:28+00:00",
+      "sha256": "2994ea2e31022a7e565fa7774c5e22a53e3922361dfbb0a7a40a8576af4e4f32",
+      "status": 200
+    },
+    "66981d1588fc1384b33c102c457f49224e5f241d018284dae618b172152563b5": {
+      "bytes": 7926,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244084&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:47+00:00",
+      "sha256": "8e3d2a2203daf48443d547b34f8b68154543d664b9301fa0cdabf034953b142b",
+      "status": 200
+    },
+    "697a3e2487f10e4ea8ca6aae47d38de978e4f44af81c7a5219b6e89d43cbd318": {
+      "bytes": 8511,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244063&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:10+00:00",
+      "sha256": "43b0813f93e4b38d5e942c77feea55dbc067076a9fc3e42e888125526760d018",
+      "status": 200
+    },
+    "6b1cad2a211fdf94094fc36b5d0bf80d4a4f0918947bbf8c8ceabca129053b3b": {
+      "bytes": 8513,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244059&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:33:56+00:00",
+      "sha256": "7ebfbc3ba8a9956f137f138b5298faa7a4dfabb05d8bfb70503db2c2a931d1fd",
+      "status": 200
+    },
+    "6b7e390cc93c96a42b3917a12e59bcbf002f3501c21fb2be726dc441f33b5ced": {
+      "bytes": 6959,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244088&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:57+00:00",
+      "sha256": "d9dd7aef71d6f46b557bb3348d66aa9f931ebb78e012989df0c72ff1ad17b1cd",
+      "status": 200
+    },
+    "6e0411ec9a6b6a80127583a4b4968fd3f244de73d5209241475bb4209585bb09": {
+      "bytes": 7332,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244054&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:33:47+00:00",
+      "sha256": "288c30b21339b31fecd6472b90a40b986c28592a5e1edb0d59b647399019f4b7",
+      "status": 200
+    },
+    "70077261b8bb57e16c1d9adcebf3ba7077d4f654584202aae7f97a06a6bec6c9": {
+      "bytes": 8521,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244088&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:56+00:00",
+      "sha256": "9a538b4257b7d8acfcc7821a165e31938df29ccd4ae664eaa42910949a0ccbe4",
+      "status": 200
+    },
+    "701c3bd3f6a42313d1a8672c4f631ea44befc07278f041d85eff8f7875e9d512": {
+      "bytes": 7729,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244075&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:29+00:00",
+      "sha256": "bc0fef10710d7f38d7ff4e7c4b72a4000f12cd6cb3dbd7e5f099089300c93b62",
+      "status": 200
+    },
+    "74e8d544c1b479afdb8be43fc323802777550e02a22e376434bc41ae2d9f95e2": {
+      "bytes": 6802,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244064&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:09+00:00",
+      "sha256": "7d173ca9a4d89cf7bd8653b4d91dcf8d3ebbf80e658169d6a3a4a520bb570351",
+      "status": 200
+    },
+    "77c19f01425585159c94ae276b0fec6ab3874cd5409a5cf1b21a6e4c08031f34": {
+      "bytes": 7126,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244051&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:33:41+00:00",
+      "sha256": "ff4dc8141e61996d56e6034187a3ba0690f0ed075c28880cc51730a8e98cf87f",
+      "status": 200
+    },
+    "795587455746cd12f70b34bc0c0a3169bb9a508f40f2f3859efdb341b71f5158": {
+      "bytes": 8511,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244071&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:26+00:00",
+      "sha256": "ed16e5980dffb4631b55517d3f66c147b673753072c9e507b5f24767811e1424",
+      "status": 200
+    },
+    "7cc718516d5c8a19612708de6fe9dbf1ca57601ce50f210f614128bdace886f9": {
+      "bytes": 6688,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244085&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:49+00:00",
+      "sha256": "9c137d10ebd5a459a8ade43bcb93e6cffc4d7a74c504668b36a1b9e9abaf5db8",
+      "status": 200
+    },
+    "7db4899dc70deac036257d1fdaea47889098f8d35c83f2c86a990df5581687d9": {
+      "bytes": 8507,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244104&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:26+00:00",
+      "sha256": "d89293ddf4664ecdc6f818c8a828fa0836d0c635bd119b4082123c3ca999c698",
+      "status": 200
+    },
+    "7fabd0ee3a0c8d75856d1e8508b55c21ace42dbd3378b21966c4fd3973c941b8": {
+      "bytes": 8527,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244080&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:40+00:00",
+      "sha256": "53221d60864b5743380bf62feb481030de52a4c8200c9c42eb33ddad7a7969e6",
+      "status": 200
+    },
+    "8053f5c3bcf69e38a3944d057853c22ebf91fb3505d99d856dd47be1caa118a0": {
+      "bytes": 8535,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244096&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:10+00:00",
+      "sha256": "47bb80589c17d7ee310d6cb52ca23f94584ac6ad3f0b78cc344cc4cb9592b330",
+      "status": 200
+    },
+    "82002d28c26069e0f605f596fc5ebc40444cebe177e6e2a72fcb47c190b1ed24": {
+      "bytes": 8527,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244105&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:28+00:00",
+      "sha256": "17634767c5a4c69d24b484b1fd87ca99016ed15a863882588d8cdb9174322225",
+      "status": 200
+    },
+    "86c0cc68761b574e6c6764125f20bdf6fcb5e003e6b8a3073e25e68743979e18": {
+      "bytes": 8506,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244066&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:04+00:00",
+      "sha256": "50eaa58537c3298f378c08ca2000769d94607b5b625dd382d928e4e45adaf26e",
+      "status": 200
+    },
+    "894c71fe89cc7de9e5558e303dbb0b97678634b6b693dd6211be849815e5fab6": {
+      "bytes": 7101,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244081&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:39+00:00",
+      "sha256": "0766e6940bd2d573ab64a813f6340fa36e2b86d77dc969d16ea1cd77db3fc25c",
+      "status": 200
+    },
+    "89f0d2ff737432dcfc3db574eecbc4e13075b4b648aa3de5780285751277f080": {
+      "bytes": 8512,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244074&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:20+00:00",
+      "sha256": "8fe8517294dc39db5592a36528aadd01e051be2d50e84675a38eea6c77290105",
+      "status": 200
+    },
+    "8a4f8a26526d75e4e5b518a333196cb0e8a548b27a99302e419a2e63cd7fa16d": {
+      "bytes": 8545,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244097&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:12+00:00",
+      "sha256": "c37d21b3cdcac087deffa07d44556edabe46272bf39d3a4083caac2b27e23344",
+      "status": 200
+    },
+    "8aeba5f4d2433689ea93a9090117716aeb4e1e477d13d2d52de4a8adaccd030d": {
+      "bytes": 3530,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/customer_events.php?customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:33:26+00:00",
+      "sha256": "da3f6e38fa217088c18b86c90b3eee8ea99b36802dd1d212c4c5db870451613d",
+      "status": 200
+    },
+    "8fa132b0cee9a0b66c18e18997f29f450207927ba4221fe9b0a8e06cd1fde853": {
+      "bytes": 8535,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244068&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:14+00:00",
+      "sha256": "a36e681170a04ee996ac55aa418681f3691c952b0f67c9cbb39b45135306d96d",
+      "status": 200
+    },
+    "91b6c02500f14c2e2a1e24a4a6df0fb88737b59ed606ae67e380db4caf3607f9": {
+      "bytes": 6977,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244076&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:31+00:00",
+      "sha256": "1031935a71d420e6c98dcd4acf6a344ad603e3c64f96db9579bfd72457614ee5",
+      "status": 200
+    },
+    "94dbae271f4e9ac244d8ead162e8a05edf0916578a08efa5eb62aa07264daf01": {
+      "bytes": 7159,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244079&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:43+00:00",
+      "sha256": "0c2bea072e0952e469eb02c725c379bf6e75b8d25a527de89c3aef3c282b0507",
+      "status": 200
+    },
+    "953a45c569e36db0fc7b52fcb0a3dac0b310d3fcaee0757e852e09881f3c57a7": {
+      "bytes": 8528,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244064&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:08+00:00",
+      "sha256": "8c77ac6588a32bdeee74f1f701c5a1c4edc85bd65f4c14e87ad6fa508d8ecb90",
+      "status": 200
+    },
+    "974daf745449b21ed6ab68085beaa0d94f38069b4001eddc36067e4eff40b96c": {
+      "bytes": 8527,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244052&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:33:42+00:00",
+      "sha256": "b3626f00b8e99929a21f5dd7853346960e5a0b787140e56065841d35680b0025",
+      "status": 200
+    },
+    "98c7367da4e1b21a7f8a2e6a64436d089d1cf29b547453ff06c76a36c6870446": {
+      "bytes": 8536,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244082&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:36+00:00",
+      "sha256": "603b3fb7d70e3e7101b2579e0a600465169e18cec3326fffbe902a4dd2c9a080",
+      "status": 200
+    },
+    "991beac31476416c93415fc021cabf1b51a4bc62f9512d853c19694e0a160256": {
+      "bytes": 7669,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244094&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:01+00:00",
+      "sha256": "c5a3eaa67fe80f4e6953b35a1c9af336d3d659091705ffd050e674294bf42999",
+      "status": 200
+    },
+    "9a67f00259eb57628e8a166a16162caff4bcef3a02031ec4606ba03b43c350ec": {
+      "bytes": 24588,
+      "request": {
+        "form": {
+          "customer": "24",
+          "getStats": "1",
+          "season": "15"
+        },
+        "method": "POST",
+        "url": "https://app.ttscore.io/customer_events.php"
+      },
+      "retrieved_at": "2026-11-20T10:33:30+00:00",
+      "sha256": "2fe19c44fce79b984868909ac85e0533669d9a33c9c7405edca60460cfa884c3",
+      "status": 200
+    },
+    "9b3a03bb87d6c5f2792b0952846f1f953a691e426f0e472c9c36740b7c5ef8b3": {
+      "bytes": 8525,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244070&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:18+00:00",
+      "sha256": "e3ff3ee89ba1f223ef84afef510b12b6f070af44d9919b57e08fee14a384d241",
+      "status": 200
+    },
+    "9cc0188c5fb8f68c88610e225a9c8e9671f7eb8dac20047ff28e2a221c567e18": {
+      "bytes": 7402,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244091&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:07+00:00",
+      "sha256": "f5be0e8c8fc50b1491c14ad3e8c23a3e31c7b0e6c17d612ecd5fbd0b44af76fe",
+      "status": 200
+    },
+    "9cf5d9c80d3c54d4ad015f00b32dafd2cadd96cb0c9b73293e122d60ead2af6a": {
+      "bytes": 8504,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244081&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:38+00:00",
+      "sha256": "fadb8c7296bc2514b89da99b3224f83893cf60faa774926689ca9ad978adeea6",
+      "status": 200
+    },
+    "9d5b1b35f5c3389e1389f512185bf3ef53b2a525a3f50303d9954232dcb0f3d5": {
+      "bytes": 8093,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244074&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:21+00:00",
+      "sha256": "6e57b04522052b74bec50c8169e089908db19389cb08f447d63e6b2200abc553",
+      "status": 200
+    },
+    "9e4fcf9c53a8fa9cb13f2b4baf7dd4f87b849dc97141e9e2d3bf79423d0d717d": {
+      "bytes": 8511,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244099&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:22+00:00",
+      "sha256": "870e5a59e08767e8787689cb6de7a3c8ea6840eb9e0c9c8cd82b55fc173364b9",
+      "status": 200
+    },
+    "a0e1445479d9138865ce6e9724dce24b9b88f6bdbe26e0799fe5d1f9341bc193": {
+      "bytes": 8464,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244105&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:29+00:00",
+      "sha256": "eb95670ab117a6bc4539f13fe818b3963199ddfed8fa21d38b3b971e147edd6c",
+      "status": 200
+    },
+    "a17320bb516238c5b4c82cf2f0a911ffdc9f91c29bbf51329522229daa2f706a": {
+      "bytes": 8550,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244093&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:02+00:00",
+      "sha256": "ed9f40db000a101253613b9f18bd4828742ebfc675e39b89d7683944ddcaad9b",
+      "status": 200
+    },
+    "a247557b9fa5f7e4326c14ae2cb785c5e03be93d0f84b1316ced687e6d3059b3": {
+      "bytes": 8528,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244092&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:04+00:00",
+      "sha256": "b8d76df8a9e8880d24958dd1c2e3030aad32472a0484052e21341579e23d1368",
+      "status": 200
+    },
+    "a57979622d81243eb168510035db1bab3cc01e5091ab577b99ea84922dadd2c3": {
+      "bytes": 8089,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244080&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:41+00:00",
+      "sha256": "0dcd16a88fc32c0dee773c5604d5a25ecda39439b486f7d397df04d03a2d8575",
+      "status": 200
+    },
+    "a677cb7d7b4c2cc64edd79b45dd19730b3661c28bcb2c04b32aaab86b1ed227e": {
+      "bytes": 350842,
+      "request": {
+        "form": {
+          "agecategoryid": "15",
+          "customer": "24",
+          "getStats": "1",
+          "select-date": "0"
+        },
+        "method": "POST",
+        "url": "https://app.ttscore.io/customer_ranking.php"
+      },
+      "retrieved_at": "2026-11-20T10:35:36+00:00",
+      "sha256": "1d8bc3f9aa5c2f019fbfe5c405df30a60b3293ed42a95ff5b7c6d280fa81f1b5",
+      "status": 200
+    },
+    "ae20d789f5b120b888722ef2d49c63b1505b6ffe6c45c5dd0f26f27aafdf1db4": {
+      "bytes": 8536,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244054&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:33:46+00:00",
+      "sha256": "81e3360eb03cff4bccfc86a4a1b25634926d18f3256e2557cddda1e99a123486",
+      "status": 200
+    },
+    "aebb8af690b953e907c7140ec8888fed5531344be1a45d8ce49d93bf49c9f535": {
+      "bytes": 6706,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244057&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:33:51+00:00",
+      "sha256": "768faa40083c100650d253798d56a8adb15e7543394c6b1ceb2a619a6e9a3a8b",
+      "status": 200
+    },
+    "b2e536a60060139e42ad6915971bbd4d2a64ddc9cbb84db8a780d29015966d32": {
+      "bytes": 7466,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244073&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:23+00:00",
+      "sha256": "96db7c84972abcd525aa2ae450e9923d8676d401b9ce4d210fb67ea6220a6ee9",
+      "status": 200
+    },
+    "b37b17e7202c32931fef2b5ceb22f38f658c80b862c719f20b4024f0abe3729f": {
+      "bytes": 8542,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244078&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:34+00:00",
+      "sha256": "026aeb7ebfb2ed0ae0a2375674c616768f89dd654366a238cbb9a6224754fc74",
+      "status": 200
+    },
+    "b3e10d46d7270ce8caf339efa3e775da3dbcafbaacf9df061c67c237f94f2b17": {
+      "bytes": 8528,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244062&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:02+00:00",
+      "sha256": "d4d087122e1d79d927cb7389eb7e1ec209acc95998e514e28857c0c399503a26",
+      "status": 200
+    },
+    "b57198d10eb8d151fa2a88ccea611666b950dbc20807139707cea74bceac4a69": {
+      "bytes": 6214,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/customer/24"
+      },
+      "retrieved_at": "2026-11-20T10:33:25+00:00",
+      "sha256": "a50af31c87785f8ba7fa287cfb6482fbf68b4dfde37bafb04a0cd6825bc05192",
+      "status": 200
+    },
+    "b8b77c70d12ea66e14565d28db1deba935dbed12e2fc100128b04133b11e054a": {
+      "bytes": 7908,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244066&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:05+00:00",
+      "sha256": "0a9be5077b1dd9647275c8442934649b8afc7a5e5769bebd2bb2709c2b6a3686",
+      "status": 200
+    },
+    "ba6cff900ea6fad13e254b0baeba5174ff1dba43b74d1a076111e1072abb26e9": {
+      "bytes": 6967,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244106&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:31+00:00",
+      "sha256": "de5c26e62e16fded25bfd06409475f35c31a98e118108c8c34004cdc00ac1dbc",
+      "status": 200
+    },
+    "bb4ea675f82d2308d4d07097e36b6fc4a96bd99bc0ba4dbd29b2aaadd9fae7b8": {
+      "bytes": 18006,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/customer_ranking.php?customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:32+00:00",
+      "sha256": "065e774513dca6ecc9a7d94dfd803dfa52110281c04b1f14bdca9c0e6b319461",
+      "status": 200
+    },
+    "bd9213c804e892193d2ccb5784338c02c414d82da262ca681c77dc3e51ec686e": {
+      "bytes": 8530,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244073&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:22+00:00",
+      "sha256": "0d4e942beaa338c833f5a1f3512077c19f79a6f631e8aae4ffd2af98dfff33fc",
+      "status": 200
+    },
+    "c2150c065aa042b24dce8af57d6b98cb2ab46cb49a35ac353a92cf9df2981379": {
+      "bytes": 8034,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244068&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:15+00:00",
+      "sha256": "3d0b980b8a86013afc412f4fd5c2d0121f6daca6d651bc8d36d7e3c8ccaa9806",
+      "status": 200
+    },
+    "c21f6f9eba6d1392c69583faf7f71c294eb3fb15c9cf1780539572214021a990": {
+      "bytes": 193267,
+      "request": {
+        "form": {
+          "customer": "24",
+          "getStats": "1",
+          "season": ""
+        },
+        "method": "POST",
+        "url": "https://app.ttscore.io/customer_events.php"
+      },
+      "retrieved_at": "2026-11-20T10:33:27+00:00",
+      "sha256": "0c504d3e8ba4d9668c2e5cf95d98356a7f33859ca764f1b5be2d9a6aa683580e",
+      "status": 200
+    },
+    "c3891a7d5ff814194bf7987d04b916466639980223ba389cfe1941a4aa165d1e": {
+      "bytes": 1248,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/robots.txt"
+      },
+      "retrieved_at": "2026-11-20T10:33:24+00:00",
+      "sha256": "8fa3036c68bfcbd32365f6225d24333264093b7cd38d306e106b4dbdc934fd5b",
+      "status": 200
+    },
+    "c7900bed5a0aa3cb34b5d7adda8e8acb2182243c439e453306ed3d5fda7973f0": {
+      "bytes": 7290,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244098&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:15+00:00",
+      "sha256": "27dd14f07e42b3d68184e62a9376c600a12e00f7aa69583746844f54e09e2655",
+      "status": 200
+    },
+    "c89078da0601bd34eaf5aeb689a84e3b0ce2dd08ad2e0e057509d578b62e566e": {
+      "bytes": 8585,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244103&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:25+00:00",
+      "sha256": "2c46dc42e55f87386b1511e4303cf377d5d319ef15cdb1e047def78f8b7348c9",
+      "status": 200
+    },
+    "caac94432ea1dbb6df7ee6ddfcbcbcec14a9952590bd44bb3e4d636883bae207": {
+      "bytes": 21414,
+      "request": {
+        "form": {
+          "customer": "24",
+          "getStats": "1",
+          "season": "10"
+        },
+        "method": "POST",
+        "url": "https://app.ttscore.io/customer_events.php"
+      },
+      "retrieved_at": "2026-11-20T10:33:35+00:00",
+      "sha256": "a4c3ba47c36e78f1c37fefcdfb38d4a90eaf5798ead6249f875587939601a9ee",
+      "status": 200
+    },
+    "cdeb9003be0571afd43c0fd25935f4ec3fe67502fea3ca9dc16948b64f04c535": {
+      "bytes": 8513,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244087&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:58+00:00",
+      "sha256": "0daf6a844980d3d570ae05d99911a5016b1b1aaf9ca1ce6d4562fb63a94f6761",
+      "status": 200
+    },
+    "d0a07edcc0dbd7f14ae13706f4071c1b6c615973efdb503e51905624299ec669": {
+      "bytes": 8533,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244089&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:54+00:00",
+      "sha256": "1b82be4de14cea51da48206fee3bcb529a3f12eecae7679d7866ba331a395b75",
+      "status": 200
+    },
+    "d3da38b2bb4bb23395c6a8dc20a04e8e0186063e026ef2d1fed27b30e2298651": {
+      "bytes": 23825,
+      "request": {
+        "form": {
+          "customer": "24",
+          "getStats": "1",
+          "season": "14"
+        },
+        "method": "POST",
+        "url": "https://app.ttscore.io/customer_events.php"
+      },
+      "retrieved_at": "2026-11-20T10:33:31+00:00",
+      "sha256": "f2531e9cfaf5d0b2c913c7baa4c77ca85b006a2aa44d703cac627b7de59b300d",
+      "status": 200
+    },
+    "d3f0eb603501870edd1f8aeeafa60c4079ab28ab9174759c466160a4e729577f": {
+      "bytes": 8533,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244056&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:33:52+00:00",
+      "sha256": "73e560dea39d578ab8cc0bc68aede2cf770a6d5e335e0d7c79f731debbb038d0",
+      "status": 200
+    },
+    "d49bd7425987b62cbc6b39283b882bee0091f1a73d71ef6796304e64bf687108": {
+      "bytes": 7008,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244097&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:13+00:00",
+      "sha256": "fe671d5b36059e5b301965ca39ec46663f38bb374e257a70a5a690e2b7fad3cd",
+      "status": 200
+    },
+    "d549071be6143f76201507c9b1a9b52b38cd035317fbd5a8aa017bffbe9ce747": {
+      "bytes": 8545,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244069&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:16+00:00",
+      "sha256": "94baa2eb6ce4d215a8e4b199604b208ad0647d09dfa62304c2d62796b12834b9",
+      "status": 200
+    },
+    "d5f3740e7529bd619e0b729a02e34b9d09daeedde1601d86d4ec77cc31514987": {
+      "bytes": 345055,
+      "request": {
+        "form": {
+          "agecategoryid": "15",
+          "customer": "24",
+          "getStats": "1",
+          "select-date": "2026-08-01"
+        },
+        "method": "POST",
+        "url": "https://app.ttscore.io/customer_ranking.php"
+      },
+      "retrieved_at": "2026-11-20T10:35:33+00:00",
+      "sha256": "d961da10d8a1d9ce7b32bb99e6daa2c857cc71ec588800d8f53936e3c84345c0",
+      "status": 200
+    },
+    "d699b765902c37f398638cada7bfd083135f9f6655c8aa55e976a74cb61916c5": {
+      "bytes": 7251,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244095&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:09+00:00",
+      "sha256": "3bf28c6a04f0e889329c178fbd069aa3568e2888326db4ec144379366defb713",
+      "status": 200
+    },
+    "d7a21c72cb317c46cc88dc08a0c1d8a61cd13fc2ae2829a1ccd97049d1bc3281": {
+      "bytes": 84363,
+      "request": {
+        "form": {
+          "agecategoryid": "10",
+          "customer": "24",
+          "getStats": "1",
+          "select-date": "0"
+        },
+        "method": "POST",
+        "url": "https://app.ttscore.io/customer_ranking.php"
+      },
+      "retrieved_at": "2026-11-20T10:35:36+00:00",
+      "sha256": "217bc47aa0039b9fc622f0c0f968278af93e80676ed0be6f90565245e4c63a20",
+      "status": 200
+    },
+    "d969fec8895a3cd0f262360ef8582fc6dbd1ebd9677e54da8ade24e46ecc1a19": {
+      "bytes": 8519,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244103&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:24+00:00",
+      "sha256": "e20493f1fc1fcb74350fa35c1d8a6541c28705e1a51dea188a6e86469a4b91a1",
+      "status": 200
+    },
+    "da286f844017a919f0157c7984c75c3bedb027647d9492516fd06d45a2307d06": {
+      "bytes": 7526,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244053&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:33:45+00:00",
+      "sha256": "dfbe4ac2f02f0e5152b1d712db4ff9bff7b8768b8ae88f722d3950700653c0cd",
+      "status": 200
+    },
+    "dbfeab4bb8e2cd59d0bcf07934f034bf36705a2364146d2f417803a127517a82": {
+      "bytes": 8490,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244095&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:08+00:00",
+      "sha256": "989c2c3fef7dfd718ab26f758b6cf90d3977327eaa5053baf29f311f7987db24",
+      "status": 200
+    },
+    "dc17f7ec444583d89c52fbd6c1c52f562d315e3277f4752b9dfb6337fb880858": {
+      "bytes": 6955,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244060&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:33:59+00:00",
+      "sha256": "7aea39cec072f2e88f6d29e76015c8e5da76dc2febc61b0078e1c067fcf16710",
+      "status": 200
+    },
+    "de9dbd7829823d82ef01ded4b36c05e0c4995983ec26ea5fcb942dc36d6e8e30": {
+      "bytes": 8550,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244065&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:06+00:00",
+      "sha256": "a8bc64a0e73b43b7a0abf165b77eb202730867e1bf53848510c32f904baef34f",
+      "status": 200
+    },
+    "e38c51765a8087c4dd9bd0c1ae72ef1fe0f5abd0c3b935414a7c7064bb9c8ed0": {
+      "bytes": 8525,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244098&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:14+00:00",
+      "sha256": "0b100f3a1559ecc2b73c1e1520119e8eb726e96c6a67215e79c9e3d9c9b15a6a",
+      "status": 200
+    },
+    "e79fd2525bc878c658432aaf639dc9f83f1e7499b723c27248508955a07b5c77": {
+      "bytes": 8542,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244072&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:24+00:00",
+      "sha256": "4550f168e557f26edb5536d45465ce44dcf3c120f3c303f47356b634765857c4",
+      "status": 200
+    },
+    "eb2499d907d7c1c6d17cfed9e9ff60c6c56d4d9c0f2c5f15aa27dae16623e4bd": {
+      "bytes": 8542,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244100&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:35:20+00:00",
+      "sha256": "44a5b9e8b63f215b9026ed74a950746aed52960d6c3f47950c52d1b4c7d40d3d",
+      "status": 200
+    },
+    "ecbaf4172164197c4965f356d9360c2abdeea0bebcb3f2256aa22cb2fbfa905c": {
+      "bytes": 8521,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244060&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:33:58+00:00",
+      "sha256": "feab6d374e70ed3e34a932a6e51cddaba2442867e053f6c061df7e043610ee5e",
+      "status": 200
+    },
+    "edef9db325a7e5facee420b16b5e7029d209f098b8df1cf8dbc0022c1ca64201": {
+      "bytes": 25620,
+      "request": {
+        "form": {
+          "customer": "24",
+          "getStats": "1",
+          "season": "16"
+        },
+        "method": "POST",
+        "url": "https://app.ttscore.io/customer_events.php"
+      },
+      "retrieved_at": "2026-11-20T10:33:29+00:00",
+      "sha256": "4a8e0ae5deebf77aa7aff145ff7ceb4783961f1109b4eca803b79a948c2c0930",
+      "status": 200
+    },
+    "eecb00ec32b20d83939e4702cef39967851bc2d3c7ca99d1030904a2fc9dc0f0": {
+      "bytes": 8490,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244067&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:12+00:00",
+      "sha256": "966830fa95195f2a2f399a6a1fb28fb46d4e133a4536fc2a6d709f9297413e4e",
+      "status": 200
+    },
+    "f2674eb3d3130961d597346904b7f6b547036f110249365b2833a3088172b5b6": {
+      "bytes": 7586,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244055&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:33:55+00:00",
+      "sha256": "cc9a5982c81c19bcebb995709842c44962533f030372d9f040a865f08688d545",
+      "status": 200
+    },
+    "f3f1f63c0e7c54138adc02ebe5409793afb418060d945d66299935b1e9294be4": {
+      "bytes": 8527,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244077&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:32+00:00",
+      "sha256": "b45ee243ba2f9b69bb0dc4e38ca6a289c02bbaf8aa7503257501cf0c90810282",
+      "status": 200
+    },
+    "f62dc7cc306ec9b25f66127954c1636b739a56290243d1442c16012aeddb9b01": {
+      "bytes": 7816,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244059&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:33:57+00:00",
+      "sha256": "bd6cdb93615aa792765a52efdeb251c5331f8615fff2b2eaa2b3f74b52cd25db",
+      "status": 200
+    },
+    "f80ed657e78930fead9818fd12bc0f17098710fca3d532381ac8af32d18b4e78": {
+      "bytes": 7822,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244087&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:59+00:00",
+      "sha256": "d4ea5dddd81e3b17e959326a0aeba7a4a5ca056ee867d25a1bd056ab128ea977",
+      "status": 200
+    },
+    "f9a9dc3b47ea5fee1a06e8c0d0d8068aaf8fe15dc72fd352f9bd05fdce9c9012": {
+      "bytes": 8097,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/admin/ajax/team_games.php?game=244077&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:33+00:00",
+      "sha256": "b5b03ae0cbcdffff6c2c8016f3ad4d15036b75b30450505462616edb31f00b72",
+      "status": 200
+    },
+    "ff48f8a0fe21eaa02bdf7bacd61f968a65048aca17771f45b0522d580c2c974b": {
+      "bytes": 8504,
+      "request": {
+        "form": null,
+        "method": "GET",
+        "url": "https://app.ttscore.io/game-team.php?game=244085&customer=24"
+      },
+      "retrieved_at": "2026-11-20T10:34:48+00:00",
+      "sha256": "e870002e540a40c92770ffb40e051eef72d00151beeaffb7d43ee70f6cd49665",
+      "status": 200
+    }
+  }
+}

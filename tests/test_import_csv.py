@@ -66,3 +66,38 @@ class ImportTests(unittest.TestCase):
         self.assertEqual(parse_games('11-5|8:11','test'),[[11,5],[8,11]])
         with self.assertRaises(DataError):parse_games('11:11','test')
 if __name__=='__main__':unittest.main()
+
+class ValidationRegressionTests(unittest.TestCase):
+    setUp = ImportTests.setUp
+    tearDown = ImportTests.tearDown
+    import_match = ImportTests.import_match
+    def test_reproducible_build(self):
+        self.assertEqual(build(self.path,self.seed),build(self.path,self.seed))
+    def test_invalid_finished_games(self):
+        for game in ('1:0','11:10','12:8','15:12','0:0'):
+            with self.subTest(game=game),self.assertRaises(DataError):parse_games(game,'test')
+    def test_partial_aggregate_mismatch(self):
+        m={**self.match,'score1':'2','score2':''}
+        with self.assertRaisesRegex(DataError,'do not agree'):self.import_match(m)
+    def test_impossible_match_score(self):
+        m={**self.match,'score1':'2','score2':'1','games':''}
+        with self.assertRaisesRegex(DataError,'best_of'):self.import_match(m)
+    def test_games_after_decision(self):
+        m={**self.match,'games':'11:5|11:5|11:5|5:11'}
+        with self.assertRaisesRegex(DataError,'after match'):self.import_match(m)
+    def test_duplicate_headers(self):
+        (self.path/'clubs.csv').write_text('id,name,name\nc1,A,B\n')
+        with self.assertRaisesRegex(DataError,'duplicate columns'):build(self.path,self.seed)
+    def test_overfull_row(self):
+        (self.path/'clubs.csv').write_text('id,name\nc1,A,unexpected\n')
+        with self.assertRaisesRegex(DataError,'column count'):build(self.path,self.seed)
+    def test_source_manifest_tampering(self):
+        (self.path/'provenance.json').write_text('{"csv_sha256":{}}')
+        with self.assertRaisesRegex(DataError,'hashes'):build(self.path,self.seed)
+    def test_duplicate_seed_rejected(self):
+        seed=json.loads(self.seed.read_text());seed.append(seed[0]);path=self.path/'seed.json';path.write_text(json.dumps(seed))
+        with self.assertRaisesRegex(DataError,'duplicate'):build(self.path,path)
+    def test_fixture_requires_source(self):
+        row={'id':'f1','event_id':'ttscore-777','home_club_id':'c1','away_club_id':'c2','status':'completed','home_score':'4','away_score':'0'}
+        write_csv(self.path,'fixtures',list(row),[row])
+        with self.assertRaisesRegex(DataError,'source_url'):build(self.path,self.seed)

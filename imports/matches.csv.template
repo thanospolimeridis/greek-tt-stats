@@ -1,1 +1,1 @@
-id,event_id,date,player1_id,player2_id,winner_id,score1,score2,games,round,status,source_url,club1_id,club2_id
+id,event_id,date,player1_id,player2_id,winner_id,score1,score2,games,round,status,source_url,club1_id,club2_id,best_of,fixture_id,source_id

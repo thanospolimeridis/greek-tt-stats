@@ -1,144 +1,92 @@
-# Greek TT Archive — Ελληνική Επιτραπέζια Αντισφαίριση
+# Greek TT Archive · Ελληνική Επιτραπέζια Αντισφαίριση
 
-**A working, zero-runtime-dependency, static website for Greek table tennis results and statistics.**
+Free, open-source Greek table tennis statistics: **Python ingestion + a static, offline-ready website**. No database server, paid APIs, subscriptions or frontend dependencies. Independent project, not an official ΕΦΟΕπΑ service.
 
-This is an **independent prototype, not an official HTTF/ΕΦΟΕπΑ service** and not a reimplementation of TTScore's tournament-management product.
+## Current coverage — 20 November 2026
 
-## Current state — important
+- **518 publicly listed TTScore events**, reconciled across 2018–19 through 2026–27.
+- **One additional legacy event** retained from the original prototype, labelled absent from the current catalog (519 displayed total).
+- **260 completed singles matches and 56 team fixtures** from A1 men 2025–26, event 777.
+- **2,483 athletes**, linked by federation registration number where available, and **138 exact club names**.
+- **4,909 ranking records**: men and women, 1 August and 1 October 2026.
+- Four doubles results are excluded from singles statistics and listed for review; 128 unplayed lineup slots are not results.
 
-- The website is fully functional and includes **10 authentic Greek competition listings** linked to their actual TTScore event pages (2023–2026). The list is a **verified sample, not the complete event archive**.
-- The player, club, individual-match, fixture, H2H and ranking views are implemented and can display CSV-imported data.
-- **No individual match results, players, ranking points, or wins have been fabricated.** Those sections show honest empty states until verified structured data are imported.
-- There is no verified public TTScore API, bulk CSV export or licensed ingestion arrangement at present. **Do not claim automatic TTScore synchronization or full historical coverage.**
-- Container-based development could not access TTScore's site over the network. The optional probe/capture scripts are provided to investigate source access on a network-connected machine. They do not bypass HTTP restrictions or authentication.
+**Historical results are incomplete.** Other events, age categories and ranking dates are not yet imported. No results are invented. Validation checks source consistency, not independent historical truth. The About page exposes scope and exclusions.
 
-## Open the site right now
+## Use and build
 
-Double-click `index.html` in a browser. It is a **self-contained HTML file**: all data, styling, and JavaScript are embedded. Internet access is only needed to open the original TTScore links.
-
-The complete site is also in `dist/index.html`.
-
-## Build locally (Python standard library only)
+Open `index.html` directly, or serve the folder with `python3 -m http.server 8000`. The site works offline; source links require Internet access.
 
 ```sh
 python3 scripts/import_csv.py
 python3 scripts/build.py
 python3 -m unittest discover -s tests -v
+node tests/smoke.js
 ```
 
-No `npm install`, `pip install`, Node.js, database, Docker, AWS account, commercial API or paid library needed for the **normal site build**.
+Python 3.10+ is sufficient for ingestion/build. Node is only needed for the zero-dependency frontend tests (CI uses Python 3.12 and Node 22). Builds do not contact TTScore.
 
-## Deploy free with GitHub Pages
+Implemented views: Greek/English navigation, accent-insensitive Greek and transliterated/alias search, player profiles, game-by-game histories, H2H, ranking snapshot selection/history, tournament results, and club fixture statistics. Original names and category labels retain their source language. Player club labels are dated ranking observations, not inferred current membership.
 
-1. Create a **public** GitHub repository (e.g. `greek-tt-archive`).
-2. Upload/commit all source files from this folder and push to the `main` branch.
-3. Open GitHub **Settings → Pages → Build and deployment → GitHub Actions**.
-4. The included `.github/workflows/deploy.yml` validates the data, builds the website and publishes `dist/index.html` after each push to `main`.
-5. The URL is approximately `https://YOUR-USERNAME.github.io/greek-tt-archive/` (GitHub shows the exact link).
-
-**Hosting and build-run cost target: €0**, under GitHub Pages/Actions public-repository terms and usage limits. The default `github.io` URL is free; a custom domain is optional and may cost money. GitHub Pages currently documents a 1 GB published-site limit and a soft 100 GB/month bandwidth limit. This design is suitable for an informational public archive; GitHub Pages is not suitable for a transactional or commercial SaaS application.
-
-## Data architecture
+## Data pipeline
 
 ```text
-TTScore / Federation source evidence (source URLs and authorized exports)
-           |
-           v
-imports/*.csv + data/verified_events.json  [user-supplied, source-grounded]
-           |
-           v
-scripts/import_csv.py                       [validation + identity checking]
-           |
-           v
-data/catalog.json                          [canonical snapshot]
-           |
-           v
-scripts/build.py                            [embed data + JS + CSS]
-           |
-           v
-dist/index.html                             [single static file]
-           |
-           v
-GitHub Pages                               [public archive; no server]
+Public TTScore UI requests → ignored raw response cache
+                           → validated imports/*.csv + provenance.json
+                           → data/catalog.json → index.html + dist/index.html
+                           → GitHub Pages
 ```
 
-### CSV schema
-
-Create files in the `imports/` folder. Rename copies of `*.csv.template` to `*.csv`, then add UTF-8 data. **Do not populate with test/fabricated athletes.**
-
-| File | Required columns | Useful optional columns |
-| --- | --- | --- |
-| `events.csv` | `id,name,season,source_url` | `type,region,start_date,end_date` |
-| `clubs.csv` | `id,name` | `region` |
-| `players.csv` | `id,name` | `club_id,gender,aliases` |
-| `matches.csv` | `id,event_id,date,player1_id,player2_id,status` | `winner_id,score1,score2,games,round,source_url,club1_id,club2_id` |
-| `rankings.csv` | `id,player_id,category,date,rank,source_url` | `points` |
-| `fixtures.csv` | `id,event_id,home_club_id,away_club_id,status` | `date,home_score,away_score,source_url` |
-
-Completed individual matches **must** have `source_url`, `winner_id`, and either set scores or game-by-game scores. A CSV with a missing completed-match source URL is deliberately rejected. One game's score can be written `11:8`, and the complete score as `11:8|9:11|13:11|11:7`; the importer derives `3–1` and cross-checks it against any supplied set score. Winners and player IDs must be consistent. Allowed match statuses: `completed`, `walkover`, `retired`, `cancelled`, `scheduled`. Only `completed` results currently count toward win percentages and head-to-head statistics; walkovers and retirements remain separately represented.
-
-For a ranking snapshot, use the **official published** rank and points, not a rating synthesized by this platform. Ranking snapshots are category-specific and date-specific.
-
-**Important data-model note:** team fixtures and individual matches are separate. The same individual match should have just one ID even if it belongs to a team fixture. Historical player-to-club memberships will eventually require a dedicated import table; the current player record carries their present `club_id` and individual matches can independently carry their contemporaneous `club1_id` and `club2_id`.
-
-### Limitations of this MVP architecture
-
-Embedding all data into one HTML file is ideal for a first release (no backend, very little maintenance) but eventually slows initial page loading once the archive grows into hundreds of thousands of matches. At that scale, **split the dataset into static JSON files by season or player**, or precompute aggregates, while keeping the hosting model free and static. Do not migrate to a paid SQL service just because the dataset grows moderately.
-
-### Data quality and rights
-
-- The primary source of truth for individual results is a verified TTScore/federation record or authorized export.
-- Preserve the URL, original event ID, stable athlete IDs, exact score and original publication date where provided.
-- Never infer a match result from a schedule or league table.
-- Historical coverage is incomplete until explicitly proven otherwise; present statistics as *recorded/imported*, not lifetime totals.
-- Bulk republication may require permission even for publicly viewable data. Check TTScore and federation data-reuse terms before a full production import.
-- Youth athlete information is personal data: avoid exact birthdays, contact details, unnecessary photos and other sensitive data. Establish a lawful basis and correction/deletion policy prior to publication.
-
-## Investigate TTScore source access
-
-For a **read-only connectivity probe** against **known event URLs**:
+Run the collector for the checked scope:
 
 ```sh
-python3 scripts/probe_ttscore.py --max-events 5 --delay 2
+python3 scripts/ttscore.py --league 777 \
+  --ranking 15:2026-08-01 --ranking 10:2026-08-01 \
+  --ranking 15:latest --ranking 10:latest
 ```
 
-The script checks robots rules and source availability and writes `probe-report.json`. It does **not** scrape unpublished endpoints, brute-force IDs or bypass access restrictions.
+Add `--offline` to replay cached responses without network access. Use a **new `--cache` directory** for fresh retrievals. Output replaces the selected scope; repeat all desired league/ranking selections. Use `--output /tmp/ttscore-review` to stage new work. The importer refuses to overwrite manual CSV directories without its manifest.
 
-For an optional browser-based examination of the *public* JSON network responses (requires developer-only Playwright):
+See [the audit](docs/AUDIT.md) and [TTScore extraction guide](docs/TTSCORE.md) for discovered requests, limitations, reproducibility, and the path to broader historical coverage.
 
-```sh
-python3 -m pip install playwright
-python3 -m playwright install chromium
-python3 scripts/capture_ttscore.py --event 777
-```
+## Validation and provenance
 
-This writes `capture/page.html`, a limited JSON network-response capture, and `capture/report.json`. **Keep the capture private**, and inspect it before sharing it: API response JSON might contain personal data. This is diagnostic tooling only, **not a confirmed bulk importer**. Do not run with an authenticated session or attempt to work around access restrictions. If TTScore offers a documented/authorized export, use that instead.
+`imports/provenance.json` retains request URL/method/form, retrieval UTC time, response SHA-256, CSV hashes, coverage and review records. Individual source IDs join to that manifest. Raw responses stay in Git-ignored `capture/`; birth years, nationality, contact information and registration notes are not emitted into normalized player records.
 
-## Maintenance
+The validator rejects duplicate IDs/snapshots, missing references, malformed CSVs, unsafe source URLs, invalid dates, impossible completed game scores, score/winner disagreement, games after a match ends, and changed CSVs with stale provenance. The source importer also reconciles team scores with match sheets. `best_of` defaults to 5; set it explicitly for other match formats. Only `completed` singles count in H2H and win rates; noncompleted CSV records remain visible in histories.
 
-- With manually supplied verified CSV data: commit updates to GitHub; deployments are automatic.
-- With a **future verified permitted API/export feed**: add a scheduled GitHub Actions workflow that fetches the feed, validates it and builds the same static site. The current repository intentionally does **not** pretend that automatic ingestion is already working.
-- Monitor source schema changes and duplicate IDs after each update; the import script fails early on inconsistencies.
-- No 24/7 application server, database, background worker or purchased hosting is needed.
+Code changes preserve stable dataset bytes when data are unchanged. CI rebuilds and checks that canonical JSON and portable HTML match the committed versions. To correct source-derived records, update the adapter/source evidence and regenerate the manifest, rather than silently editing generated CSVs.
 
-## File layout
+## Manual/authorized imports
 
-```text
-index.html                     Offline-ready website
-src/template.html              HTML shell
-src/style.css                  Responsive styling
-src/app.js                     Browsing, search, results, H2H, rankings
-scripts/import_csv.py          CSV validator + canonical dataset builder
-scripts/build.py               Self-contained single-file site builder
-scripts/probe_ttscore.py       Polite source access diagnostics
-scripts/capture_ttscore.py     Optional Playwright public-network capture
-data/verified_events.json      Verifiable TTScore event sample
-imports/*.template             CSV column templates
-tests/                         Data integrity tests
-.github/workflows/deploy.yml   Free GitHub Pages deployment
-dist/index.html                Publishable build output (generated)
-```
+Templates in `imports/*.csv.template` document the supported tables. For separate authorized CSVs use a separate directory and `python3 scripts/import_csv.py --input PATH`. Events, players, clubs, singles matches, official rankings and team fixtures are separate tables. Matches can reference `fixture_id` and historical `club1_id`/`club2_id`. Every match and fixture requires a source URL. No synthetic/test records belong in production CSVs.
 
-## License
+Names alone never justify merging athletes. Club IDs based on names remain provisional until official club identity data are available. Maintain correction evidence and review renames explicitly.
 
-Site *code* is MIT licensed (see `LICENSE`). **No license or reuse rights for TTScore, federation, athlete or competition data are granted by the code license.** Source data rights must be determined separately.
+## GitHub and free deployment
+
+[Source repository](https://github.com/thanospolimeridis/greek-tt-stats) · [Configured website](https://thanospolimeridis.github.io/greek-tt-stats/)
+
+The repository includes PR validation and a Pages deployment workflow. Pushes to `main` validate the committed source data, build `dist/`, and deploy. No TTScore secrets or service credentials are required by Actions.
+
+GitHub Pages supports public repositories on GitHub Free: [official documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages). Use the default `github.io` address; no purchased domain is required. The application has no hosted backend or recurring service dependency.
+
+## Project structure
+
+| Path | Purpose |
+| --- | --- |
+| `scripts/ttscore.py` | Public request collector, source parsers and offline replay |
+| `scripts/import_csv.py` | Validation and deterministic canonical dataset |
+| `scripts/build.py` | Embed CSS, JavaScript and JSON into portable HTML |
+| `src/` | Greek/English static application |
+| `imports/` | Normalized source CSVs and provenance manifest |
+| `data/verified_events.json` | Original prototype's seed listings; not evidence of complete coverage |
+| `tests/` | Synthetic parser/validation regressions and frontend behavior checks |
+| `docs/` | Audit, observed source schema and remaining work |
+| `.github/workflows/` | Validation and free static deployment |
+
+The 2.7 MiB portable page is adequate for this initial dataset. Before broad backfill, split data into static season/player JSON and precompute indexes; retain static hosting. Remaining adapters include individual groups, knockout/consolation, doubles and richer nonplayed statuses. Do not label those gaps complete.
+
+## Licence
+
+Site code is MIT licensed. This grants **no licence to third-party TTScore/federation data**. Public accessibility does not itself settle bulk republication rights. Retain attribution and honor corrections/removal requests. No exact birth dates, birth years, contact details, or unnecessary personal fields are published by this importer.

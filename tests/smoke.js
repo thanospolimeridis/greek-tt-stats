@@ -5,38 +5,64 @@ const vm=require('vm');
 const assert=require('assert');
 const root=path.join(__dirname,'..');
 const script=fs.readFileSync(path.join(root,'src','app.js'),'utf8');
-const db=JSON.parse(fs.readFileSync(path.join(root,'data','catalog.json'),'utf8'));
-function render(route,data=db){
+const published=JSON.parse(fs.readFileSync(path.join(root,'data','catalog.json'),'utf8'));
+const db={events:JSON.parse(fs.readFileSync(path.join(root,'data','verified_events.json'),'utf8')),players:[],clubs:[],matches:[],fixtures:[],rankings:[],meta:{data_coverage:'event_catalog_only'}};
+let checks=0;
+function check(value,message){assert(value,message);checks++}
+function render(route,data=db,lang='el'){
   const container={innerHTML:''};
   const handlers={};
   const context={
     document:{documentElement:{lang:'el'},getElementById(id){return id==='site-data'?{textContent:JSON.stringify(data)}:id==='app'?container:null},addEventListener(name,fn){handlers[name]=fn}},
     window:{addEventListener(name,fn){handlers[name]=fn},scrollTo(){}},
-    localStorage:{getItem(){return 'el'},setItem(){}},
+    localStorage:{getItem(){return lang},setItem(){}},
     location:{hash:'#'+route},Intl,URL,encodeURIComponent,decodeURIComponent,console
   };
-  vm.runInNewContext(script,context,{timeout:2000});
-  return {html:container.innerHTML,handlers,context};
+  vm.runInNewContext(script,context,{timeout:5000});
+  return {get html(){return container.innerHTML},handlers,context,
+    change(id,value){handlers.change({target:{id,value}})},
+    click(id){handlers.click({target:{closest(sel){return sel==='#'+id?{}:null}}})},
+    search(value){handlers.input({target:{id:'search-roster',value,matches(){return true}}})}};
 }
-assert(render('home').html.includes('Α1 ΑΝΔΡΩΝ 2025-26'),'Home displays sourced events');
-assert(render('events').html.includes('ΑΝΟΙΚΤΟ ΠΡΩΤΑΘΛΗΜΑ ΒΟΛΟΥ 2025'),'Event listing works');
-assert(render('event/ttscore-777').html.includes('Α1 ΑΝΔΡΩΝ 2025-26'),'Event detail works');
-assert(render('players').html.includes('Δεν έχουν εισαχθεί'),'Empty states are honest');
-assert(render('rankings').html.includes('Δεν έχουν εισαχθεί'),'Official ranking empty state');
-assert(render('h2h').html.includes('σύγκριση'),'H2H empty state');
-assert(render('about').html.includes('Διαφάνεια δεδομένων'),'Provenance page works');
+for(const route of ['home','events','players','clubs','rankings','h2h','about','event/ttscore-777']){
+  check(render(route,published).html.includes('</main>'),'Published data route '+route);
+}
+check(render('players').html.includes('Δεν έχουν εισαχθεί'),'Honest empty player state');
+check(render('%broken').html.includes('404'),'Malformed hash does not crash');
+check(render('player/missing').html.includes('404'),'Unknown player');
 const sample=structuredClone(db);
-sample.clubs=[{id:'c1',name:'Test Club'}];
-sample.players=[{id:'p1',name:'Player One',club_id:'c1'},{id:'p2',name:'Player Two',club_id:'c1'}];
-sample.matches=[{id:'m1',event_id:'ttscore-777',date:'2026-02-03',player1_id:'p1',player2_id:'p2',winner_id:'p1',score1:3,score2:1,status:'completed',source_url:'https://app.ttscore.io/test'}];
-sample.rankings=[{id:'r1',player_id:'p1',category:'Men',date:'2026-02-03',rank:15,points:99,source_url:'https://app.ttscore.io/test'}];
-assert(render('player/p1',sample).html.includes('100%'),'Imported player stats computed');
-assert(render('event/ttscore-777',sample).html.includes('Player One'),'Imported match participants shown');
-assert(render('rankings',sample).html.includes('Player One'),'Imported official ranking appears');
-assert(render('club/c1',sample).html.includes('Player One'),'Club profile works');
-const h2h=render('h2h',sample);
-assert(h2h.html.includes('Player Two'),'Comparison selections populated');
-const switcher=render('home');
-switcher.handlers.click({target:{closest(sel){return sel==='#lang-switch'?{}:null}}});
-assert(switcher.html.includes('Α1 ΑΝΔΡΩΝ'),'Greek before switch');
-console.log('PASS: 12 frontend route/render checks');
+sample.clubs=[{id:'c1',name:'Test Club'},{id:'c2',name:'Other Club'}];
+sample.players=[{id:'p1',name:'Γιώργος Παίκτης',club_id:'c1',aliases:'George Player'},{id:'p2',name:'Player Two',club_id:'c2'}];
+sample.matches=[
+ {id:'m1',event_id:'ttscore-777',date:'2026-02-03',player1_id:'p1',player2_id:'p2',winner_id:'p1',score1:3,score2:1,games:[[11,5],[5,11],[11,8],[11,7]],status:'completed',source_url:'https://app.ttscore.io/test'},
+ {id:'m2',event_id:'ttscore-777',date:'2026-02-04',player1_id:'p1',player2_id:'p2',winner_id:'p2',score1:0,score2:3,status:'walkover',source_url:'https://app.ttscore.io/test'}];
+sample.rankings=[
+ {id:'r1',player_id:'p1',category:'Men',date:'2026-02-03',rank:15,points:99,source_url:'https://app.ttscore.io/test'},
+ {id:'r2',player_id:'p1',category:'Men',date:'2026-01-03',rank:20,points:88,source_url:'https://app.ttscore.io/test'}];
+sample.fixtures=[{id:'f1',event_id:'ttscore-777',home_club_id:'c1',away_club_id:'c2',status:'completed',date:'2026-02-03',home_score:4,away_score:1,source_url:'https://app.ttscore.io/test'}];
+check(render('player/p1',sample).html.includes('100%'),'Walkover excluded from win rate');
+const second=render('player/p2',sample,'en');
+check(second.html.includes('✕ 1–3'),'Score oriented to profile player');
+check(second.html.includes('5–11, 11–5, 8–11, 7–11'),'Game scores oriented to player');
+check(second.html.includes('Walkover'),'Non-completed result visible in history');
+const h2h=render('h2h',sample,'en');h2h.change('h2h-player1','p2');h2h.change('h2h-player2','p1');
+check(h2h.html.includes('Player Two · 0'),'H2H excludes walkover');
+check(h2h.html.includes('✕ 1–3'),'H2H score orientation');
+h2h.change('h2h-player2','p2');check(h2h.html.includes('two distinct'),'Self-comparison prevented');
+const rankings=render('rankings',sample,'en');
+check(rankings.html.includes('#15')&&!rankings.html.includes('#20'),'Latest snapshot default');
+rankings.change('ranking-date','2026-01-03');check(rankings.html.includes('#20')&&!rankings.html.includes('#15'),'Historical snapshot selection');
+const search=render('players',sample);
+for(const query of ['γιωργος','giorgos','George']){search.search(query);check(search.html.includes('Γιώργος Παίκτης')&&!search.html.includes('Player Two'),'Greek/Latin/alias search: '+query)}
+const switcher=render('home');switcher.click('lang-switch');
+check(switcher.context.document.documentElement.lang==='en','HTML language switched');
+check(switcher.html.includes('Competitions'),'Actual rerender in English');
+check(render('club/c1',sample,'en').html.includes('Team fixture statistics'),'Club statistics rendered');
+const unsafe=structuredClone(sample);unsafe.players[0].name='<img src=x onerror=alert(1)>';
+check(!render('player/p1',unsafe).html.includes('<img src=x'),'Names are HTML escaped');
+const many=structuredClone(db);many.players=Array.from({length:60},(_,i)=>({id:'p'+i,name:'Player '+String(i).padStart(2,'0')}));
+const paging=render('players',many,'en');
+check(paging.html.includes('Player 49')&&!paging.html.includes('Player 50'),'Player pagination first page');
+paging.click('page-next');check(paging.html.includes('Player 59')&&!paging.html.includes('Player 00'),'Player pagination second page');
+paging.search('Player 00');check(paging.html.includes('Player 00'),'Search resets pagination');
+console.log(`PASS: ${checks} frontend behavior checks`);

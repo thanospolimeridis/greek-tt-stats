@@ -1,17 +1,31 @@
 #!/usr/bin/env python3
-"""Build one portable, fully self-contained index.html (zero JS dependencies)."""
-from pathlib import Path
+"""Build a portable static page without network access or JS dependencies."""
 import json
-ROOT=Path(__file__).resolve().parents[1]
-data=json.loads((ROOT/'data'/'catalog.json').read_text(encoding='utf-8'))
-# Avoid prematurely closing <script> in inline JSON.
-serialized=json.dumps(data,ensure_ascii=False,separators=(',',':')).replace('<','\\u003c').replace('>','\\u003e').replace('&','\\u0026')
-css=(ROOT/'src'/'style.css').read_text(encoding='utf-8')
-js=(ROOT/'src'/'app.js').read_text(encoding='utf-8')
-template=(ROOT/'src'/'template.html').read_text(encoding='utf-8')
-html=template.replace('/*INLINE_CSS*/',css).replace('/*INLINE_JS*/',js).replace('/*INLINE_JSON*/',serialized)
-(ROOT/'index.html').write_text(html,encoding='utf-8')
-dist=ROOT/'dist'
-dist.mkdir(exist_ok=True)
-(dist/'index.html').write_text(html,encoding='utf-8')
-print('Built index.html and dist/index.html,',round(len(html.encode('utf-8'))/1024),'KiB')
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def build_site(root=ROOT):
+    data = json.loads((root/'data'/'catalog.json').read_text(encoding='utf-8'))
+    # Source text must never close the JSON script element or become HTML.
+    serialized = json.dumps(data,ensure_ascii=False,separators=(',',':')).replace('<','\\u003c').replace('>','\\u003e').replace('&','\\u0026')
+    css = (root/'src'/'style.css').read_text(encoding='utf-8')
+    js = (root/'src'/'app.js').read_text(encoding='utf-8')
+    template = (root/'src'/'template.html').read_text(encoding='utf-8')
+    # Replace markers once in the template, not recursively in source data.
+    import re
+    replacements = {'/*INLINE_CSS*/':css,'/*INLINE_JS*/':js,'/*INLINE_JSON*/':serialized}
+    html = re.sub(r'/\*INLINE_(?:CSS|JS|JSON)\*/',lambda m:replacements[m[0]],template)
+    dist = root/'dist'
+    dist.mkdir(exist_ok=True)
+    for path in (root/'index.html', dist/'index.html'):
+        temporary = path.with_suffix('.html.tmp')
+        temporary.write_text(html,encoding='utf-8')
+        temporary.replace(path)
+    return html
+
+
+if __name__ == '__main__':
+    output = build_site()
+    print('Built index.html and dist/index.html,',round(len(output.encode('utf-8'))/1024),'KiB')
