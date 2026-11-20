@@ -6,3 +6,5 @@ probe-report.json
 capture/
 *.log
 dist/
+/coverage.json
+/provenance.json

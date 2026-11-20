@@ -9,14 +9,14 @@ const published=JSON.parse(fs.readFileSync(path.join(root,'data','catalog.json')
 const db={events:JSON.parse(fs.readFileSync(path.join(root,'data','verified_events.json'),'utf8')),players:[],clubs:[],matches:[],fixtures:[],rankings:[],meta:{data_coverage:'event_catalog_only'}};
 let checks=0;
 function check(value,message){assert(value,message);checks++}
-function render(route,data=db,lang='el'){
+function render(route,data=db,lang='el',fetcher){
   const container={innerHTML:''};
   const handlers={};
   const context={
     document:{documentElement:{lang:'el'},getElementById(id){return id==='site-data'?{textContent:JSON.stringify(data)}:id==='app'?container:null},addEventListener(name,fn){handlers[name]=fn}},
     window:{addEventListener(name,fn){handlers[name]=fn},scrollTo(){}},
     localStorage:{getItem(){return lang},setItem(){}},
-    location:{hash:'#'+route},Intl,URL,encodeURIComponent,decodeURIComponent,console
+    location:{hash:'#'+route},Intl,URL,encodeURIComponent,decodeURIComponent,console,fetch:fetcher
   };
   vm.runInNewContext(script,context,{timeout:5000});
   return {get html(){return container.innerHTML},handlers,context,
@@ -78,4 +78,47 @@ const phaseView=render('event/ttscore-777',phasesSample,'en');
 check(phaseView.html.includes('3–1'),'Group result visible before filtering');
 phaseView.change('phase-filter','knockout');
 check(!phaseView.html.includes('3–1'),'Phase filter excludes group matches');
-console.log(`PASS: ${checks} total frontend behavior checks`);
+
+
+const longHistory=structuredClone(sample);
+longHistory.matches=Array.from({length:51},(_,i)=>({...sample.matches[0],id:'history-'+i,source_url:'https://app.ttscore.io/history-'+i}));
+const historyPage=render('player/p1',longHistory,'en');
+check(historyPage.html.includes('history-49')&&!historyPage.html.includes('history-50'),'Long player histories paginate');
+check(historyPage.html.includes('<strong>51</strong>'),'Player totals include all pages');
+historyPage.click('page-next');check(historyPage.html.includes('history-50')&&!historyPage.html.includes('history-49'),'Older player results remain accessible');
+const coverageSample=structuredClone(sample);
+coverageSample.events.push({id:'ttscore-9999',name:'Deferred Competition',season:'2026-27',source_url:'https://app.ttscore.io/customer/24/event/9999'});
+coverageSample.meta.provenance={coverage:{event_catalog:{count:coverageSample.events.length,seasons:['2025-26','2026-27']},events:{777:{singles:1,doubles:0,issues:2,phases:['league']}},leagues:{},rankings:[],batch:{attempted:1,eligible:2,pending:1,as_of:'2026-11-20',deferred:[{event:'9999',reason:'not_finished_by_cutoff'}]}}};
+const coveragePage=render('about',coverageSample,'en');
+check(coveragePage.html.includes('1/2 additional competitions checked'),'Batch progress is explicit');
+check(coveragePage.html.includes('Not finished by the reference date'),'Deferred competitions are distinguished from imported events');
+check(coveragePage.html.includes('does not establish complete history'),'Traversal is not labelled historical completeness');
+check(render('event/ttscore-9999',coverageSample,'en').html.includes('Not finished by the reference date'),'Event page explains deferral');
+async function hostedChecks(){
+ const hosted=structuredClone(sample);
+ hosted.meta={...hosted.meta,verified_results:123,table_counts:{doubles:4},event_match_counts:{'ttscore-777':1},
+  partitions:{player:{p1:'records/p1.json',p2:'records/p2.json'},event:{'ttscore-777':'records/e1.json'},club:{c1:'records/c1.json'}}};
+ hosted.matches=[];hosted.doubles=[];hosted.fixtures=[];
+ const payload={matches:sample.matches,doubles:[],fixtures:sample.fixtures};
+ const flush=()=>new Promise(resolve=>setImmediate(resolve));
+ check(render('home',hosted,'en').html.includes('>123</div>'),'Hosted home retains whole-archive totals without fetching results');
+ const pending=[];
+ const view=render('player/p1',hosted,'en',url=>new Promise(resolve=>pending.push({url,resolve})));
+ check(view.html.includes('Loading results')&&!view.html.includes('No imported'),'Loading is distinct from an empty history');
+ view.context.location.hash='#player/p2';view.handlers.hashchange();
+ pending[0].resolve({ok:true,json:async()=>payload});await flush();
+ check(view.html.includes('Loading results'),'Stale player request cannot replace the current route');
+ pending[1].resolve({ok:true,json:async()=>payload});await flush();
+ check(view.html.includes('Player Two')&&view.html.includes('✕ 1–3'),'Hosted profile loads the complete player history with oriented scores');
+ view.context.location.hash='#home';view.handlers.hashchange();
+ check(view.html.includes('>123</div>'),'Navigation preserves global counts after loading a subset');
+ view.context.location.hash='#player/p2';view.handlers.hashchange();
+ check(pending.length===2&&!view.html.includes('Loading results'),'Revisiting a loaded profile uses its cached result file');
+ const failed=render('event/ttscore-777',hosted,'en',async()=>({ok:false}));await flush();
+ check(failed.html.includes('Results could not be loaded')&&!failed.html.includes('No imported'),'Failed downloads cannot masquerade as missing historical results');
+ const compare=render('h2h',hosted,'en',async()=>({ok:true,json:async()=>payload}));
+ compare.change('h2h-player1','p2');compare.change('h2h-player2','p1');await flush();
+ check(compare.html.includes('Player Two · 0')&&compare.html.includes('✕ 1–3'),'Hosted H2H uses complete first-player history and excludes walkovers');
+ console.log(`PASS: ${checks} total frontend behavior checks`);
+}
+hostedChecks().catch(error=>{console.error(error);process.exitCode=1;});

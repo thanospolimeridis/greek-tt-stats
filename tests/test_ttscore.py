@@ -9,6 +9,22 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from ttscore import Client, Importer, event_rows, options, schedule_rows, DataError, SourceAccessError, digest, team_totals
 
 class SourceTests(unittest.TestCase):
+    def test_request_throttle_survives_worker_restart(self):
+        clock=[100.0];starts=[]
+        class Response:
+            status=200
+            def __init__(self,url):self.url=url
+            def __enter__(self):return self
+            def __exit__(self,*args):pass
+            def geturl(self):return self.url
+            def read(self,*args):return b''
+        def open_request(self,request,**kwargs):
+            starts.append(clock[0]);return Response(request.full_url)
+        with tempfile.TemporaryDirectory() as tmp,patch('ttscore.time.monotonic',side_effect=lambda:clock[0]),patch('ttscore.time.sleep',side_effect=lambda delay:clock.__setitem__(0,clock[0]+delay)),patch('urllib.request.OpenerDirector.open',open_request):
+            Client(Path(tmp)).get('/robots.txt')
+            clock[0]+=0.2
+            Client(Path(tmp)).get('/customer/24')
+        self.assertEqual(starts,[100.0,101.0])
     def test_event_epoch_is_unknown_and_source_retained(self):
         body='<div class="grid"><a href="https://app.ttscore.io/customer/24/event/123"><h4>A &amp; B</h4><h6>01/01/70-01/01/70</h6><h6>Unknown</h6></a></div>'
         row=event_rows(body,'2020-21','hash')[0]

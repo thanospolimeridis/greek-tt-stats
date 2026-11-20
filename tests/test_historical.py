@@ -73,8 +73,9 @@ class TraversalTests(unittest.TestCase):
         client=FakeClient();imp=History(client)
         imp.participants=lambda *args:{}
         imp.counts={'categories_discovered':0,'categories_selected':0,'groups_visited':0}
-        with self.assertRaisesRegex(DataError,'cyclic'):
-            imp.phase('1','groups','/rounds_schedule2.php?event=1&customer=24','agecategoryid_groups')
+        imp.phase('1','groups','/rounds_schedule2.php?event=1&customer=24','agecategoryid_groups')
+        self.assertTrue(any('cyclic' in issue['reason'] for issue in imp.coverage['issues']))
+        self.assertEqual(imp.counts.get('categories_visited',0),0)
         self.assertIn('/rounds_schedule2.php?tournament=1&customer=24&page=1',client.paths)
     def test_duplicate_game_not_double_counted(self):
         imp=History(None);row={'id':'a','event_id':'e','date':'2020-01-01','score1':'3','score2':'0','games':'11:5|11:5|11:5'}

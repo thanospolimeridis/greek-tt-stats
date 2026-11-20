@@ -24,7 +24,7 @@ from import_csv import DataError, TYPES, REQUIRED, build, parse_games
 ROOT = Path(__file__).resolve().parents[1]
 BASE = 'https://app.ttscore.io'
 AGENT = 'GreekTTArchive/0.2 (public results research; cached; 1 request/second)'
-VERSION = 'ttscore-public-v2'
+VERSION = 'ttscore-public-v3'
 
 
 def digest(data):
@@ -99,19 +99,22 @@ class Client:
         self.cache, self.offline, self.delay = cache, offline, max(1, delay)
         self.cache.mkdir(parents=True, exist_ok=True)
         self.records = {}
-        self.last = 0
+        self.throttle = self.cache/'.last-request'
+        try:self.last=min(time.monotonic(),float(self.throttle.read_text()))
+        except (OSError,ValueError):self.last=0
         self.opener = urllib.request.build_opener(SameOriginRedirect())
         self.robot = None
 
     def get(self, path, form=None):
         allowed = ('/robots.txt','/customer/24','/customer_events.php','/customer_ranking.php',
                    '/tournament_groups_league.php','/game-team.php','/admin/ajax/team_games.php',
-                   '/rounds_schedule2.php','/tournament_ko_games.php','/tournament_players.php')
+                   '/rounds_schedule2.php','/tournament_ko_games.php','/tournament_players.php',
+                   '/event_schedule.php','/admin/ajax/event_schedule.php')
         url = BASE + path
         if urllib.parse.urlsplit(path).path not in allowed and not re.fullmatch(r'/customer/24/event/\d+',path):
             raise SourceAccessError(f'Unsupported public request: {path}')
         method = 'POST' if form is not None else 'GET'
-        if form is not None and urllib.parse.urlsplit(path).path not in ('/customer_events.php','/customer_ranking.php','/tournament_groups_league.php','/rounds_schedule2.php','/tournament_ko_games.php','/tournament_players.php'):
+        if form is not None and urllib.parse.urlsplit(path).path not in ('/customer_events.php','/customer_ranking.php','/tournament_groups_league.php','/rounds_schedule2.php','/tournament_ko_games.php','/tournament_players.php','/admin/ajax/event_schedule.php'):
             raise SourceAccessError('Only read-only search forms may use POST')
         if path != '/robots.txt' and self.robot is None:
             rules = self.get('/robots.txt')[0]
@@ -135,6 +138,7 @@ class Client:
             for attempt in range(3):
                 time.sleep(max(0, self.delay-(time.monotonic()-self.last)))
                 self.last = time.monotonic()
+                self.throttle.write_text(str(self.last))
                 req = urllib.request.Request(url, data=urllib.parse.urlencode(form).encode() if form is not None else None,
                                              headers={'User-Agent':AGENT})
                 try:
@@ -155,6 +159,10 @@ class Client:
                     if wait > 60:
                         raise SourceAccessError('Server requests a longer pause; retry later') from exc
                     time.sleep(wait)
+                except (urllib.error.URLError,TimeoutError,ConnectionError) as exc:
+                    if attempt==2:
+                        raise SourceAccessError(f'Network retrieval failed: {path}') from exc
+                    time.sleep(2**(attempt+1))
             body_path.write_bytes(body)
             meta_path.write_text(json.dumps(metadata,ensure_ascii=False,indent=2)+'\n')
         self.records[key] = metadata
@@ -290,52 +298,63 @@ class Importer:
                 source=f'{BASE}/tournament_groups_league.php?group={group}&customer=24'
                 body,key=self.client.get(source[len(BASE):])
                 for game,cells in schedule_rows(body):
-                    summary['fixtures_discovered']+=1
-                    fixture_id='ttscore-game-'+game
-                    if fixture_id in self.data['fixtures']:
-                        continue
-                    names=cells[3].split(' - ')
-                    score=re.fullmatch(r'(\d+)\s*-\s*(\d+)',cells[5])
-                    if len(names)!=2 or not score or max(map(int,score.groups()))==0:
-                        self.coverage['issues'].append({'event':event,'game':game,'reason':'unresolved_or_unplayed_fixture'})
-                        continue
-                    date=dt.datetime.strptime(cells[1].split(' / ')[0],'%y-%m-%d').date().isoformat()
-                    clubs=[self.club(n) for n in names]
-                    detail,detailkey=self.client.get(f'/game-team.php?game={game}&customer=24')
-                    if '/admin/ajax/team_games.php?game=' not in detail:
-                        raise DataError('Missing public team results link')
-                    raw,rawkey=self.client.get(f'/admin/ajax/team_games.php?game={game}&customer=24')
-                    payload=json.loads(raw)
-                    if not isinstance(payload.get('data'),list):
-                        raise DataError('Missing team games data array')
                     try:
-                        if team_totals(payload['data']) != list(map(int,score.groups())):
-                            raise DataError('fixture_total_disagrees_with_match_sheet')
-                    except DataError as exc:
-                        self.coverage['issues'].append({'event':event,'game':game,'reason':str(exc),'source_id':rawkey})
-                        continue
-                    fixture={'id':fixture_id,'event_id':'ttscore-'+event,'date':date,'home_club_id':clubs[0],
-                             'away_club_id':clubs[1],'status':'completed','home_score':score[1],'away_score':score[2],
-                             'source_url':source,'source_id':key}
-                    self.put('fixtures',fixture)
-                    summary['fixtures_imported']+=1
-                    for entry in payload['data']:
-                        try:
-                            row=self.team_match(entry,event,fixture,rawkey,category,cells[0])
-                            if row:
-                                self.put('doubles' if 'winner_side' in row else 'matches',row)
-                                summary['singles_imported']+= 'winner_side' not in row
-                                summary['doubles_imported']=summary.get('doubles_imported',0)+('winner_side' in row)
-                            else:
-                                summary['excluded_rows']+=1
-                                summary['unused_rows']+=1
-                        except (DataError,ValueError,KeyError,TypeError) as exc:
-                            summary['excluded_rows']+=1
-                            summary['review_rows']+=1
-                            self.coverage['issues'].append({'event':event,'game':game,'row':entry.get('team_games',{}).get('ID'),
-                                                           'reason':str(exc),'source_id':rawkey})
+                        self.fixture(event,game,cells,key,source,category,summary)
+                    except SourceAccessError:raise
+                    except (DataError,ValueError,KeyError,TypeError) as exc:
+                        summary['review_rows']+=1
+                        self.coverage['issues'].append({'event':event,'game':game,'reason':str(exc),'source_id':key})
         # Traversal does not prove historical completeness or explain absent scores.
         summary['status']='retrieved_public_league_rows'
+
+    def fixture(self,event,game,cells,key,source,category,summary,phase=None):
+        summary['fixtures_discovered']+=1
+        fixture_id='ttscore-game-'+game
+        if fixture_id in self.data['fixtures']:
+            return
+        names=cells[3].split(' - ')
+        score=re.fullmatch(r'(\d+)\s*-\s*(\d+)',cells[5])
+        if len(names)!=2 or not score or max(map(int,score.groups()))==0:
+            self.coverage['issues'].append({'event':event,'game':game,'reason':'unresolved_or_unplayed_fixture'})
+            return
+        date=dt.datetime.strptime(cells[1].split(' / ')[0],'%y-%m-%d').date().isoformat()
+        clubs=[self.club(n) for n in names]
+        if not getattr(self,'sheet_checked',False):
+            detail,_=self.client.get(f'/game-team.php?game={game}&customer=24')
+            if '/admin/ajax/team_games.php?game=' not in detail:
+                raise DataError('Missing public team results link')
+            self.sheet_checked=True
+        raw,rawkey=self.client.get(f'/admin/ajax/team_games.php?game={game}&customer=24')
+        payload=json.loads(raw)
+        if not isinstance(payload.get('data'),list):
+            raise DataError('Missing team games data array')
+        try:
+            if team_totals(payload['data']) != list(map(int,score.groups())):
+                raise DataError('fixture_total_disagrees_with_match_sheet')
+        except DataError as exc:
+            self.coverage['issues'].append({'event':event,'game':game,'reason':str(exc),'source_id':rawkey})
+            return
+        fixture={'id':fixture_id,'event_id':'ttscore-'+event,'date':date,'home_club_id':clubs[0],
+                 'away_club_id':clubs[1],'status':'completed','home_score':score[1],'away_score':score[2],
+                 'source_url':source,'source_id':key}
+        self.put('fixtures',fixture)
+        summary['fixtures_imported']+=1
+        for entry in payload['data']:
+            try:
+                row=self.team_match(entry,event,fixture,rawkey,category,cells[0])
+                if row:
+                    if phase:row['phase']=phase
+                    self.put('doubles' if 'winner_side' in row else 'matches',row)
+                    summary['singles_imported']+= 'winner_side' not in row
+                    summary['doubles_imported']=summary.get('doubles_imported',0)+('winner_side' in row)
+                else:
+                    summary['excluded_rows']+=1
+                    summary['unused_rows']+=1
+            except (DataError,ValueError,KeyError,TypeError) as exc:
+                summary['excluded_rows']+=1
+                summary['review_rows']+=1
+                self.coverage['issues'].append({'event':event,'game':game,'row':entry.get('team_games',{}).get('ID'),
+                                               'reason':str(exc),'source_id':rawkey})
 
     def team_match(self, entry,event,fixture,source_id,category,round_):
         game=entry['team_games']

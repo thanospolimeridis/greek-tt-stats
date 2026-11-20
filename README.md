@@ -6,13 +6,14 @@ Free, open-source Greek table tennis statistics: **Python ingestion + a static, 
 
 - **518 publicly listed TTScore events**, reconciled across 2018–19 through 2026–27.
 - **One additional legacy event** retained from the original prototype, labelled absent from the current catalog (519 displayed total).
-- **1,865 completed singles matches, 117 doubles matches and 56 team fixtures**, from 11 competitions across all nine listed seasons (10 selected tournaments plus A1 men 2025–26).
-- **2,484 athletes**, linked by federation registration number where available, and **140 exact club names**.
+- **5,565 completed singles matches, 117 doubles matches and 58 team fixtures**, from 19 competitions across all nine listed seasons.
+- **2,519 athletes**, linked by federation registration number where available, and **148 exact club names**.
 - **4,909 ranking records**: men and women, 1 August and 1 October 2026.
 - All four previously excluded league doubles are recovered with member IDs. The other 113 doubles preserve source pair labels without invented athlete links.
-- **41 walkovers and one inconsistent score record** are flagged and excluded from played-match statistics; seven tournament unplayed/bye slots and 128 unused league slots are not results.
+- **239 walkovers, three inconsistent score records and four unresolved/unplayed fixtures** are flagged and excluded from played-match statistics; 28 tournament unplayed/bye slots and 134 unused league slots are not results.
+- The current resumable batch has checked **8 of 481 additional eligible competitions**. **473 remain queued**, and 26 listings are explicitly deferred because their dates are unknown or they had not finished by the 20 November cutoff.
 
-**Historical results are incomplete.** Most catalogued competitions and additional ranking snapshots remain unimported. The season-by-season table on About shows the exact scope. No results are invented. Validation checks source consistency, not independent historical truth. The About page exposes scope and exclusions.
+**Historical results are incomplete.** Collection continues through the remaining queue, with validated checkpoints published periodically. Additional ranking snapshots also remain unimported. The season-by-season table on About shows the exact scope. No results are invented. Validation checks source consistency, not independent historical truth. The About page exposes scope and exclusions, with downloadable coverage and provenance reports.
 
 ## Use and build
 
@@ -34,7 +35,8 @@ Implemented views: Greek/English navigation, accent-insensitive Greek and transl
 ```text
 Public TTScore UI requests → ignored raw response cache
                            → validated imports/*.csv + provenance.json
-                           → data/catalog.json → index.html + dist/index.html
+                           → data/catalog.json → portable index.html
+                                               → dist/index.html + static result JSON
                            → GitHub Pages
 ```
 
@@ -48,14 +50,15 @@ python3 scripts/ttscore.py --output /tmp/ttscore-base --league 777 \
 
 Add `--offline` to replay cached responses without network access. Use a **new `--cache` directory** for fresh retrievals. Output replaces the selected scope; repeat all desired league/ranking selections. Use `--output /tmp/ttscore-review` to stage new work. The importer refuses to overwrite manual CSV directories without its manifest.
 
-Expand the current archive using the reviewed selection across every listed season:
+Continue the frozen queue of all remaining eligible competitions in resumable batches:
 
 ```sh
-python3 scripts/historical.py --balanced --output /tmp/tt-history-review
-python3 scripts/import_csv.py --input /tmp/tt-history-review --output /tmp/tt-history-review/catalog.json
+python3 scripts/batch_import.py --limit 9
+# Or process every remaining eligible competition:
+python3 scripts/batch_import.py
 ```
 
-Use `--offline` to replay hashed source responses; `--event ID` for additional tournaments. This importer merges the existing archive and checkpoints completed events. Review staged CSVs and coverage before promoting them to `imports/` and rebuilding. See [Historical backfill](docs/HISTORICAL_IMPORT.md), [the audit](docs/AUDIT.md), and [TTScore extraction guide](docs/TTSCORE.md) for source contracts and remaining gaps.
+The default output is `capture/batch-imports/`; completed competitions and raw responses are checkpointed separately. Use `--offline` to repeat normalization without network access. Review staged CSVs and coverage before promoting them to `imports/` and rebuilding. See [Resumable competition imports](docs/BATCH_IMPORT.md) for the frozen scope, pause/resume commands, and release checks; [Historical backfill](docs/HISTORICAL_IMPORT.md), [the audit](docs/AUDIT.md), and [TTScore extraction guide](docs/TTSCORE.md) document the original exploration and source contracts.
 
 ## Validation and provenance
 
@@ -85,9 +88,12 @@ GitHub Pages supports public repositories on GitHub Free: [official documentatio
 | --- | --- |
 | `scripts/ttscore.py` | Public request collector, source parsers and offline replay |
 | `scripts/historical.py` | Resumable group, knockout, consolation and doubles imports |
+| `scripts/batch_import.py` | Season-balanced queue, event checkpoints and validated staged exports |
+| `scripts/validate_batch.py` | Baseline preservation, coverage reconciliation and source-cache audit |
+| `data/import-plan.json` | Frozen remaining competition queue and deferred listings |
 | `data/backfill-plan.json` | Reviewed tournament selection across all nine listed seasons |
 | `scripts/import_csv.py` | Validation and deterministic canonical dataset |
-| `scripts/build.py` | Embed CSS, JavaScript and JSON into portable HTML |
+| `scripts/build.py` | Portable HTML plus hosted pages with static result files |
 | `src/` | Greek/English static application |
 | `imports/` | Normalized source CSVs and provenance manifest |
 | `data/verified_events.json` | Original prototype's seed listings; not evidence of complete coverage |
@@ -95,7 +101,7 @@ GitHub Pages supports public repositories on GitHub Free: [official documentatio
 | `docs/` | Audit, observed source schema and remaining work |
 | `.github/workflows/` | Validation and free static deployment |
 
-The portable page remains adequate for this dataset. As the archive grows, split data into static season/player JSON and precompute indexes while retaining static hosting. Remaining work includes other competitions, team-tournament formats, richer nonplayed outcomes, older ranking snapshots and resolved tournament-doubles identities. Do not label those gaps complete.
+The hosted site loads result files for the selected player, competition, or club. Whole-archive totals remain visible, and failed downloads are explicitly distinguished from empty histories. Player histories and coverage tables are paginated; the full request manifest is downloaded separately. The build also produces a complete, self-contained `index.html` for offline use, published as `offline.html` from the About page. No server or frontend dependency is needed for either version. Remaining work includes unchecked competitions, unresolved source issues, richer nonplayed outcomes, older ranking snapshots and resolved tournament-doubles identities. Do not label those gaps complete.
 
 ## Licence
 

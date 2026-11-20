@@ -97,9 +97,11 @@ def group_players(body):
 
 class History(Importer):
     def put(self,kind,row):
-        if kind in ('matches','doubles') and row['id'] in self.data[kind]:
+        if kind in ('matches','doubles','fixtures') and row['id'] in self.data[kind]:
             old=self.data[kind][row['id']]
-            keys=('event_id','date','player1_id','player2_id','side1_name','side2_name','score1','score2','games','status')
+            keys=('event_id','date','player1_id','player2_id','partner1_id','partner2_id','side1_name','side2_name',
+                  'score1','score2','games','status','winner_id','winner_side','best_of','fixture_id',
+                  'home_club_id','away_club_id','home_score','away_score')
             if any(old.get(k,'')!=row.get(k,'') for k in keys):raise DataError('conflicting_duplicate_game')
             return
         super().put(kind,row)
@@ -128,7 +130,15 @@ class History(Importer):
         if not type_match:raise DataError('missing_schedule_discipline')
         discipline=int(type_match[1])
         if discipline==2:
-            self.issue(event,phase,'team_tournament_requires_fixture_adapter',group=group)
+            summary=self.coverage.setdefault('team_tournaments',{}).setdefault(event,{
+                'fixtures_discovered':0,'fixtures_imported':0,'singles_imported':0,'doubles_imported':0,
+                'excluded_rows':0,'unused_rows':0,'review_rows':0,'historical_complete':False})
+            for game,cells in schedule_rows(body):
+                try:self.fixture(event,game,cells,key,BASE+url,category,summary,phase)
+                except SourceAccessError:raise
+                except (DataError,ValueError,KeyError,TypeError) as exc:
+                    summary['review_rows']+=1
+                    self.issue(event,phase,exc,game=game,source_id=key)
             return
         rows=schedule_rows(body)
         for game,cells in rows:
@@ -165,55 +175,68 @@ class History(Importer):
         self.counts['categories_discovered']+=len(cats)
         self.counts['categories_selected']+=len(selected)
         for cat,label in selected:
-            participants=self.participants(event,cat)
-            form={'event':event,'customer':'24','getStats':'1',field:cat}
-            endpoint=path.split('?')[0]
-            if series:form['series']=series
-            body,key=self.client.get(endpoint,form)
-            visited=set()
-            while True:
-                mapping={}
-                for a in Document(body).find('a'):
-                    ident=re.search(r'loadPlayer\(24,\d+,(\d+)',a.attrs.get('onclick',''))
-                    if ident:mapping[ident[1]]=clean(a.text())
-                groups=ko_groups(body) if series else {g:None for g in re.findall(r"loadSchedule\('(\d+)'",body)}
-                scoped_players={} if series else group_players(body)
-                if not groups and body.strip():
-                    self.issue(event,phase,'no_groups_in_response',category=label,source_id=key)
-                for group,bindings in groups.items():
-                    self.import_schedule(event,phase,label,group,mapping if series else scoped_players.get(group,{}),participants,bindings)
-                    self.counts['groups_visited']+=1
-                links=re.findall(r"nextPage\('([^']+)'",body)
-                if not links:break
-                if len(set(links))!=1:raise DataError('ambiguous_pagination')
-                nexturl=links[0]
-                if not re.fullmatch(re.escape(BASE)+r'/rounds_schedule2\.php\?tournament=\d+&customer=24&page=\d+',nexturl) or nexturl in visited:
-                    raise DataError('invalid_or_cyclic_pagination')
-                visited.add(nexturl)
-                body,key=self.client.get(nexturl[len(BASE):])
+            try:
+                self.category(event,phase,path,field,series,cat,label)
+                self.counts['categories_visited']=self.counts.get('categories_visited',0)+1
+                if getattr(self,'progress',None):self.progress(phase,label)
+            except SourceAccessError:raise
+            except (DataError,ValueError,KeyError,TypeError) as exc:
+                self.issue(event,phase,exc,category=label)
 
-    def event(self,event,category_limit=None):
+    def category(self,event,phase,path,field,series,cat,label):
+        participants=self.participants(event,cat)
+        form={'event':event,'customer':'24','getStats':'1',field:cat}
+        endpoint=path.split('?')[0]
+        if series:form['series']=series
+        body,key=self.client.get(endpoint,form)
+        visited=set()
+        while True:
+            mapping={}
+            for a in Document(body).find('a'):
+                ident=re.search(r'loadPlayer\(24,\d+,(\d+)',a.attrs.get('onclick',''))
+                if ident:mapping[ident[1]]=clean(a.text())
+            groups=ko_groups(body) if series else {g:None for g in re.findall(r"loadSchedule\('(\d+)'",body)}
+            scoped_players={} if series else group_players(body)
+            if not groups and body.strip():
+                self.issue(event,phase,'no_groups_in_response',category=label,source_id=key)
+            for group,bindings in groups.items():
+                self.import_schedule(event,phase,label,group,mapping if series else scoped_players.get(group,{}),participants,bindings)
+                self.counts['groups_visited']+=1
+            links=re.findall(r"nextPage\('([^']+)'",body)
+            if not links:break
+            if len(set(links))!=1:raise DataError('ambiguous_pagination')
+            nexturl=links[0]
+            if not re.fullmatch(re.escape(BASE)+r'/rounds_schedule2\.php\?tournament=\d+&customer=24&page=\d+',nexturl) or nexturl in visited:
+                raise DataError('invalid_or_cyclic_pagination')
+            visited.add(nexturl)
+            body,key=self.client.get(nexturl[len(BASE):])
+
+    def event(self,event,category_limit=None,as_of=None):
         record=self.data['events']['ttscore-'+event]
-        if not record.get('end_date') or record['end_date'] >= dt.date.today().isoformat():
+        if not record.get('end_date') or record['end_date'] >= (as_of or dt.date.today().isoformat()):
             raise DataError('Event is ongoing, future-dated, or undated; do not infer final outcomes')
         body,key=self.client.get('/customer/24/event/'+event)
-        self.counts={'singles':0,'doubles':0,'unplayed_or_bye':0,'groups_visited':0,'categories_discovered':0,'categories_selected':0}
+        self.counts={'singles':0,'doubles':0,'unplayed_or_bye':0,'groups_visited':0,'categories_discovered':0,'categories_selected':0,'categories_visited':0}
         phases=[]
         # Only follow the actual navigation, including parameter ordering supplied by the source.
         links=re.findall(r"loadQueryResults\('https://app.ttscore.io/([^']+)'",body)
         for link in dict.fromkeys(links):
+            if link.startswith('tournament_groups_league.php?'):phases.append(('league','/'+link,'agecategoryid_league',None))
             if link.startswith('rounds_schedule2.php?'):phases.append(('groups','/'+link,'agecategoryid_groups',None))
             if link.startswith('tournament_ko_games.php?'):
                 series=re.search(r'series=(\d+)',link)[1]
                 phases.append(('knockout' if series=='1' else 'consolation','/'+link,'agecategoryid_ko',series))
         start=len(self.coverage['issues'])
         for phase,path,field,series in phases:
-            try:self.phase(event,phase,path,field,series,category_limit)
+            try:
+                if phase=='league':self.league(event)
+                else:self.phase(event,phase,path,field,series,category_limit)
             except SourceAccessError:raise
             except (DataError,ValueError,KeyError) as exc:self.issue(event,phase,exc)
         if not phases:self.issue(event,'navigation','no_supported_individual_views')
         self.counts['singles']=len(self.data['matches'])
         self.counts['doubles']=len(self.data['doubles'])
+        self.counts['fixtures']=len(self.data['fixtures'])
         self.coverage.setdefault('events',{})[event]={**self.counts,'phases':[p[0] for p in phases],
                     'issues':len(self.coverage['issues'])-start,'status':'partial' if len(self.coverage['issues'])>start or category_limit else 'public_views_traversed',
                     'historical_complete':False}
@@ -225,7 +248,8 @@ def restore_base(importer,path):
     for kind in TYPES:
         p=path/f'{kind}.csv'
         if p.exists():
-            for row in csv.DictReader(p.open(encoding='utf-8')):importer.data[kind][row['id']]={k:v for k,v in row.items() if v!=''}
+            with p.open(encoding='utf-8') as source:
+                for row in csv.DictReader(source):importer.data[kind][row['id']]={k:v for k,v in row.items() if v!=''}
     provenance=json.loads((path/'provenance.json').read_text())
     importer.client.records.update(provenance['requests'])
     importer.coverage=provenance['coverage']
