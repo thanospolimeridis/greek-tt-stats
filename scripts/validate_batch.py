@@ -52,6 +52,9 @@ def audit(data, baseline, plan, *, allow_pending=False):
         raise DataError('Batch progress does not agree with event coverage')
     if batch['deferred'] != plan['deferred']:
         raise DataError('Deferred scope changed')
+    order=batch.get('processed_order',[i for i in queue if i in checked])
+    if len(order)!=len(set(order)) or set(order)!=(set(queue)-set(pending)):
+        raise DataError('Processed event order does not agree with checked scope')
     if pending and not allow_pending:
         raise DataError(f'{len(pending)} eligible competitions remain unchecked')
     failures = [i for i in queue if checked.get(i, {}).get('status') in ('source_access_failed', 'validation_failed')]
@@ -114,7 +117,8 @@ def replay_archive(input_dir, baseline_dir, plan, cache):
     rebuilt=History(Client(cache,offline=True));restore_base(rebuilt,baseline_dir)
     prior=set(rebuilt.coverage.get('events',{}))|set(rebuilt.coverage.get('leagues',{}))
     checked=set(manifest['coverage'].get('events',{}))
-    queue=[item['event'] for item in plan['queue'] if item['event'] in checked and item['event'] not in prior]
+    order=manifest['coverage']['batch'].get('processed_order',[item['event'] for item in plan['queue']])
+    queue=[ident for ident in order if ident in checked and ident not in prior]
     with tempfile.TemporaryDirectory() as temporary:
         folder=Path(temporary)
         for position, ident in enumerate(queue,1):

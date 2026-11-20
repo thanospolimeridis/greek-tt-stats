@@ -63,6 +63,13 @@ class ReleaseAuditTests(unittest.TestCase):
         with self.assertRaisesRegex(DataError,'unchecked competition'):
             audit(current, baseline, plan, allow_pending=True)
 
+    def test_replay_order_cannot_omit_or_repeat_checked_events(self):
+        for order in ([],['2','2'],['3']):
+            current, baseline, plan=self.sample()
+            current['meta']['provenance']['coverage']['batch']['processed_order']=order
+            with self.subTest(order=order), self.assertRaisesRegex(DataError,'Processed event order'):
+                audit(current,baseline,plan,allow_pending=True)
+
     def test_cache_must_match_published_response_hash(self):
         request={'url':'https://app.ttscore.io/robots.txt','method':'GET','form':None}
         key=sha256(json.dumps(request,sort_keys=True).encode())

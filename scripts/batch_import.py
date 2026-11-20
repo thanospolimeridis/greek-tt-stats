@@ -75,18 +75,32 @@ def merge_event(base, saved, event):
         base.coverage.setdefault(key,{}).update(saved['coverage'].get(key,{}))
     base.coverage['issues']=[i for i in base.coverage['issues'] if i.get('event')!=event]+saved['coverage']['issues']
     base.coverage['events'][event]['adapter_sha256']=saved['adapter_sha256']
+    order=base.coverage.setdefault('batch',{}).setdefault('processed_order',[])
+    if event not in order:order.append(event)
 
 
 def batch_coverage(base, plan):
     ids=[x['event'] for x in plan['queue']]
     events=base.coverage.get('events',{})
     attempted=[i for i in ids if i in events]
+    # Preserve actual merge order so prioritized imports reproduce athlete aliases
+    # and the first observed identity exactly during an offline release replay.
+    order=base.coverage.get('batch',{}).get('processed_order',[])
+    order=[i for i in order if i in attempted]+[i for i in attempted if i not in order]
     failures=[i for i in attempted if events[i].get('status') in ('source_access_failed','validation_failed')]
     base.coverage['batch']={'runner':'ttscore-batch-v1','plan_sha256':digest((json.dumps(plan,sort_keys=True,ensure_ascii=False,indent=2)+'\n').encode()),
         'as_of':plan['as_of'],'eligible':len(ids),'attempted':len(attempted),'pending':len(ids)-len(attempted),
-        'failed':failures,'deferred':plan['deferred'],'pending_events':[i for i in ids if i not in events],
+        'failed':failures,'deferred':plan['deferred'],'pending_events':[i for i in ids if i not in events],'processed_order':order,
         'historical_complete':False}
     return base.coverage['batch']
+
+
+def prioritized_queue(plan, priorities):
+    by_id={item['event']:item for item in plan['queue']}
+    if any(ident not in by_id for ident in priorities):
+        raise DataError('Priority event must already be in the frozen eligible queue')
+    order=list(dict.fromkeys(priorities))
+    return [by_id[ident] for ident in order]+[item for item in plan['queue'] if item['event'] not in order]
 
 
 def resume_archive(client, output, baseline):
@@ -138,6 +152,7 @@ def main():
     ap.add_argument('--stop-file',type=Path,default=ROOT/'capture'/'pause-import')
     ap.add_argument('--as-of',default=dt.date.today().isoformat())
     ap.add_argument('--limit',type=int,help='Stop after this many newly processed competitions')
+    ap.add_argument('--priority',action='append',default=[],help='Check an existing eligible event before resuming the remaining queue; repeatable')
     ap.add_argument('--offline',action='store_true')
     ap.add_argument('--worker',help=argparse.SUPPRESS)
     ap.add_argument('--checkpoint-file',type=Path,help=argparse.SUPPRESS)
@@ -153,7 +168,7 @@ def main():
     client=Client(args.cache,args.offline)
     base=resume_archive(client,args.output,args.base)
     completed=0
-    for item in plan['queue']:
+    for item in prioritized_queue(plan,args.priority):
         ident=item['event'];version=adapter_hash()
         existing=base.coverage.get('events',{}).get(ident,{})
         if existing.get('adapter_sha256')==version and not args.offline:continue

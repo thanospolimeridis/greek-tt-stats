@@ -41,6 +41,11 @@ sample.rankings=[
  {id:'r2',player_id:'p1',category:'Men',date:'2026-01-03',rank:20,points:88,source_url:'https://app.ttscore.io/test'}];
 sample.fixtures=[{id:'f1',event_id:'ttscore-777',home_club_id:'c1',away_club_id:'c2',status:'completed',date:'2026-02-03',home_score:4,away_score:1,source_url:'https://app.ttscore.io/test'}];
 check(render('player/p1',sample).html.includes('100%'),'Walkover excluded from win rate');
+const rankingsOnly=structuredClone(sample);rankingsOnly.matches=[];
+const missingHistory=render('player/p1',rankingsOnly,'en').html;
+check(missingHistory.includes('No completed singles results have been imported for this player yet.')&&missingHistory.includes('#15'),'Ranking-only profile explicitly distinguishes missing match history');
+check(!missingHistory.includes('<strong>0</strong>')&&(missingHistory.match(/<strong>—<\/strong>/g)||[]).length===3,'Missing history does not imply zero career wins or losses');
+check(render('player/p1',rankingsOnly,'el').html.includes('Αυτό δεν σημαίνει ότι δεν έχει αγωνιστεί'),'Greek profile explains missing results');
 const second=render('player/p2',sample,'en');
 check(second.html.includes('✕ 1–3'),'Score oriented to profile player');
 check(second.html.includes('5–11, 11–5, 8–11, 7–11'),'Game scores oriented to player');

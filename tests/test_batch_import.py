@@ -6,13 +6,26 @@ import tempfile
 import unittest
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
-from batch_import import make_plan, merge_event, batch_coverage, catalog_fingerprint, resume_archive
+from batch_import import make_plan, merge_event, batch_coverage, catalog_fingerprint, resume_archive, prioritized_queue
 from historical import History
 from ttscore import DataError
 import test_ttscore
 
 
 class PlanTests(unittest.TestCase):
+    def test_priority_preserves_scope_and_records_actual_merge_order(self):
+        plan={'as_of':'2023-01-01','queue':[{'event':'1'},{'event':'2'},{'event':'3'}],'deferred':[]}
+        self.assertEqual([r['event'] for r in prioritized_queue(plan,['3','3'])],['3','1','2'])
+        self.assertEqual([r['event'] for r in plan['queue']],['1','2','3'])
+        with self.assertRaisesRegex(DataError,'frozen eligible'):prioritized_queue(plan,['4'])
+        class Client:
+            def __init__(self):self.records={}
+        imp=History(Client())
+        for ident in ('3','1','3'):
+            batch_coverage(imp,plan)
+            merge_event(imp,{'data':{},'requests':{},'coverage':{'events':{ident:{}},'issues':[]},'adapter_sha256':'v1'},ident)
+        self.assertEqual(batch_coverage(imp,plan)['processed_order'],['3','1'])
+        self.assertEqual(batch_coverage(imp,plan)['pending_events'],['2'])
     def test_interrupted_managed_export_recovers_without_overwriting_unmanaged_data(self):
         import contextlib
         import io

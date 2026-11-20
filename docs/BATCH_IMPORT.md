@@ -13,6 +13,9 @@ python3 scripts/batch_import.py --limit 9
 # Continue the entire remaining queue.
 python3 scripts/batch_import.py
 
+# Prioritize an existing eligible competition, then continue the same full queue.
+python3 scripts/batch_import.py --priority 782
+
 # Re-normalize from the local source cache, without network access.
 python3 scripts/batch_import.py --offline
 ```
@@ -20,6 +23,8 @@ python3 scripts/batch_import.py --offline
 The default reviewed baseline is `imports/`; the evolving validated bundle is `capture/batch-imports/`. Current status is in `capture/batch-state.json`. A fresh worker handles each event, validates its normalized records, and writes an adapter-versioned checkpoint to `capture/batch-checkpoints/`. The parent merges identities and validates the whole archive before replacing the prior staged export. Failed events are not marked imported; already completed exports survive an interruption.
 
 A checkpoint may be reused only with the same adapter fingerprint. A changed adapter is replayed from cached source responses before its results are reused. Offline runs always re-normalize event source data; they do not rely on normalized checkpoints. Request throttling carries across worker restarts, and the collector remains sequential with at least one second between request starts.
+
+`--priority` changes processing order without changing the frozen eligible scope or dropping other competitions. It can be repeated. Coverage records the actual merge order, and release replay uses that order to preserve athlete names, aliases and source identity evidence exactly. Stop the existing collector at an event boundary before restarting with priorities; run only one online collector against a cache at a time.
 
 For a graceful stop after the active event:
 
