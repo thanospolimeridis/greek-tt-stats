@@ -112,11 +112,11 @@ kinds.events=[{id:'ttscore-1',name:'Open A',season:'2025-26'},{id:'ttscore-2',na
 kinds.matches=[];
 kinds.meta={event_match_counts:{'ttscore-1':5,'ttscore-2':3,'ttscore-3':2},provenance:{coverage:{events:{1:{phases:['groups','knockout']},2:{phases:['league']},3:{phases:['knockout']}},leagues:{},team_tournaments:{3:{}}}}};
 const kindList=render('events',kinds,'en');
-check(kindList.html.includes('Individual tournament')&&kindList.html.includes('Team league')&&kindList.html.includes('Team cup / play-off'),'Tournaments and leagues share one list with type labels');
+check(kindList.html.includes('Individual tournament')&&kindList.html.includes('Team · league table')&&kindList.html.includes('Team · knockout'),'Tournaments and leagues share one list with type labels');
 check(!kindList.html.includes('Queued D'),'Competitions without results are hidden by default');
 kindList.handlers.change({target:{id:'results-only',checked:false}});
 check(kindList.html.includes('Queued D')&&kindList.html.includes('Not yet checked'),'Unchecked competitions stay visible on request and are not guessed');
-check(render('event/ttscore-3',kinds,'en').html.includes('Team cup / play-off'),'Team cups with knockout views are not labelled individual');
+check(render('event/ttscore-3',kinds,'en').html.includes('Team · knockout'),'Team cups with knockout views are not labelled individual');
 const scoped=structuredClone(sample);scoped.events.push({id:'ttscore-5',name:'Solo Open',season:'2025-26'});
 scoped.meta.provenance={coverage:{events:{5:{phases:['groups']},777:{phases:['league']}},leagues:{}}};
 scoped.matches.push({...sample.matches[0],id:'m3',event_id:'ttscore-5',winner_id:'p2',score1:1,score2:3});

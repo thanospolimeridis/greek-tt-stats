@@ -55,3 +55,5 @@ a.event-row:hover,a.player-row:hover{border-color:#acd5cd;transform:translateY(-
  .seg{display:flex;width:100%}.seg-btn{flex:1;text-align:center;padding:8px 10px}
  .profile-head{gap:14px}.avatar.big{flex-basis:60px;width:60px;height:60px;font-size:20px}
 }
+/* The competitions list is the main entry point: keep it in the desktop header too. */
+.navlink.navmobile{display:inline-block}
