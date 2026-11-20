@@ -17,8 +17,9 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
-TYPES = ('events', 'players', 'clubs', 'matches', 'rankings', 'fixtures')
+TYPES = ('events', 'players', 'clubs', 'matches', 'rankings', 'fixtures', 'doubles')
 REQUIRED = {
+    'doubles': ('id','event_id','date','side1_name','side2_name','winner_side','status','score1','score2','games','source_url'),
     'events': ('id', 'name', 'season', 'source_url'),
     'players': ('id', 'name'),
     'clubs': ('id', 'name'),
@@ -203,6 +204,36 @@ def build(input_dir, seed_file):
                 raise DataError(f'{ident}: invalid fixture reference')
             if row.get('club1_id') != fixture['home_club_id'] or row.get('club2_id') != fixture['away_club_id']:
                 raise DataError(f'{ident}: fixture clubs disagree')
+    for row in data['doubles']:
+        ident = row['id']
+        if row['event_id'] not in by_id['events']:
+            raise DataError(f'{ident}: missing doubles event')
+        if row['status'] != 'completed' or row['winner_side'] not in ('1','2'):
+            raise DataError(f'{ident}: unsupported doubles outcome')
+        row['games'] = parse_games(row['games'], ident)
+        a,b = integer(row['score1'], ident), integer(row['score2'], ident)
+        best_of = integer(row.get('best_of') or '5', ident)
+        if best_of not in (1,3,5,7,9):raise DataError(f'{ident}: invalid doubles best_of')
+        target = best_of//2+1
+        if max(a,b) != target or min(a,b) >= target or (a>b) != (row['winner_side']=='1'):
+            raise DataError(f'{ident}: doubles score/winner disagreement')
+        counts=[0,0]
+        for ga,gb in row['games']:
+            if max(counts)==target: raise DataError(f'{ident}: games after doubles decided')
+            counts[0 if ga>gb else 1]+=1
+        if counts != [a,b]: raise DataError(f'{ident}: doubles game totals disagree')
+        row['score1'],row['score2']=a,b
+        members=[row.get(k,'') for k in ('player1_id','partner1_id','player2_id','partner2_id')]
+        if any(members) and (len(set(members))!=4 or any(p not in by_id['players'] for p in members)):
+            raise DataError(f'{ident}: invalid doubles members')
+        identity = 'resolved_members' if all(members) else 'source_pair_labels_only'
+        if row.get('identity_status',identity) != identity:
+            raise DataError(f'{ident}: doubles identity status disagrees with members')
+        row['identity_status'] = identity
+        row['best_of'] = best_of
+        if row.get('fixture_id') and (row['fixture_id'] not in by_id['fixtures'] or by_id['fixtures'][row['fixture_id']]['event_id']!=row['event_id']):
+            raise DataError(f'{ident}: invalid doubles fixture')
+        if not row['source_url']: raise DataError(f'{ident}: doubles source required')
     ranking_keys = set()
     for row in data['rankings']:
         key = (row['player_id'],row['category'],row['date'])
@@ -251,8 +282,15 @@ def build(input_dir, seed_file):
             for row in data[kind]:
                 if row.get('source_id') and row['source_id'] not in requests:
                     raise DataError(f"{kind} {row['id']}: unknown provenance source_id")
+    season_coverage = {}
+    for season in sorted({e['season'] for e in data['events']}):
+        ids = {e['id'] for e in data['events'] if e['season']==season}
+        singles = [m for m in data['matches'] if m['event_id'] in ids and m['status']=='completed']
+        doubles = [m for m in data['doubles'] if m['event_id'] in ids]
+        season_coverage[season] = {'catalog_events':len(ids),'events_with_results':len({m['event_id'] for m in singles+doubles}),'singles':len(singles),'doubles':len(doubles)}
     data['meta'] = {
-        'schema_version': 2,
+        'season_coverage':season_coverage,
+        'schema_version': 3,
         'product': 'Greek Table Tennis Statistics',
         'dataset_sha256': hashlib.sha256(json.dumps(data,sort_keys=True,ensure_ascii=False).encode()).hexdigest(),
         'inputs': inputs,
@@ -260,9 +298,9 @@ def build(input_dir, seed_file):
         'historical_coverage': 'partial',
         'legacy_events_not_in_current_catalog': legacy_ids,
         'source': 'TTScore public event pages + explicitly imported records',
-        'data_coverage': ('event_catalog_only' if not data['matches'] else 'imported_match_records'),
+        'data_coverage': ('event_catalog_only' if not data['matches'] and not data['doubles'] else 'imported_match_records'),
         'verified_results': sum(m['status']=='completed' for m in data['matches']),
-        'events_with_results': len({m['event_id'] for m in data['matches'] if m['status']=='completed'}),
+        'events_with_results': len({m['event_id'] for m in data['matches']+data['doubles'] if m['status']=='completed'}),
         'disclaimer': 'Event listings do not imply match-result coverage. Rankings must come from official published snapshots.'
     }
     return data

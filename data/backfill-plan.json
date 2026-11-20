@@ -1,0 +1,15 @@
+{
+  "scope": "Selected tournaments spanning every publicly listed season; not a complete archive",
+  "events": [
+    {"event": "287", "season": "2018-19"},
+    {"event": "364", "season": "2019-20"},
+    {"event": "416", "season": "2020-21"},
+    {"event": "510", "season": "2021-22"},
+    {"event": "585", "season": "2022-23"},
+    {"event": "681", "season": "2023-24"},
+    {"event": "753", "season": "2024-25"},
+    {"event": "857", "season": "2025-26"},
+    {"event": "898", "season": "2026-27"},
+    {"event": "839", "season": "2025-26"}
+  ]
+}

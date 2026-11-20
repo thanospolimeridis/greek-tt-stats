@@ -65,7 +65,6 @@ class ImportTests(unittest.TestCase):
     def test_parser(self):
         self.assertEqual(parse_games('11-5|8:11','test'),[[11,5],[8,11]])
         with self.assertRaises(DataError):parse_games('11:11','test')
-if __name__=='__main__':unittest.main()
 
 class ValidationRegressionTests(unittest.TestCase):
     setUp = ImportTests.setUp
@@ -101,3 +100,30 @@ class ValidationRegressionTests(unittest.TestCase):
         row={'id':'f1','event_id':'ttscore-777','home_club_id':'c1','away_club_id':'c2','status':'completed','home_score':'4','away_score':'0'}
         write_csv(self.path,'fixtures',list(row),[row])
         with self.assertRaisesRegex(DataError,'source_url'):build(self.path,self.seed)
+
+class DoublesValidationTests(unittest.TestCase):
+    setUp = ImportTests.setUp
+    tearDown = ImportTests.tearDown
+    def double(self, **changes):
+        row={'id':'d1','event_id':'ttscore-777','date':'2026-02-03','side1_name':'A / B','side2_name':'C / D','winner_side':'1','status':'completed','score1':'3','score2':'0','games':'11:5|11:5|11:5','source_url':'https://app.ttscore.io/test','best_of':'5',**changes}
+        write_csv(self.path,'doubles',list(row),[row]);return build(self.path,self.seed)
+    def test_pair_labels_do_not_create_athletes(self):
+        result=self.double()
+        self.assertEqual(len(result['players']),2)
+        self.assertEqual(len(result['matches']),0)
+        self.assertEqual(len(result['doubles']),1)
+        self.assertEqual(result['meta']['events_with_results'],1)
+        self.assertEqual(result['meta']['data_coverage'],'imported_match_records')
+    def test_false_identity_claim_rejected(self):
+        with self.assertRaisesRegex(DataError,'identity status'):
+            self.double(identity_status='resolved_members')
+    def test_winner_must_match_pair_score(self):
+        with self.assertRaises(DataError):self.double(winner_side='2')
+    def test_partial_member_identity_rejected(self):
+        with self.assertRaises(DataError):self.double(player1_id='p1')
+    def test_games_after_decision_rejected(self):
+        with self.assertRaises(DataError):self.double(score2='1',games='11:5|11:5|11:5|5:11')
+    def test_invalid_format_rejected(self):
+        with self.assertRaises(DataError):self.double(best_of='4')
+
+if __name__=='__main__':unittest.main()

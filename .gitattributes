@@ -1,0 +1,3 @@
+# Preserve the exact CSV bytes hashed by the provenance manifest.
+# Python's CSV writer uses the standard CRLF record terminator.
+imports/*.csv -text whitespace=cr-at-eol

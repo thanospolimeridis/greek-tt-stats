@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
-from ttscore import Client, Importer, event_rows, options, schedule_rows, DataError, digest, team_totals
+from ttscore import Client, Importer, event_rows, options, schedule_rows, DataError, SourceAccessError, digest, team_totals
 
 class SourceTests(unittest.TestCase):
     def test_event_epoch_is_unknown_and_source_retained(self):
@@ -39,6 +39,16 @@ class SourceTests(unittest.TestCase):
             client=Client(Path(tmp),offline=True)
             with self.assertRaises(DataError):client.get('/admin/delete.php')
             with self.assertRaises(DataError):client.get('/game-team.php',{'game':'1'})
+    def test_malformed_cache_aborts_as_access_failure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cache=Path(tmp)
+            req={'url':'https://app.ttscore.io/robots.txt','method':'GET','form':None}
+            key=digest(json.dumps(req,sort_keys=True).encode())
+            (cache/f'{key}.body').write_bytes(b'User-agent: *')
+            for metadata in ('{broken','{}','[]'):
+                (cache/f'{key}.json').write_text(metadata)
+                with self.subTest(metadata=metadata),self.assertRaises(SourceAccessError):
+                    Client(cache,offline=True).get('/robots.txt')
     def test_identity_uses_registration_not_names(self):
         importer=Importer(None)
         a=importer.player('123','Same Name','event1','hash')

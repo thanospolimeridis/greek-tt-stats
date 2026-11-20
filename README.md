@@ -6,12 +6,13 @@ Free, open-source Greek table tennis statistics: **Python ingestion + a static, 
 
 - **518 publicly listed TTScore events**, reconciled across 2018–19 through 2026–27.
 - **One additional legacy event** retained from the original prototype, labelled absent from the current catalog (519 displayed total).
-- **260 completed singles matches and 56 team fixtures** from A1 men 2025–26, event 777.
-- **2,483 athletes**, linked by federation registration number where available, and **138 exact club names**.
+- **1,865 completed singles matches, 117 doubles matches and 56 team fixtures**, from 11 competitions across all nine listed seasons (10 selected tournaments plus A1 men 2025–26).
+- **2,484 athletes**, linked by federation registration number where available, and **140 exact club names**.
 - **4,909 ranking records**: men and women, 1 August and 1 October 2026.
-- Four doubles results are excluded from singles statistics and listed for review; 128 unplayed lineup slots are not results.
+- All four previously excluded league doubles are recovered with member IDs. The other 113 doubles preserve source pair labels without invented athlete links.
+- **41 walkovers and one inconsistent score record** are flagged and excluded from played-match statistics; seven tournament unplayed/bye slots and 128 unused league slots are not results.
 
-**Historical results are incomplete.** Other events, age categories and ranking dates are not yet imported. No results are invented. Validation checks source consistency, not independent historical truth. The About page exposes scope and exclusions.
+**Historical results are incomplete.** Most catalogued competitions and additional ranking snapshots remain unimported. The season-by-season table on About shows the exact scope. No results are invented. Validation checks source consistency, not independent historical truth. The About page exposes scope and exclusions.
 
 ## Use and build
 
@@ -26,7 +27,7 @@ node tests/smoke.js
 
 Python 3.10+ is sufficient for ingestion/build. Node is only needed for the zero-dependency frontend tests (CI uses Python 3.12 and Node 22). Builds do not contact TTScore.
 
-Implemented views: Greek/English navigation, accent-insensitive Greek and transliterated/alias search, player profiles, game-by-game histories, H2H, ranking snapshot selection/history, tournament results, and club fixture statistics. Original names and category labels retain their source language. Player club labels are dated ranking observations, not inferred current membership.
+Implemented views: Greek/English navigation, accent-insensitive Greek and transliterated/alias search, player profiles, game-by-game histories, H2H, ranking snapshot selection/history, tournament results with phase filters, separate doubles histories, and club fixture statistics. Original names and category labels retain their source language. Player club labels are dated ranking observations, not inferred current membership.
 
 ## Data pipeline
 
@@ -37,17 +38,24 @@ Public TTScore UI requests → ignored raw response cache
                            → GitHub Pages
 ```
 
-Run the collector for the checked scope:
+Reproduce the original catalog/league/ranking scope in a **separate output directory** (the base collector replaces its output; it does not merge historical tournaments):
 
 ```sh
-python3 scripts/ttscore.py --league 777 \
+python3 scripts/ttscore.py --output /tmp/ttscore-base --league 777 \
   --ranking 15:2026-08-01 --ranking 10:2026-08-01 \
   --ranking 15:latest --ranking 10:latest
 ```
 
 Add `--offline` to replay cached responses without network access. Use a **new `--cache` directory** for fresh retrievals. Output replaces the selected scope; repeat all desired league/ranking selections. Use `--output /tmp/ttscore-review` to stage new work. The importer refuses to overwrite manual CSV directories without its manifest.
 
-See [the audit](docs/AUDIT.md) and [TTScore extraction guide](docs/TTSCORE.md) for discovered requests, limitations, reproducibility, and the path to broader historical coverage.
+Expand the current archive using the reviewed selection across every listed season:
+
+```sh
+python3 scripts/historical.py --balanced --output /tmp/tt-history-review
+python3 scripts/import_csv.py --input /tmp/tt-history-review --output /tmp/tt-history-review/catalog.json
+```
+
+Use `--offline` to replay hashed source responses; `--event ID` for additional tournaments. This importer merges the existing archive and checkpoints completed events. Review staged CSVs and coverage before promoting them to `imports/` and rebuilding. See [Historical backfill](docs/HISTORICAL_IMPORT.md), [the audit](docs/AUDIT.md), and [TTScore extraction guide](docs/TTSCORE.md) for source contracts and remaining gaps.
 
 ## Validation and provenance
 
@@ -59,7 +67,7 @@ Code changes preserve stable dataset bytes when data are unchanged. CI rebuilds 
 
 ## Manual/authorized imports
 
-Templates in `imports/*.csv.template` document the supported tables. For separate authorized CSVs use a separate directory and `python3 scripts/import_csv.py --input PATH`. Events, players, clubs, singles matches, official rankings and team fixtures are separate tables. Matches can reference `fixture_id` and historical `club1_id`/`club2_id`. Every match and fixture requires a source URL. No synthetic/test records belong in production CSVs.
+Templates in `imports/*.csv.template` document the supported tables. For separate authorized CSVs use a separate directory and `python3 scripts/import_csv.py --input PATH`. Events, players, clubs, singles matches, doubles matches, official rankings and team fixtures are separate tables. Matches can reference `fixture_id` and historical `club1_id`/`club2_id`. Every match and fixture requires a source URL. No synthetic/test records belong in production CSVs.
 
 Names alone never justify merging athletes. Club IDs based on names remain provisional until official club identity data are available. Maintain correction evidence and review renames explicitly.
 
@@ -76,6 +84,8 @@ GitHub Pages supports public repositories on GitHub Free: [official documentatio
 | Path | Purpose |
 | --- | --- |
 | `scripts/ttscore.py` | Public request collector, source parsers and offline replay |
+| `scripts/historical.py` | Resumable group, knockout, consolation and doubles imports |
+| `data/backfill-plan.json` | Reviewed tournament selection across all nine listed seasons |
 | `scripts/import_csv.py` | Validation and deterministic canonical dataset |
 | `scripts/build.py` | Embed CSS, JavaScript and JSON into portable HTML |
 | `src/` | Greek/English static application |
@@ -85,7 +95,7 @@ GitHub Pages supports public repositories on GitHub Free: [official documentatio
 | `docs/` | Audit, observed source schema and remaining work |
 | `.github/workflows/` | Validation and free static deployment |
 
-The 2.7 MiB portable page is adequate for this initial dataset. Before broad backfill, split data into static season/player JSON and precompute indexes; retain static hosting. Remaining adapters include individual groups, knockout/consolation, doubles and richer nonplayed statuses. Do not label those gaps complete.
+The portable page remains adequate for this dataset. As the archive grows, split data into static season/player JSON and precompute indexes while retaining static hosting. Remaining work includes other competitions, team-tournament formats, richer nonplayed outcomes, older ranking snapshots and resolved tournament-doubles identities. Do not label those gaps complete.
 
 ## Licence
 

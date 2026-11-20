@@ -1,5 +1,7 @@
 # Project audit — 20 November 2026
 
+This records the initial-release audit. The subsequent [historical backfill](HISTORICAL_IMPORT.md) adds group, knockout, consolation and doubles adapters; current counts are in README and the website’s coverage page.
+
 ## Finding
 
 Retain the Python standard-library ingestion pipeline and self-contained static website. No backend, database service, frontend framework, paid API, or npm dependencies are needed for the current archive. GitHub Pages is suitable for this informational project.

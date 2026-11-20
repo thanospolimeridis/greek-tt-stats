@@ -24,7 +24,7 @@ from import_csv import DataError, TYPES, REQUIRED, build, parse_games
 ROOT = Path(__file__).resolve().parents[1]
 BASE = 'https://app.ttscore.io'
 AGENT = 'GreekTTArchive/0.2 (public results research; cached; 1 request/second)'
-VERSION = 'ttscore-public-v1'
+VERSION = 'ttscore-public-v2'
 
 
 def digest(data):
@@ -32,7 +32,7 @@ def digest(data):
 
 
 def clean(text):
-    return ' '.join(html.unescape(text or '').split())
+    return ' '.join(html.unescape(str(text or '')).split())
 
 
 class Node:
@@ -83,10 +83,14 @@ def options(body, name):
     raise DataError(f'Source schema changed: missing selector {name}')
 
 
+class SourceAccessError(DataError):
+    """Transport/cache failure must never be normalized as a source-data gap."""
+
+
 class SameOriginRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         if urllib.parse.urlsplit(newurl).netloc != 'app.ttscore.io':
-            raise DataError('Refusing cross-origin redirect')
+            raise SourceAccessError('Refusing cross-origin redirect')
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
@@ -101,29 +105,33 @@ class Client:
 
     def get(self, path, form=None):
         allowed = ('/robots.txt','/customer/24','/customer_events.php','/customer_ranking.php',
-                   '/tournament_groups_league.php','/game-team.php','/admin/ajax/team_games.php')
+                   '/tournament_groups_league.php','/game-team.php','/admin/ajax/team_games.php',
+                   '/rounds_schedule2.php','/tournament_ko_games.php','/tournament_players.php')
         url = BASE + path
-        if urllib.parse.urlsplit(path).path not in allowed:
-            raise DataError(f'Unsupported public request: {path}')
+        if urllib.parse.urlsplit(path).path not in allowed and not re.fullmatch(r'/customer/24/event/\d+',path):
+            raise SourceAccessError(f'Unsupported public request: {path}')
         method = 'POST' if form is not None else 'GET'
-        if form is not None and urllib.parse.urlsplit(path).path not in ('/customer_events.php','/customer_ranking.php','/tournament_groups_league.php'):
-            raise DataError('Only read-only search forms may use POST')
+        if form is not None and urllib.parse.urlsplit(path).path not in ('/customer_events.php','/customer_ranking.php','/tournament_groups_league.php','/rounds_schedule2.php','/tournament_ko_games.php','/tournament_players.php'):
+            raise SourceAccessError('Only read-only search forms may use POST')
         if path != '/robots.txt' and self.robot is None:
             rules = self.get('/robots.txt')[0]
             self.robot = urllib.robotparser.RobotFileParser(BASE+'/robots.txt')
             self.robot.parse(rules.splitlines())
         if self.robot and not self.robot.can_fetch(AGENT,url):
-            raise DataError(f'robots.txt disallows {path}')
+            raise SourceAccessError(f'robots.txt disallows {path}')
         request = {'url':url,'method':method,'form':form}
         key = digest(json.dumps(request,sort_keys=True).encode())
         meta_path, body_path = self.cache/f'{key}.json', self.cache/f'{key}.body'
         if meta_path.exists() and body_path.exists():
-            metadata, body = json.loads(meta_path.read_text()), body_path.read_bytes()
-            if metadata['sha256'] != digest(body) or metadata['request'] != request:
-                raise DataError(f'Corrupt cache: {key}')
+            try:
+                metadata, body = json.loads(meta_path.read_text()), body_path.read_bytes()
+                if metadata['sha256'] != digest(body) or metadata['request'] != request:
+                    raise SourceAccessError(f'Corrupt cache: {key}')
+            except (OSError,ValueError,KeyError,TypeError) as exc:
+                raise SourceAccessError(f'Corrupt cache: {key}') from exc
         else:
             if self.offline:
-                raise DataError(f'Offline cache miss: {method} {path} {form}')
+                raise SourceAccessError(f'Offline cache miss: {method} {path} {form}')
             for attempt in range(3):
                 time.sleep(max(0, self.delay-(time.monotonic()-self.last)))
                 self.last = time.monotonic()
@@ -132,10 +140,10 @@ class Client:
                 try:
                     with self.opener.open(req, timeout=30) as response:
                         if response.geturl() != url:
-                            raise DataError(f'Unexpected redirect: {path}')
+                            raise SourceAccessError(f'Unexpected redirect: {path}')
                         body = response.read(5_000_001)
                         if len(body) > 5_000_000:
-                            raise DataError('Response exceeds 5 MB limit')
+                            raise SourceAccessError('Response exceeds 5 MB limit')
                         metadata = {'request':request,'retrieved_at':dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds'),
                                     'sha256':digest(body),'bytes':len(body),'status':response.status}
                     break
@@ -145,12 +153,15 @@ class Client:
                     retry = exc.headers.get('Retry-After','')
                     wait = int(retry) if retry.isdigit() else 2**(attempt+1)
                     if wait > 60:
-                        raise DataError('Server requests a longer pause; retry later') from exc
+                        raise SourceAccessError('Server requests a longer pause; retry later') from exc
                     time.sleep(wait)
             body_path.write_bytes(body)
             meta_path.write_text(json.dumps(metadata,ensure_ascii=False,indent=2)+'\n')
         self.records[key] = metadata
-        return body.decode('utf-8-sig'), key
+        try:
+            return body.decode('utf-8-sig'), key
+        except UnicodeDecodeError as exc:
+            raise SourceAccessError(f'Invalid response encoding: {key}') from exc
 
 
 def event_rows(body, season, source_id):
@@ -184,10 +195,10 @@ def schedule_rows(body):
         if match:
             cells = [clean(td.text()) for td in tr.find('td')]
             if len(cells) != 6:
-                raise DataError('League schedule schema changed')
+                raise DataError('Source schedule schema changed')
             result.append((match[1],cells))
     if not result and 'scheduleTable' not in body:
-        raise DataError('Missing league schedule table')
+        raise DataError('Missing source schedule table')
     return result
 
 
@@ -312,8 +323,9 @@ class Importer:
                         try:
                             row=self.team_match(entry,event,fixture,rawkey,category,cells[0])
                             if row:
-                                self.put('matches',row)
-                                summary['singles_imported']+=1
+                                self.put('doubles' if 'winner_side' in row else 'matches',row)
+                                summary['singles_imported']+= 'winner_side' not in row
+                                summary['doubles_imported']=summary.get('doubles_imported',0)+('winner_side' in row)
                             else:
                                 summary['excluded_rows']+=1
                                 summary['unused_rows']+=1
@@ -327,8 +339,7 @@ class Importer:
 
     def team_match(self, entry,event,fixture,source_id,category,round_):
         game=entry['team_games']
-        if int(game['Home_2'] or -1)>0 or int(game['Away_2'] or -1)>0:
-            raise DataError('doubles_not_supported')
+        is_double = int(game['Home_2'] or -1)>0 or int(game['Away_2'] or -1)>0
         if int(game['Home'] or 0)<=0 or int(game['Away'] or 0)<=0:
             return None  # bye / unset lineup, not a played match
         if not game.get('Score') or game.get('Winner') in (None,'','0','-1'):
@@ -365,6 +376,9 @@ class Importer:
             if not name:
                 raise DataError('missing_player_name')
             players.append(self.player(p['AM'],name,event+'-'+game[side],source_id))
+        if is_double:
+            from historical import team_double
+            return team_double(self,entry,event,fixture,source_id,category,round_,players,games,scores,target)
         return {'id':'ttscore-team-game-'+game['ID'],'event_id':'ttscore-'+event,'date':fixture['date'],
                 'player1_id':players[0],'player2_id':players[1],'winner_id':players[0 if winner=='Home' else 1],
                 'status':'completed','score1':str(scores[0]),'score2':str(scores[1]),'games':'|'.join(games),
