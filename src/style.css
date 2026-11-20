@@ -57,3 +57,32 @@ a.event-row:hover,a.player-row:hover{border-color:#acd5cd;transform:translateY(-
 }
 /* The competitions list is the main entry point: keep it in the desktop header too. */
 .navlink.navmobile{display:inline-block}
+/* Ranking points over time: modelled on the USATT "Rating Over Time" chart. */
+.rchart-panel{margin-bottom:24px}
+.rchart-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.rchart-head h3{margin:0;font-size:16px;letter-spacing:-.01em}
+.rchart-ranges{display:inline-flex;border:1px solid #d5dee0;border-radius:6px;overflow:hidden}
+.rchart-ranges button{border:0;border-left:1px solid #d5dee0;background:#fff;padding:6px 13px;font-size:12px;font-weight:650;color:#33474f}
+.rchart-ranges button:first-child{border-left:0}.rchart-ranges button.active{background:#e6f6e8;color:#2e8b3d}
+.rchart-body{display:grid;grid-template-columns:22px 62px minmax(0,1fr);grid-template-rows:330px 28px}
+.rchart-ylabel{writing-mode:vertical-rl;transform:rotate(180deg);align-self:center;justify-self:center;font-size:12px;color:#5d7178}
+.rchart-yaxis{position:relative}
+.rchart-yaxis span{position:absolute;right:10px;transform:translateY(-50%);font-size:12px;color:#4d6168;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rchart-plot{position:relative;border-left:1px solid #c9d3d6;border-bottom:1px solid #c9d3d6}
+.rchart-plot svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.rchart-plot polyline{fill:none;stroke:#29496b;stroke-width:1.4}
+.vgrid{position:absolute;top:0;bottom:0;border-left:1px solid #dfe5e7}
+.pt{position:absolute;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:#1f3b5c;z-index:2;cursor:default;outline:none}
+.pt:hover,.pt:focus{box-shadow:0 0 0 4px #1f3b5c33}
+.pt:focus-visible{box-shadow:0 0 0 3px #f4ab61}
+.tip{display:none;position:absolute;bottom:15px;left:50%;transform:translateX(-50%);background:#24476b;color:#fff;font-size:12px;line-height:1.45;padding:6px 10px;border-radius:4px;white-space:nowrap;z-index:3;box-shadow:0 4px 14px #0003}
+.tip b{font-weight:800}.tip.tip-left{left:auto;right:-6px;transform:none}.tip.tip-below{bottom:auto;top:15px}
+.pt:hover .tip,.pt:focus .tip{display:block}
+.guide{position:absolute;left:0;right:0;border-top:1px dashed #2c3e50;opacity:0;pointer-events:none;z-index:1}
+.pt:hover+.guide,.pt:focus+.guide{opacity:.75}
+.rchart-xaxis{position:relative}
+.rchart-ylabel{grid-column:1;grid-row:1}.rchart-yaxis{grid-column:2;grid-row:1}.rchart-plot{grid-column:3;grid-row:1}.rchart-xaxis{grid-column:3;grid-row:2}
+.rchart-xaxis span{position:absolute;top:6px;transform:translateX(-50%);font-size:12px;color:#4d6168;white-space:nowrap}
+.rtable{margin-top:14px}.rtable summary{font-weight:750;font-size:13px}.rtable .table-wrap{margin-top:10px}
+details.rtable{max-width:none}
+@media (max-width:700px){.rchart-body{grid-template-columns:0 54px minmax(0,1fr);grid-template-rows:240px 28px}.rchart-ylabel{visibility:hidden}.rchart-yaxis span{font-size:11px;right:7px}.rchart-xaxis span{font-size:11px}}

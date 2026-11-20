@@ -124,6 +124,16 @@ const profile=render('player/p1',scoped,'en');
 check(profile.html.includes('All competitions · 2')&&profile.html.includes('Individual tournaments · 1')&&profile.html.includes('Team competitions · 1'),'Profile splits the same history by type');
 profile.click('scope-individual');
 check(profile.html.includes('✕ 1–3')&&!profile.html.includes('✓ 3–1'),'Type filter narrows the profile history');
+const charted=structuredClone(sample);
+charted.rankings.push({id:'r0',player_id:'p1',category:'Men',date:'2025-01-03',rank:31,points:70,source_url:'https://app.ttscore.io/test'});
+const chart=render('player/p1',charted,'en');
+const points=()=>(chart.html.match(/class="pt"/g)||[]).length;
+check(chart.html.includes('Ranking points over time')&&points()===2,'Ranking chart opens on one year of official snapshots');
+chart.click('range-all');check(points()===3&&chart.html.includes('3/3 snapshots in range'),'All range plots every snapshot');
+chart.click('range-3m');check(points()===2,'Range is measured back from the latest snapshot');
+check(!chart.html.includes('rating'),'Official ranking points are never called a rating');
+const unscored=structuredClone(sample);for(const r of unscored.rankings)r.points=null;
+check(render('player/p1',unscored,'en').html.includes('Ranking position over time'),'Snapshots without points fall back to ranking position');
 async function hostedChecks(){
  const hosted=structuredClone(sample);
  hosted.meta={...hosted.meta,verified_results:123,table_counts:{doubles:4},event_match_counts:{'ttscore-777':1},
