@@ -28,7 +28,7 @@ node tests/smoke.js
 
 Python 3.10+ is sufficient for ingestion/build. Node is only needed for the zero-dependency frontend tests (CI uses Python 3.12 and Node 22). Builds do not contact TTScore.
 
-Implemented views: Greek/English navigation, accent-insensitive Greek and transliterated/alias search, player profiles, game-by-game histories, H2H, ranking snapshot selection/history, tournament results with phase filters, separate doubles histories, and club fixture statistics. Original names and category labels retain their source language. Player club labels are dated ranking observations, not inferred current membership.
+Implemented views: Greek/English navigation, accent-insensitive Greek and transliterated/alias search, one competitions list for tournaments and leagues (type taken from the source's own result views, never guessed from names), competition pages with per-player summaries, match cards, phase/category filters, doubles and team fixtures, player profiles split by individual/team competitions with per-season tables, official ranking points over time across age categories, game-by-game histories, H2H, ranking snapshot selection, and club fixture statistics. Original names and category labels retain their source language. Player club labels are dated ranking observations, not inferred current membership.
 
 ## Data pipeline
 
@@ -97,12 +97,15 @@ GitHub Pages supports public repositories on GitHub Free: [official documentatio
 | `scripts/build.py` | Portable HTML plus hosted pages with static result files |
 | `src/` | Greek/English static application |
 | `imports/` | Normalized source CSVs and provenance manifest |
+| `imports/ranking-history/` | Official ranking snapshots (yearly CSV shards) with their own provenance; never read or written by the batch collector |
+| `scripts/import_rankings.py` | Adds ranking snapshots to `imports/ranking-history/` (`--offline` replays the cache) |
+| `scripts/ranking_history.py` | Validates the ranking history and merges it at build time |
 | `data/verified_events.json` | Original prototype's seed listings; not evidence of complete coverage |
 | `tests/` | Synthetic parser/validation regressions and frontend behavior checks |
 | `docs/` | Audit, observed source schema and remaining work |
 | `.github/workflows/` | Validation and free static deployment |
 
-The hosted site loads result files for the selected player, competition, or club. Whole-archive totals remain visible, and failed downloads are explicitly distinguished from empty histories. Player histories and coverage tables are paginated; the full request manifest is downloaded separately. The build also produces a complete, self-contained `index.html` for offline use, published as `offline.html` from the About page. No server or frontend dependency is needed for either version. Remaining work includes unchecked competitions, unresolved source issues, richer nonplayed outcomes, older ranking snapshots and resolved tournament-doubles identities. Do not label those gaps complete.
+The hosted site loads result files for the selected player, competition, or club. Whole-archive totals remain visible, and failed downloads are explicitly distinguished from empty histories. Player histories and coverage tables are paginated; the full request manifest is downloaded separately. The build also produces a complete, self-contained `index.html` for offline use, published as `offline.html` from the About page. No server or frontend dependency is needed for either version. Ranking rows are stored compactly in the site (snapshot date, category and source once per snapshot); each player's file carries their ranking history and each past snapshot date has its own file. Remaining work includes unchecked competitions, unresolved source issues, richer nonplayed outcomes and resolved tournament-doubles identities. Do not label those gaps complete.
 
 ## Licence
 
