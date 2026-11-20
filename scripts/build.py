@@ -35,8 +35,26 @@ def partition_results(data, dist):
     return paths
 
 
+def list_summaries(data):
+    """Counts for list pages, which load no result files. Completed singles only."""
+    from collections import Counter, defaultdict
+    entrants, played, won = defaultdict(set), Counter(), Counter()
+    for m in data.get('matches', []):
+        if m['status'] != 'completed':
+            continue
+        for ident in (m['player1_id'], m['player2_id']):
+            entrants[m['event_id']].add(ident)
+            played[ident] += 1
+        if m.get('winner_id'):
+            won[m['winner_id']] += 1
+    return ({ident: len(players) for ident, players in sorted(entrants.items())},
+            {ident: [played[ident], won[ident]] for ident in sorted(played)})
+
+
 def build_site(root=ROOT):
     data = json.loads((root/'data'/'catalog.json').read_text(encoding='utf-8'))
+    data.setdefault('meta', {})
+    data['meta']['event_player_counts'], data['meta']['player_summary'] = list_summaries(data)
     provenance=data.get('meta',{}).get('provenance',{})
     # Keep the detailed audit downloadable without parsing every request in the UI.
     if provenance:

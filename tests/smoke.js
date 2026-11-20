@@ -72,14 +72,19 @@ paging.click('page-next');check(paging.html.includes('Player 59')&&!paging.html.
 paging.search('Player 00');check(paging.html.includes('Player 00'),'Search resets pagination');
 const pairSample=structuredClone(sample);
 pairSample.doubles=[{id:'d1',event_id:'ttscore-777',date:'2026-02-03',side1_name:'A / B',side2_name:'C / D',winner_side:'1',score1:3,score2:0,games:[[11,5],[11,5],[11,5]],status:'completed',identity_status:'source_pair_labels_only',source_url:'https://app.ttscore.io/test'}];
-check(render('event/ttscore-777',pairSample,'en').html.includes('A / B'),'Doubles results visible on tournament');
-check(render('event/ttscore-777',pairSample,'en').html.includes('individual identities unresolved'),'Unresolved pair identities disclosed');
+const doublesView=render('event/ttscore-777',pairSample,'en');
+check(doublesView.html.includes('id="tab-doubles"')&&!doublesView.html.includes('A / B'),'Doubles have their own event tab');
+doublesView.click('tab-doubles');
+check(doublesView.html.includes('A / B'),'Doubles results visible on tournament');
+check(doublesView.html.includes('individual identities unresolved'),'Unresolved pair identities disclosed');
 check(render('player/p1',pairSample,'en').html.includes('100%'),'Doubles do not affect singles statistics');
 check(!render('player/p1',pairSample,'en').html.includes('A / B'),'Unresolved pair labels do not create profile history');
 pairSample.doubles[0]={...pairSample.doubles[0],player1_id:'p1',partner1_id:'p3',player2_id:'p2',partner2_id:'p4',identity_status:'resolved_members'};
 check(render('player/p1',pairSample,'en').html.includes('A / B'),'Resolved doubles appear in member history');
 const phasesSample=structuredClone(sample);phasesSample.matches[0].phase='groups';
 const phaseView=render('event/ttscore-777',phasesSample,'en');
+check(phaseView.html.includes('id="tab-players"')&&phaseView.html.includes('Γιώργος Παίκτης'),'Event opens on the per-player summary');
+phaseView.click('tab-matches');
 check(phaseView.html.includes('3–1'),'Group result visible before filtering');
 phaseView.change('phase-filter','knockout');
 check(!phaseView.html.includes('3–1'),'Phase filter excludes group matches');
@@ -102,6 +107,23 @@ check(render('event/ttscore-9999',coverageSample,'en').html.includes('Not finish
 coverageSample.meta.provenance.coverage.events['777'].scope='available_results';
 coverageSample.meta.provenance.coverage.events['777'].snapshot_date='2026-11-20';
 check(render('event/ttscore-777',coverageSample,'en').html.includes('Partial results through'),'Ongoing results disclose the dated partial snapshot');
+const kinds=structuredClone(sample);
+kinds.events=[{id:'ttscore-1',name:'Open A',season:'2025-26'},{id:'ttscore-2',name:'League B',season:'2025-26'},{id:'ttscore-3',name:'Cup C',season:'2025-26'},{id:'ttscore-4',name:'Queued D',season:'2025-26'}];
+kinds.matches=[];
+kinds.meta={event_match_counts:{'ttscore-1':5,'ttscore-2':3,'ttscore-3':2},provenance:{coverage:{events:{1:{phases:['groups','knockout']},2:{phases:['league']},3:{phases:['knockout']}},leagues:{},team_tournaments:{3:{}}}}};
+const kindList=render('events',kinds,'en');
+check(kindList.html.includes('Individual tournament')&&kindList.html.includes('Team league')&&kindList.html.includes('Team cup / play-off'),'Tournaments and leagues share one list with type labels');
+check(!kindList.html.includes('Queued D'),'Competitions without results are hidden by default');
+kindList.handlers.change({target:{id:'results-only',checked:false}});
+check(kindList.html.includes('Queued D')&&kindList.html.includes('Not yet checked'),'Unchecked competitions stay visible on request and are not guessed');
+check(render('event/ttscore-3',kinds,'en').html.includes('Team cup / play-off'),'Team cups with knockout views are not labelled individual');
+const scoped=structuredClone(sample);scoped.events.push({id:'ttscore-5',name:'Solo Open',season:'2025-26'});
+scoped.meta.provenance={coverage:{events:{5:{phases:['groups']},777:{phases:['league']}},leagues:{}}};
+scoped.matches.push({...sample.matches[0],id:'m3',event_id:'ttscore-5',winner_id:'p2',score1:1,score2:3});
+const profile=render('player/p1',scoped,'en');
+check(profile.html.includes('All competitions · 2')&&profile.html.includes('Individual tournaments · 1')&&profile.html.includes('Team competitions · 1'),'Profile splits the same history by type');
+profile.click('scope-individual');
+check(profile.html.includes('✕ 1–3')&&!profile.html.includes('✓ 3–1'),'Type filter narrows the profile history');
 async function hostedChecks(){
  const hosted=structuredClone(sample);
  hosted.meta={...hosted.meta,verified_results:123,table_counts:{doubles:4},event_match_counts:{'ttscore-777':1},
