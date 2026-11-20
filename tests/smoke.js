@@ -144,6 +144,21 @@ check((career.match(/class="pt"/g)||[]).length===2&&!career.includes('id="chart-
 check(career.includes('<br>#120 · Άνδρες<br>#2 · Έφηβοι')&&career.includes('#120 Άνδρες · #2 Έφηβοι'),'Every category position is shown, senior category first');
 youth.rankings[2].points=990;
 check(render('player/p1',youth,'en').html.includes('id="chart-category"'),'Diverging points fall back to one category at a time');
+const rankSearchData=structuredClone(sample);
+rankSearchData.players.push({id:'httf-24084',name:'Third Player'});
+rankSearchData.rankings.push({id:'r3',player_id:'p2',category:'Men',date:'2026-02-03',rank:3,points:120,source_url:'https://app.ttscore.io/test'},
+ {id:'r4',player_id:'httf-24084',category:'Men',date:'2026-02-03',rank:40,points:50,source_url:'https://app.ttscore.io/test'});
+const rankSearch=render('rankings',rankSearchData,'en');
+const typeRanking=value=>rankSearch.handlers.input({target:{id:'search-rankings',value,matches(){return true}}});
+check(rankSearch.html.includes('id="search-rankings"')&&rankSearch.html.includes('Player Two')&&rankSearch.html.includes('Third Player'),'Rankings page offers an athlete search');
+typeRanking('giorgos');
+check(rankSearch.html.includes('Γιώργος Παίκτης')&&!rankSearch.html.includes('Player Two')&&rankSearch.html.includes('#15')&&rankSearch.html.includes('1 ranking entries match'),'Rankings search finds an athlete by transliterated name and keeps the real position');
+rankSearch.change('ranking-date','2026-01-03');
+check(rankSearch.html.includes('#20')&&!rankSearch.html.includes('#15'),'Search follows the athlete to a past snapshot');
+rankSearch.change('ranking-date','latest');typeRanking('24084');
+check(rankSearch.html.includes('Third Player')&&rankSearch.html.includes('#40')&&!rankSearch.html.includes('Γιώργος Παίκτης'),'Rankings search accepts a registration number');
+typeRanking('nobody here');
+check(rankSearch.html.includes('There are no records matching this selection.'),'Empty search explains there is no match, not missing data');
 async function hostedChecks(){
  const hosted=structuredClone(sample);
  hosted.meta={...hosted.meta,verified_results:123,table_counts:{doubles:4},event_match_counts:{'ttscore-777':1},
