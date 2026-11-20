@@ -86,3 +86,4 @@ a.event-row:hover,a.player-row:hover{border-color:#acd5cd;transform:translateY(-
 .rtable{margin-top:14px}.rtable summary{font-weight:750;font-size:13px}.rtable .table-wrap{margin-top:10px}
 details.rtable{max-width:none}
 @media (max-width:700px){.rchart-body{grid-template-columns:0 54px minmax(0,1fr);grid-template-rows:240px 28px}.rchart-ylabel{visibility:hidden}.rchart-yaxis span{font-size:11px;right:7px}.rchart-xaxis span{font-size:11px}}
+.rchart.dense .pt{width:6px;height:6px;margin:-3px 0 0 -3px}

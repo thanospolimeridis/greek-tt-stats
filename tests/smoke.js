@@ -164,6 +164,19 @@ async function hostedChecks(){
   {setInterval(fn,delay){interval=delay;}});
  await flush();
  check(interval===300000&&updated.html.includes('An updated archive is available.')&&updated.html.includes('Load update'),'Hosted pages announce later releases without automatic navigation');
+ const rankHosted=structuredClone(sample);
+ rankHosted.rankings=[sample.rankings[0]];rankHosted.matches=[];rankHosted.fixtures=[];
+ rankHosted.meta={...rankHosted.meta,ranking_dates:{Men:['2026-02-03','2026-01-03']},table_counts:{rankings:2},
+  partitions:{player:{p1:'records/p1r.json'},ranking:{'2026-01-03':'records/r0103.json'},event:{},club:{}}};
+ const rankFiles={'records/p1r.json':{matches:sample.matches,doubles:[],fixtures:[],rankings:sample.rankings},
+  'records/r0103.json':{matches:[],doubles:[],fixtures:[],rankings:[sample.rankings[1]]}};
+ const fetchRankFile=async url=>({ok:true,json:async()=>rankFiles[url]});
+ const hostedProfile=render('player/p1',rankHosted,'en',fetchRankFile);await flush();
+ check((hostedProfile.html.match(/class="pt"/g)||[]).length===2,'Hosted profile charts the full history from the player file');
+ const hostedRanks=render('rankings',rankHosted,'en',fetchRankFile);
+ check(hostedRanks.html.includes('#15')&&!hostedRanks.html.includes('#20')&&hostedRanks.html.includes('value="2026-01-03"'),'Hosted rankings list every date but inline only the latest snapshot');
+ hostedRanks.change('ranking-date','2026-01-03');await flush();
+ check(hostedRanks.html.includes('#20')&&!hostedRanks.html.includes('#15'),'A past ranking date loads its own snapshot file');
  console.log(`PASS: ${checks} total frontend behavior checks`);
 }
 hostedChecks().catch(error=>{console.error(error);process.exitCode=1;});

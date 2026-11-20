@@ -11,7 +11,14 @@ def partition_results(data, dist):
     """Build static route files; shared rows are copied, never inferred or aggregated."""
     from collections import defaultdict
     groups = {kind:defaultdict(lambda: {'matches':[], 'doubles':[], 'fixtures':[]})
-              for kind in ('event','player','club')}
+              for kind in ('event','club')}
+    # Ranking history is too large for the main page: each player's file carries
+    # their snapshots, and each past snapshot date gets its own file.
+    for kind in ('player','ranking'):
+        groups[kind] = defaultdict(lambda: {'matches':[], 'doubles':[], 'fixtures':[], 'rankings':[]})
+    for row in data.get('rankings',[]):
+        groups['player'][row['player_id']]['rankings'].append(row)
+        groups['ranking'][row['date']]['rankings'].append(row)
     for kind in ('matches','doubles','fixtures'):
         for row in data.get(kind,[]):
             groups['event'][row['event_id']][kind].append(row)
@@ -71,9 +78,17 @@ def build_site(root=ROOT):
     html=render(data)
     dist = root/'dist'
     dist.mkdir(exist_ok=True)
-    hosted={**data,'matches':[],'doubles':[],'fixtures':[],'meta':dict(data.get('meta',{}))}
+    latest={}
+    for row in data.get('rankings',[]):
+        latest[row['category']]=max(latest.get(row['category'],''),row['date'])
+    hosted={**data,'matches':[],'doubles':[],'fixtures':[],'meta':dict(data.get('meta',{})),
+            'rankings':[r for r in data.get('rankings',[]) if r['date']==latest[r['category']]]}
     hosted['meta']['partitions']=partition_results(data,dist)
-    hosted['meta']['table_counts']={kind:len(data.get(kind,[])) for kind in ('matches','doubles','fixtures')}
+    dates_by_category={}
+    for row in data.get('rankings',[]):
+        dates_by_category.setdefault(row['category'],set()).add(row['date'])
+    hosted['meta']['ranking_dates']={c:sorted(d,reverse=True) for c,d in sorted(dates_by_category.items())}
+    hosted['meta']['table_counts']={kind:len(data.get(kind,[])) for kind in ('matches','doubles','fixtures','rankings')}
     from collections import Counter
     hosted['meta']['event_match_counts']=dict(Counter(m['event_id'] for m in data.get('matches',[]) if m['status']=='completed'))
     hosted['meta']['release_id']=hashlib.sha256(html.encode()).hexdigest()
