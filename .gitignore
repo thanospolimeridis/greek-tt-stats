@@ -8,3 +8,5 @@ capture/
 dist/
 /coverage.json
 /provenance.json
+/data/catalog.json
+/index.html

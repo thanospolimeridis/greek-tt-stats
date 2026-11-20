@@ -19,6 +19,33 @@ def participant_id(node):
     return ids[0] if len(ids)==1 else None
 
 
+def bracket_byes(body):
+    """Identify an explicit BYE with one identified, advancing opponent.
+
+    Blank/unfilled positions, two byes, contradictory identities and unknown
+    winner flags remain detail-page requests, never inferred exclusions.
+    """
+    candidates={};ambiguous=set()
+    for round_ in Document(body).find('ul'):
+        if 'koround' not in classes(round_):continue
+        entries=[n for n in round_.children if isinstance(n,Node) and n.tag=='li']
+        for index,node in enumerate(entries):
+            if 'data-gameid' not in node.attrs or 'data-groupid' not in node.attrs:continue
+            if not 0<index<len(entries)-1:continue
+            sides=[entries[index-1],entries[index+1]]
+            byes=[any('ko-bye' in classes(n) for n in side.find('div')) for side in sides]
+            if sum(byes)!=1:continue
+            bye=byes.index(True);other=1-bye
+            ids=[participant_id(side) for side in sides]
+            if ids[bye] is not None or ids[other] is None:continue
+            if 'winner' not in classes(sides[other]) or 'winner' in classes(sides[bye]):continue
+            group=node.attrs['data-groupid']
+            candidate={'game':node.attrs['data-gameid'],'participants':ids,'player':ids[other]}
+            if group in candidates and candidates[group]!=candidate:ambiguous.add(group)
+            candidates[group]=candidate
+    return {g:r for g,r in candidates.items() if g not in ambiguous}
+
+
 def compact_games(body):
     """Return candidates keyed by group; never treat missing scores as results."""
     candidates={}; ambiguous=set()

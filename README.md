@@ -17,7 +17,7 @@ Free, open-source Greek table tennis statistics: **Python ingestion + a static, 
 
 ## Use and build
 
-Open `index.html` directly, or serve the folder with `python3 -m http.server 8000`. The site works offline; source links require Internet access.
+Build from the committed CSVs, then open `index.html` directly or serve the folder with `python3 -m http.server 8000`. The generated portable site works offline; source links require Internet access. A ready-built portable copy is also available as [offline.html](https://thanospolimeridis.github.io/greek-tt-stats/offline.html).
 
 ```sh
 python3 scripts/import_csv.py
@@ -66,7 +66,7 @@ The default output is `capture/batch-imports/`; completed competitions and raw r
 
 The validator rejects duplicate IDs/snapshots, missing references, malformed CSVs, unsafe source URLs, invalid dates, impossible completed game scores, score/winner disagreement, games after a match ends, and changed CSVs with stale provenance. The source importer also reconciles team scores with match sheets. `best_of` defaults to 5; set it explicitly for other match formats. Only `completed` singles count in H2H and win rates; noncompleted CSV records remain visible in histories.
 
-Code changes preserve stable dataset bytes when data are unchanged. CI rebuilds and checks that canonical JSON and portable HTML match the committed versions. To correct source-derived records, update the adapter/source evidence and regenerate the manifest, rather than silently editing generated CSVs.
+Code changes preserve stable dataset bytes when data are unchanged. CI runs `python3 scripts/check_reproducible_build.py`, building twice from the committed CSVs and requiring byte-identical canonical JSON, portable HTML, hosted result files, coverage, provenance and release markers. Generated `data/catalog.json`, `index.html` and `dist/` stay out of Git to avoid storing growing duplicate copies of the archive. GitHub Pages builds and publishes them from the versioned source inputs. To correct source-derived records, update the adapter/source evidence and regenerate the manifest, rather than silently editing generated CSVs.
 
 ## Manual/authorized imports
 

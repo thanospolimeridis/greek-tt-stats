@@ -7,7 +7,7 @@ import argparse
 from collections import Counter
 import json
 from pathlib import Path
-from compact_brackets import compact_games
+from compact_brackets import compact_games, bracket_byes
 from historical import game_score, ko_groups
 from import_csv import DataError
 from ttscore import ROOT, Client, SourceAccessError, schedule_rows
@@ -24,6 +24,14 @@ def compare(manifest,cache):
         counts['bracket_pages']+=1
         bindings=ko_groups(body)
         counts['bracket_groups']+=len(bindings)
+        for group,candidate in bracket_byes(body).items():
+            if bindings.get(group)!={candidate['game']:candidate['participants']}:continue
+            try:detail,_=client.get(f'/rounds_schedule2.php?group={group}&customer=24')
+            except SourceAccessError:
+                counts['bye_details_not_cached']+=1;continue
+            if schedule_rows(detail):
+                mismatches.append({'event':request['form']['event'],'group':group,'reason':'explicit_bye_has_detail_rows'})
+            else:counts['explicit_byes_with_empty_details']+=1
         for group,candidate in compact_games(body).items():
             if bindings.get(group)!={candidate['game']:candidate['participants']}:
                 counts['ambiguous_groups']+=1;continue

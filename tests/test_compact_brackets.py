@@ -2,7 +2,7 @@ import sys
 import unittest
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
-from compact_brackets import compact_games
+from compact_brackets import compact_games, bracket_byes
 from historical import History, game_score
 from import_csv import DataError
 
@@ -17,6 +17,21 @@ def bracket(score='-8,7,12,11', winner=1, advance='2', date='21-12-18'):
 
 
 class CompactBracketTests(unittest.TestCase):
+    def test_explicit_bye_requires_identified_advancing_singles_player(self):
+        html=('<ul class="koround"><li><div class="ko-position ko-bye">BYE</div></li>'
+              '<li data-gameid="99" data-groupid="42"></li>'
+              '<li class="winner"><div class="ko-position"><a onclick="loadPlayer(24,8,2)">P</a></div></li></ul>')
+        candidate=bracket_byes(html)['42']
+        imp=History(None);imp.counts={}
+        self.assertTrue(imp.skip_bracket_bye(candidate,{'99':[None,'2']},{'2':{'team':0}}))
+        self.assertEqual(imp.data['matches'],{})
+        self.assertEqual(imp.counts['explicit_bracket_byes'],1)
+        self.assertFalse(imp.skip_bracket_bye(candidate,{'99':[None,'2']},{'2':{'team':1}}))
+        self.assertFalse(imp.skip_bracket_bye(candidate,{'99':[None,'2'],'100':['3','4']},{'2':{'team':0}}))
+        for changed in (html.replace('ko-bye','unfilled'),html.replace('class="winner"','class=""'),
+                        html.replace('BYE','<a onclick="loadPlayer(24,8,1)">P</a>')):
+            self.assertEqual(bracket_byes(changed),{})
+
     def test_winner_relative_deuce_scores_preserve_orientation(self):
         candidate=compact_games(bracket())['42']
         self.assertEqual(candidate['participants'],['1','2'])

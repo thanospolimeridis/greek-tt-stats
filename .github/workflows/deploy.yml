@@ -21,8 +21,7 @@ jobs:
           node-version: '22'
       - name: Validate CSV imports and create portable site
         run: |
-          python scripts/import_csv.py
-          python scripts/build.py
+          python scripts/check_reproducible_build.py
           python -m unittest discover -s tests -v
           node tests/smoke.js
       - uses: actions/configure-pages@v5
