@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-"""Add official TTScore ranking snapshots to an existing import.
+"""Add official TTScore ranking snapshots to imports/ranking-history/.
 
 Each snapshot is one public read-only request (category x date) fetched with the
-same client, cache format and parser as ttscore.py. Rows are appended to
-rankings.csv; only players and clubs that are not already present are added, so
-existing rows and every results CSV stay byte-identical. provenance.json gains
-the request records, one coverage entry per snapshot and refreshed CSV hashes.
-A snapshot that fails validation is rejected whole and listed in coverage.
-Any HTTP or network failure stops the run before anything is written.
+same client, cache format and parser as ttscore.py. Rows go into yearly shards
+(rankings-YYYY.csv, the rankings.csv columns); athletes not yet known anywhere go
+into players.csv; the folder's own provenance.json gains the request records, one
+coverage entry per snapshot and refreshed CSV hashes. The collector's imports are
+only read, never written. A snapshot that fails validation is rejected whole and
+listed in coverage. Any HTTP or network failure stops the run before anything is
+written. The finished folder is validated with ranking_history.load().
 
     python3 scripts/import_rankings.py --cache capture/ttscore-rankings --category 15 --category 10
     python3 scripts/import_rankings.py ... --offline   # rebuild from the cache only
@@ -24,19 +25,23 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from ttscore import ROOT, Client, DataError, Importer, digest, options  # noqa: E402
 from import_csv import build  # noqa: E402
+import ranking_history  # noqa: E402
+
+ADAPTER = 'ttscore-ranking-history-v1'
 
 
-def read_csv(path):
+def read_rows(path):
+    if not path.exists():
+        return []
     with path.open(encoding='utf-8', newline='') as source:
-        reader = csv.DictReader(source)
-        return list(reader.fieldnames), list(reader)
+        return list(csv.DictReader(source))
 
 
-def write_csv(path, columns, rows):
+def write_rows(path, columns, rows):
     with path.open('w', encoding='utf-8', newline='') as target:
-        writer = csv.DictWriter(target, fieldnames=columns)
+        writer = csv.DictWriter(target, fieldnames=columns, extrasaction='raise')
         writer.writeheader()
-        writer.writerows(rows)
+        writer.writerows(sorted(rows, key=lambda r: r['id']))
 
 
 def merge_player(old, new):
@@ -48,7 +53,8 @@ def merge_player(old, new):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--imports', type=Path, default=ROOT/'imports')
+    ap.add_argument('--imports', type=Path, default=ROOT/'imports', help='Collector imports (read only)')
+    ap.add_argument('--history', type=Path, default=ranking_history.FOLDER)
     ap.add_argument('--cache', type=Path, required=True, help='Response cache (use a separate one while the collector runs)')
     ap.add_argument('--category', action='append', required=True, help='TTScore ranking category id: 15 men, 10 women, ...')
     ap.add_argument('--since', default='', help='Earliest snapshot date to add (YYYY-MM-DD)')
@@ -57,8 +63,11 @@ def main():
     ap.add_argument('--offline', action='store_true')
     args = ap.parse_args()
 
-    manifest = json.loads((args.imports/'provenance.json').read_text(encoding='utf-8'))
-    have = {(r['category'], r['date']) for r in manifest['coverage']['rankings']}
+    catalog = build(args.imports, ROOT/'data'/'verified_events.json')
+    manifest_path = args.history/'provenance.json'
+    manifest = (json.loads(manifest_path.read_text(encoding='utf-8')) if manifest_path.exists()
+                else {'adapter': ADAPTER, 'coverage': {'rankings': []}, 'requests': {}, 'csv_sha256': {}})
+    have = {(r['category'], r['date']) for r in catalog['meta']['provenance']['coverage']['rankings']+manifest['coverage']['rankings']}
     client = Client(args.cache, args.offline, args.delay)
     selector, _ = client.get('/customer_ranking.php?customer=24')
     names = dict(options(selector, 'agecategoryid'))
@@ -73,7 +82,8 @@ def main():
         todo = todo[:args.limit]
     print(f'{len(todo)} snapshots to add', flush=True)
 
-    rankings, players, clubs, coverage, rejected = {}, {}, {}, [], []
+    rankings, players, coverage, rejected = {}, {}, [], []
+    known_clubs = {c['id'] for c in catalog['clubs']}
     for category, date, request in todo:
         snapshot = Importer(client)  # isolated, so a rejected snapshot leaves nothing behind
         try:
@@ -82,8 +92,11 @@ def main():
             rejected.append({'category': names[category], 'date': date, 'reason': str(exc)})
             print('Rejected', names[category], date, exc, flush=True)
             continue
+        if set(snapshot.data['clubs']) - known_clubs:  # the collector owns club identities
+            rejected.append({'category': names[category], 'date': date, 'reason': 'club not in the collector catalog'})
+            print('Rejected', names[category], date, 'unknown club', flush=True)
+            continue
         rankings.update(snapshot.data['rankings'])
-        clubs.update(snapshot.data['clubs'])
         for ident, row in snapshot.data['players'].items():
             players[ident] = merge_player(players[ident], row) if ident in players else row
         coverage += snapshot.coverage['rankings']
@@ -91,33 +104,38 @@ def main():
 
     with tempfile.TemporaryDirectory() as tmp:
         staging = Path(tmp)
-        for path in args.imports.iterdir():
-            if path.is_file():
-                shutil.copy2(path, staging/path.name)
-        for kind, new_rows in (('rankings', rankings), ('players', players), ('clubs', clubs)):
-            columns, rows = read_csv(staging/f'{kind}.csv')
-            existing = {r['id'] for r in rows}
-            added = [r for i, r in new_rows.items() if i not in existing]
-            if not added:
-                continue
-            columns += sorted(set().union(*(set(r) for r in added)) - set(columns))
-            write_csv(staging/f'{kind}.csv', columns, sorted(rows + added, key=lambda r: r['id']))
-            print(f'{kind}: +{len(added)}', flush=True)
+        if args.history.exists():
+            for path in args.history.iterdir():
+                if path.is_file():
+                    shutil.copy2(path, staging/path.name)
+        shards = {}
+        for row in rankings.values():
+            shards.setdefault(ranking_history.shard_name(row['date']), []).append(row)
+        for name, rows in sorted(shards.items()):
+            write_rows(staging/name, ranking_history.COLUMNS, read_rows(staging/name)+rows)
+        existing = read_rows(staging/'players.csv')
+        known = {p['id'] for p in catalog['players']} | {p['id'] for p in existing}
+        added = [p for i, p in players.items() if i not in known]
+        if added or not (staging/'players.csv').exists():
+            write_rows(staging/'players.csv', ranking_history.PLAYER_COLUMNS, existing+added)
+        manifest['adapter'] = ADAPTER
         manifest['requests'].update(client.records)
-        manifest['coverage']['rankings'] = sorted(manifest['coverage']['rankings'] + coverage, key=lambda r: (r['date'], r['category']))
-        if rejected:
-            manifest['coverage']['ranking_rejections'] = sorted(manifest['coverage'].get('ranking_rejections', []) + rejected,
+        manifest['coverage']['rankings'] = sorted(manifest['coverage']['rankings']+coverage, key=lambda r: (r['date'], r['category']))
+        if rejected or manifest['coverage'].get('ranking_rejections'):
+            manifest['coverage']['ranking_rejections'] = sorted(manifest['coverage'].get('ranking_rejections', [])+rejected,
                                                                 key=lambda r: (r['date'], r['category']))
         manifest['csv_sha256'] = {p.name: digest(p.read_bytes()) for p in sorted(staging.glob('*.csv'))}
         (staging/'provenance.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True)+'\n', encoding='utf-8')
-        build(staging, ROOT/'data'/'verified_events.json')  # validate the whole import before replacing anything
+        ranking_history.load(staging, catalog)  # validate the whole folder before replacing anything
+        args.history.mkdir(parents=True, exist_ok=True)
         for path in sorted(staging.iterdir()):
-            target = args.imports/path.name
+            target = args.history/path.name
             if not target.exists() or target.read_bytes() != path.read_bytes():
                 temporary = target.with_name(target.name+'.tmp')
                 temporary.write_bytes(path.read_bytes())
                 temporary.replace(target)
-    print(json.dumps({'snapshots_added': len(coverage), 'rejected': len(rejected), 'ranking_rows': len(rankings)}), flush=True)
+    print(json.dumps({'snapshots_added': len(coverage), 'rejected': len(rejected), 'ranking_rows': len(rankings),
+                      'players_added': len(added)}), flush=True)
 
 
 if __name__ == '__main__':

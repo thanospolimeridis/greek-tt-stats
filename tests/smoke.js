@@ -187,6 +187,16 @@ async function hostedChecks(){
  check(hostedRanks.html.includes('#15')&&!hostedRanks.html.includes('#20')&&hostedRanks.html.includes('value="2026-01-03"'),'Hosted rankings list every date but inline only the latest snapshot');
  hostedRanks.change('ranking-date','2026-01-03');await flush();
  check(hostedRanks.html.includes('#20')&&!hostedRanks.html.includes('#15'),'A past ranking date loads its own snapshot file');
+ const pack=rows=>({format:'ranking-snapshots-v1',snapshots:[...new Map(rows.map(r=>[r.date+'|'+r.category,[r.date,r.category,'s',r.source_url]])).values()],clubs:[''],
+  rows:rows.map(r=>[[...new Map(rows.map(x=>[x.date+'|'+x.category,0])).keys()].indexOf(r.date+'|'+r.category),r.player_id,r.rank,r.points,0])});
+ const packedHosted=structuredClone(rankHosted);packedHosted.rankings=pack([sample.rankings[0]]);
+ const packedFiles={'records/p1r.json':{matches:sample.matches,doubles:[],fixtures:[],rankings:pack(sample.rankings)},
+  'records/r0103.json':{matches:[],doubles:[],fixtures:[],rankings:pack([sample.rankings[1]])}};
+ const fetchPacked=async url=>({ok:true,json:async()=>packedFiles[url]});
+ const packedProfile=render('player/p1',packedHosted,'en',fetchPacked);await flush();
+ check((packedProfile.html.match(/class="pt"/g)||[]).length===2&&packedProfile.html.includes('#15 Men'),'Compact ranking files decode into the profile chart');
+ const packedRanks=render('rankings',packedHosted,'en',fetchPacked);packedRanks.change('ranking-date','2026-01-03');await flush();
+ check(packedRanks.html.includes('#20')&&!packedRanks.html.includes('#15'),'Compact past snapshot files decode on the Rankings page');
  console.log(`PASS: ${checks} total frontend behavior checks`);
 }
 hostedChecks().catch(error=>{console.error(error);process.exitCode=1;});

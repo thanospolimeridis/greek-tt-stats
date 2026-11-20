@@ -2,9 +2,31 @@
 """Build a portable static page without network access or JS dependencies."""
 import json
 import hashlib
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import ranking_history  # noqa: E402
+
+RANKING_FORMAT = 'ranking-snapshots-v1'
+
+
+def pack_rankings(rows):
+    """Compact ranking rows for the site: per-snapshot fields (date, category, source)
+    are stored once and clubs by index. Row ids are omitted; the CSVs keep them."""
+    snapshots, clubs, by_snapshot, by_club, packed = [], [], {}, {}, []
+    for r in rows:
+        key = (r['date'], r['category'], r.get('source_id', ''), r.get('source_url', ''))
+        if key not in by_snapshot:
+            by_snapshot[key] = len(snapshots)
+            snapshots.append(list(key))
+        club = r.get('club_id', '') or ''
+        if club not in by_club:
+            by_club[club] = len(clubs)
+            clubs.append(club)
+        packed.append([by_snapshot[key], r['player_id'], r['rank'], r.get('points'), by_club[club]])
+    return {'format': RANKING_FORMAT, 'snapshots': snapshots, 'clubs': clubs, 'rows': packed}
 
 
 def partition_results(data, dist):
@@ -35,6 +57,7 @@ def partition_results(data, dist):
     paths={kind:{} for kind in groups}
     for kind, entries in groups.items():
         for ident, records in sorted(entries.items()):
+            if 'rankings' in records:records={**records,'rankings':pack_rankings(records['rankings'])}
             body=json.dumps(records,ensure_ascii=False,separators=(',',':'))+'\n'
             name=kind+'-'+hashlib.sha256(body.encode()).hexdigest()[:24]+'.json'
             (folder/name).write_text(body,encoding='utf-8')
@@ -66,6 +89,9 @@ def build_site(root=ROOT):
     # Keep the detailed audit downloadable without parsing every request in the UI.
     if provenance:
         data['meta']['provenance']={k:v for k,v in provenance.items() if k!='requests'}
+    # Official ranking history lives outside the collector's imports (see ranking_history.py).
+    history=ranking_history.load(root/'imports'/'ranking-history',data)
+    ranking_history.merge(data,history)
     css = (root/'src'/'style.css').read_text(encoding='utf-8')
     js = (root/'src'/'app.js').read_text(encoding='utf-8')
     template = (root/'src'/'template.html').read_text(encoding='utf-8')
@@ -75,17 +101,16 @@ def build_site(root=ROOT):
         serialized=json.dumps(payload,ensure_ascii=False,separators=(',',':')).replace('<','\\u003c').replace('>','\\u003e').replace('&','\\u0026')
         replacements={'/*INLINE_CSS*/':css,'/*INLINE_JS*/':js,'/*INLINE_JSON*/':serialized}
         return re.sub(r'/\*INLINE_(?:CSS|JS|JSON)\*/',lambda m:replacements[m[0]],template)
-    html=render(data)
+    html=render({**data,'rankings':pack_rankings(data.get('rankings',[]))})
     dist = root/'dist'
     dist.mkdir(exist_ok=True)
     latest={}
     for row in data.get('rankings',[]):
         latest[row['category']]=max(latest.get(row['category'],''),row['date'])
     hosted={**data,'matches':[],'doubles':[],'fixtures':[],'meta':dict(data.get('meta',{})),
-            # Inline copy of the latest snapshot only, without fields the list pages never
-            # read; the full rows (with source ids) stay in the player and date files.
-            'rankings':[{k:v for k,v in r.items() if k not in ('id','source_id','club_id')}
-                        for r in data.get('rankings',[]) if r['date']==latest[r['category']]]}
+            # Inline copy of the latest snapshot only; each player's file and each
+            # snapshot date file carry the rest.
+            'rankings':pack_rankings([r for r in data.get('rankings',[]) if r['date']==latest[r['category']]])}
     hosted['meta']['partitions']=partition_results(data,dist)
     dates_by_category={}
     for row in data.get('rankings',[]):
@@ -108,6 +133,12 @@ def build_site(root=ROOT):
                 temporary=report.with_suffix('.json.tmp')
                 temporary.write_text(serialized_report,encoding='utf-8')
                 temporary.replace(report)
+    if history:
+        # Published in dist/ only: an untracked file in the checkout would stop the collector.
+        report=dist/'ranking-history-provenance.json'
+        temporary=report.with_suffix('.json.tmp')
+        temporary.write_text(json.dumps(history['manifest'],ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+        temporary.replace(report)
     for path,content in ((root/'index.html',html),(dist/'offline.html',html),(dist/'index.html',hosted_html)):
         temporary = path.with_suffix('.html.tmp')
         temporary.write_text(content,encoding='utf-8')

@@ -46,6 +46,22 @@ def freeze_checkpoint(stage, releases):
     return destination
 
 
+def ranking_line(data, history_dir=ROOT/'imports'/'ranking-history'):
+    """Official ranking scope, including imports/ranking-history/ when present."""
+    snapshots = list(data['meta']['provenance']['coverage'].get('rankings', []))
+    rows = len(data['rankings'])
+    manifest_path = history_dir/'provenance.json'
+    history = json.loads(manifest_path.read_text(encoding='utf-8')) if manifest_path.exists() else None
+    if history:
+        snapshots += history['coverage']['rankings']
+        rows += sum(s['rows'] for s in history['coverage']['rankings'])
+    dates = sorted({s['date'] for s in snapshots})
+    categories = {s['category'] for s in snapshots}
+    span = (f"{len(dates)} snapshot dates from {dt.date.fromisoformat(dates[0]).strftime('%-d %B %Y')} "
+            f"to {dt.date.fromisoformat(dates[-1]).strftime('%-d %B %Y')}") if dates else 'no snapshots'
+    return f'- **{rows:,} official ranking records**: {len(categories)} age categories, {span}.', bool(history)
+
+
 def coverage_section(data, today):
     coverage = data['meta']['provenance']['coverage']
     batch = coverage['batch']
@@ -56,6 +72,7 @@ def coverage_section(data, today):
     resolved = sum(d['identity_status']=='resolved_members' for d in data['doubles'])
     unresolved = counts['doubles']-resolved
     cutoff = dt.date.fromisoformat(batch['as_of']).strftime('%-d %B %Y')
+    rankings, history = ranking_line(data)
     progress = ('Collection continues through the remaining queue, with validated checkpoints published periodically.'
                 if batch['pending'] else 'The eligible competition queue has been checked; source gaps and deferred listings remain.')
     return f'''## Current coverage — {today.strftime('%-d %B %Y')}
@@ -64,12 +81,12 @@ def coverage_section(data, today):
 - **{legacy} additional legacy event** retained from the original prototype, labelled absent from the current catalog ({counts['events']:,} displayed total).
 - **{counts['matches']:,} completed singles matches, {counts['doubles']:,} doubles matches and {counts['fixtures']:,} team fixtures**, from {competitions:,} competitions across all nine listed seasons.
 - **{counts['players']:,} athletes**, linked by federation registration number where available, and **{counts['clubs']:,} exact club names**.
-- **{counts['rankings']:,} ranking records**: men and women, 1 August and 1 October 2026.
+{rankings}
 - **{resolved:,} doubles matches identify all four members**; {unresolved:,} preserve source pair labels without invented athlete links.
 - **{len(coverage['issues']):,} source issues** are recorded, including walkovers, unresolved fixtures and inconsistent scores. Coverage reports retain exclusion reasons and unplayed/bye counts.
 - The current resumable batch has checked **{batch['attempted']:,} of {batch['eligible']:,} additional eligible competitions**. **{batch['pending']:,} remain queued**, and {len(batch['deferred']):,} listings remain explicitly deferred; the coverage report gives their reasons. Results from active or undated events are limited to explicit, validated scores dated on or before {cutoff} and remain partial snapshots.
 
-**Historical results are incomplete.** {progress} Additional ranking snapshots also remain unimported. The season-by-season table on About shows the exact scope. No results are invented. Validation checks source consistency, not independent historical truth. The About page exposes scope and exclusions, with downloadable coverage and provenance reports.
+**Historical results are incomplete.** {progress}{'' if history else ' Additional ranking snapshots also remain unimported.'} The season-by-season table on About shows the exact scope. No results are invented. Validation checks source consistency, not independent historical truth. The About page exposes scope and exclusions, with downloadable coverage and provenance reports.
 
 '''
 
