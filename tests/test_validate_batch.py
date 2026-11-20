@@ -70,6 +70,27 @@ class ReleaseAuditTests(unittest.TestCase):
             with self.subTest(order=order), self.assertRaisesRegex(DataError,'Processed event order'):
                 audit(current,baseline,plan,allow_pending=True)
 
+    def test_active_event_requires_partial_scope_and_rejects_future_results(self):
+        current,baseline,plan=self.sample()
+        plan['queue'][0].update(scope='available_results',date_status='ongoing')
+        coverage=current['meta']['provenance']['coverage']
+        coverage['events']['2'].update(scope='available_results',date_status='ongoing',snapshot_date=plan['as_of'],status='partial')
+        coverage['batch']['plan_sha256']=sha256((json.dumps(plan,sort_keys=True,ensure_ascii=False,indent=2)+'\n').encode())
+        current['matches'][-1]['date']=plan['as_of']
+        audit(current,baseline,plan,allow_pending=True)
+        current['matches'][-1]['date']='2026-11-21'
+        with self.assertRaisesRegex(DataError,'after snapshot cutoff'):audit(current,baseline,plan,allow_pending=True)
+        current['matches'][-1]['date']=plan['as_of'];coverage['events']['2']['status']='public_views_traversed'
+        with self.assertRaisesRegex(DataError,'partial scope'):audit(current,baseline,plan,allow_pending=True)
+
+    def test_deferred_event_cannot_silently_gain_results(self):
+        current,baseline,plan=self.sample()
+        plan['deferred']=[{'event':'4','reason':'not_started_by_cutoff'}]
+        current['meta']['provenance']['coverage']['batch']['deferred']=plan['deferred']
+        current['meta']['provenance']['coverage']['batch']['plan_sha256']=sha256((json.dumps(plan,sort_keys=True,ensure_ascii=False,indent=2)+'\n').encode())
+        current['matches'].append({'id':'future','event_id':'ttscore-4','score1':3})
+        with self.assertRaisesRegex(DataError,'unchecked competition'):audit(current,baseline,plan,allow_pending=True)
+
     def test_cache_must_match_published_response_hash(self):
         request={'url':'https://app.ttscore.io/robots.txt','method':'GET','form':None}
         key=sha256(json.dumps(request,sort_keys=True).encode())

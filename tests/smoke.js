@@ -99,6 +99,9 @@ check(coveragePage.html.includes('1/2 additional competitions checked'),'Batch p
 check(coveragePage.html.includes('Not finished by the reference date'),'Deferred competitions are distinguished from imported events');
 check(coveragePage.html.includes('does not establish complete history'),'Traversal is not labelled historical completeness');
 check(render('event/ttscore-9999',coverageSample,'en').html.includes('Not finished by the reference date'),'Event page explains deferral');
+coverageSample.meta.provenance.coverage.events['777'].scope='available_results';
+coverageSample.meta.provenance.coverage.events['777'].snapshot_date='2026-11-20';
+check(render('event/ttscore-777',coverageSample,'en').html.includes('Partial results through'),'Ongoing results disclose the dated partial snapshot');
 async function hostedChecks(){
  const hosted=structuredClone(sample);
  hosted.meta={...hosted.meta,verified_results:123,table_counts:{doubles:4},event_match_counts:{'ttscore-777':1},

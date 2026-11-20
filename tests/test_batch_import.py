@@ -13,6 +13,20 @@ import test_ttscore
 
 
 class PlanTests(unittest.TestCase):
+    def test_available_scope_includes_active_and_undated_but_not_future_events(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            (root/'events.csv').write_text('id,season,start_date,end_date\n'
+                'ttscore-1,2026-27,2026-09-01,2027-03-01\n'
+                'ttscore-2,2020-21,,\n'
+                'ttscore-3,2026-27,2026-12-01,2026-12-02\n')
+            (root/'provenance.json').write_text(json.dumps({'coverage':{'events':{},'leagues':{}}}))
+            plan=make_plan(root,'2026-11-20',include_available=True)
+            self.assertEqual({r['event']:r['date_status'] for r in plan['queue']},{'1':'ongoing','2':'undated'})
+            self.assertTrue(all(r['scope']=='available_results' for r in plan['queue']))
+            self.assertEqual(plan['deferred'][0]['event'],'3')
+            self.assertEqual(plan['deferred'][0]['reason'],'not_started_by_cutoff')
+            self.assertFalse(make_plan(root,'2026-11-20')['queue'])
     def test_priority_preserves_scope_and_records_actual_merge_order(self):
         plan={'as_of':'2023-01-01','queue':[{'event':'1'},{'event':'2'},{'event':'3'}],'deferred':[]}
         self.assertEqual([r['event'] for r in prioritized_queue(plan,['3','3'])],['3','1','2'])
@@ -89,6 +103,21 @@ class PlanTests(unittest.TestCase):
 
 
 class RoutingTests(unittest.TestCase):
+    def test_available_results_have_explicit_partial_scope_and_cutoff(self):
+        class Client:
+            def get(self,*args):return "loadQueryResults('https://app.ttscore.io/tournament_groups_league.php?event=8&customer=24')",'source'
+        imp=History(Client());imp.data['events']['ttscore-8']={'start_date':'2026-09-01','end_date':'2027-03-01'}
+        imp.league=lambda event:None
+        with self.assertRaises(DataError):imp.event('8',as_of='2026-11-20')
+        record=imp.event('8',as_of='2026-11-20',available_results=True)
+        self.assertEqual(imp.result_cutoff,'2026-11-20')
+        self.assertEqual(record['status'],'partial')
+        self.assertEqual(record['date_status'],'ongoing')
+        self.assertEqual(record['snapshot_date'],'2026-11-20')
+        imp.data['events']['ttscore-8']={'start_date':'2026-12-01','end_date':'2026-12-02'}
+        with self.assertRaises(DataError):imp.event('8',as_of='2026-11-20',available_results=True)
+        imp.data['events']['ttscore-8']={}
+        self.assertEqual(imp.event('8',as_of='2026-11-20',available_results=True)['date_status'],'undated')
     def test_broken_category_does_not_hide_later_category(self):
         class Client:
             def get(self,*args):return '<select name="agecategoryid_groups"><option value="1">Broken</option><option value="2">Valid</option></select>','selector'

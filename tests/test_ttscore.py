@@ -9,6 +9,25 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from ttscore import Client, Importer, event_rows, options, schedule_rows, DataError, SourceAccessError, digest, team_totals
 
 class SourceTests(unittest.TestCase):
+    def test_identical_club_labels_are_quarantined_before_publishing_fixture(self):
+        class Client:
+            def get(self,*args):raise AssertionError('Ambiguous teams must not be published')
+        imp=Importer(Client())
+        with self.assertRaisesRegex(DataError,'do_not_distinguish_teams'):
+            imp.fixture('1','2',['1','26-10-04 / 12:00','1','Club A - Club A','','1-4'],
+                        'schedule','https://app.ttscore.io/test','Men',{'fixtures_discovered':0})
+        self.assertEqual(imp.data['fixtures'],{})
+    def test_future_fixture_does_not_fetch_or_publish_results(self):
+        class Client:
+            def get(self,*args):raise AssertionError('Future fixture must not fetch a score sheet')
+        imp=Importer(Client());imp.result_cutoff='2026-11-20'
+        summary={'fixtures_discovered':0}
+        imp.fixture('1','2',['1','26-11-21 / 12:00','1','Club A - Club B','','4-0'],
+                    'schedule','https://app.ttscore.io/test','Men',summary)
+        self.assertEqual(imp.data['fixtures'],{})
+        self.assertEqual(imp.data['matches'],{})
+        self.assertEqual(summary['future_fixtures_excluded'],1)
+        self.assertEqual(imp.coverage['issues'][0]['reason'],'fixture_after_snapshot_cutoff')
     def test_request_throttle_survives_worker_restart(self):
         clock=[100.0];starts=[]
         class Response:

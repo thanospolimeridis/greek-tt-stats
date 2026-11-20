@@ -7,6 +7,16 @@ from import_csv import DataError
 import test_ttscore
 
 class HistoryTests(unittest.TestCase):
+    def test_future_individual_result_is_excluded_from_available_snapshot(self):
+        class Client:
+            def get(self,*args):
+                return ('<script>refreshScheduleTable(0)</script><table id="scheduleTable">'
+                        '<tr id="game-1"><td>1</td><td>26-11-21 / 12:00</td><td>1</td>'
+                        '<td>A - B</td><td>11-5 11-5 11-5</td><td>3-0</td></tr></table>'),'scores'
+        imp=History(Client());imp.result_cutoff='2026-11-20';imp.counts={}
+        imp.import_schedule('8','groups','Men','1',{}, {})
+        self.assertEqual(imp.data['matches'],{})
+        self.assertEqual(imp.coverage['issues'][0]['reason'],'result_after_snapshot_cutoff')
     def test_explicit_scores(self):
         row=game_score(['1','25-11-29 / 18:00','1','A - B','11-5 5-11 11-8 11-7','3 - 1'])
         self.assertEqual(row['games'],'11:5|5:11|11:8|11:7')

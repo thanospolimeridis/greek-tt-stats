@@ -312,13 +312,22 @@ class Importer:
         fixture_id='ttscore-game-'+game
         if fixture_id in self.data['fixtures']:
             return
+        cutoff=getattr(self,'result_cutoff',None)
+        date=dt.datetime.strptime(cells[1].split(' / ')[0],'%y-%m-%d').date().isoformat() if cutoff else None
+        if cutoff and date>cutoff:
+            summary['future_fixtures_excluded']=summary.get('future_fixtures_excluded',0)+1
+            self.coverage['issues'].append({'event':event,'game':game,'reason':'fixture_after_snapshot_cutoff',
+                'date':date,'cutoff':self.result_cutoff,'source_id':key})
+            return
         names=cells[3].split(' - ')
         score=re.fullmatch(r'(\d+)\s*-\s*(\d+)',cells[5])
         if len(names)!=2 or not score or max(map(int,score.groups()))==0:
             self.coverage['issues'].append({'event':event,'game':game,'reason':'unresolved_or_unplayed_fixture'})
             return
-        date=dt.datetime.strptime(cells[1].split(' / ')[0],'%y-%m-%d').date().isoformat()
+        date=date or dt.datetime.strptime(cells[1].split(' / ')[0],'%y-%m-%d').date().isoformat()
         clubs=[self.club(n) for n in names]
+        if clubs[0]==clubs[1]:
+            raise DataError('fixture_club_labels_do_not_distinguish_teams')
         if not getattr(self,'sheet_checked',False):
             detail,_=self.client.get(f'/game-team.php?game={game}&customer=24')
             if '/admin/ajax/team_games.php?game=' not in detail:

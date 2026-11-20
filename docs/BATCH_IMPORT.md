@@ -1,8 +1,10 @@
 # Resumable competition imports
 
-`data/import-plan.json` freezes the public inventory and a 2026-11-20 eligibility cutoff. It queues **481 remaining past-dated competitions**, alternating seasons. Eleven competitions had already been processed. Twenty-six are deferred: two have unknown dates and 24 had not finished by the cutoff. The legacy seed listing absent from TTScore's current catalog is not silently added to this queue.
+`data/import-plan.json` freezes the public inventory and a **2026-11-20 result cutoff**. It queues **502 additional competitions**, alternating seasons: the original 481 past-dated competitions, 19 active leagues, and two undated listings requiring inspection. Eleven competitions had already been processed. Five future competitions remain deferred. The original scope is retained in `data/import-plan-finished-2026-11-20.json`, and the new plan records its hash. No previously queued event has been dropped. The legacy seed listing absent from TTScore's current catalog is not silently added to this queue.
 
 The public catalog covers nine seasons, 2018–19 through 2026–27. Past dates establish eligibility for inspection, not proof that results are complete or that an event actually took place.
+
+Active and undated events use the explicit `available_results` scope. Only results with valid source dates on or before the cutoff can enter the archive. Future fixtures are excluded before retrieving their match sheets, future individual results are excluded, and missing or inconsistent scores remain review records. These event snapshots always stay partial and retain the cutoff and whether the event was ongoing or undated. Undated event metadata is never replaced with an invented date. A new plan can opt into this scope with `--include-available`; that option refuses to silently alter an existing plan.
 
 ## Run or resume
 
@@ -24,6 +26,8 @@ The default reviewed baseline is `imports/`; the evolving validated bundle is `c
 
 A checkpoint may be reused only with the same adapter fingerprint. A changed adapter is replayed from cached source responses before its results are reused. Offline runs always re-normalize event source data; they do not rely on normalized checkpoints. Request throttling carries across worker restarts, and the collector remains sequential with at least one second between request starts.
 
+Worker checkpoints also bind the cutoff and available-results scope. Release replay repeats those options, and the audit rejects future results or new rows in a still-deferred competition.
+
 `--priority` changes processing order without changing the frozen eligible scope or dropping other competitions. It can be repeated. Coverage records the actual merge order, and release replay uses that order to preserve athlete names, aliases and source identity evidence exactly. Stop the existing collector at an event boundary before restarting with priorities; run only one online collector against a cache at a time.
 
 For a graceful stop after the active event:
@@ -44,6 +48,7 @@ The inventory fingerprint excludes inferred event type, so discovering a league 
 - Team tournament groups and brackets use their linked fixture score tables and the same publicly exposed team sheets as leagues. Aggregate fixture scores must agree with declared rubber winners.
 - Individual records require consistent point scores, final set totals, source participant identities and legal match termination. Duplicate game IDs cannot change score, winner, event, or doubles membership.
 - Walkovers, noncountable rubbers, unresolved identities, unknown layouts, missing results, and inconsistent scores remain explicit source issues. The importer never supplies fictional scores to fill them.
+- A fixture whose two club labels are identical is kept as an identity-review gap until distinct team identities can be established from public evidence. It does not stop other fixtures from being imported or create invented club suffixes.
 - The schedule-wide JSON feed was inspected but contains scheduling information rather than score evidence. Bracket shorthand is not used as a substitute for explicit game-score tables.
 
 `coverage.batch` records attempted and pending counts, pending event IDs, and deferred reasons. Each competition retains phase/category traversal, result counts, and issue counts. “Checked” does not mean a complete historical record. A competition with zero usable results stays visible in the coverage report.

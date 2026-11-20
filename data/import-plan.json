@@ -3,163 +3,38 @@
   "catalog_sha256": "a1ba8235e91fb96b043b2e38224c3ae08a1a3a3ae1229008fad31e7fbfae960a",
   "deferred": [
     {
-      "end_date": "",
-      "event": "405",
-      "reason": "undated",
-      "season": "2020-21"
-    },
-    {
-      "end_date": "",
-      "event": "408",
-      "reason": "undated",
-      "season": "2020-21"
-    },
-    {
-      "end_date": "2027-02-21",
-      "event": "867",
-      "reason": "not_finished_by_cutoff",
-      "season": "2026-27"
-    },
-    {
-      "end_date": "2027-02-21",
-      "event": "868",
-      "reason": "not_finished_by_cutoff",
-      "season": "2026-27"
-    },
-    {
-      "end_date": "2027-02-21",
-      "event": "869",
-      "reason": "not_finished_by_cutoff",
-      "season": "2026-27"
-    },
-    {
-      "end_date": "2027-02-21",
-      "event": "870",
-      "reason": "not_finished_by_cutoff",
-      "season": "2026-27"
-    },
-    {
-      "end_date": "2027-02-21",
-      "event": "871",
-      "reason": "not_finished_by_cutoff",
-      "season": "2026-27"
-    },
-    {
-      "end_date": "2027-02-21",
-      "event": "872",
-      "reason": "not_finished_by_cutoff",
-      "season": "2026-27"
-    },
-    {
-      "end_date": "2027-02-21",
-      "event": "873",
-      "reason": "not_finished_by_cutoff",
-      "season": "2026-27"
-    },
-    {
-      "end_date": "2027-02-21",
-      "event": "874",
-      "reason": "not_finished_by_cutoff",
-      "season": "2026-27"
-    },
-    {
-      "end_date": "2027-02-21",
-      "event": "875",
-      "reason": "not_finished_by_cutoff",
-      "season": "2026-27"
-    },
-    {
-      "end_date": "2027-02-21",
-      "event": "876",
-      "reason": "not_finished_by_cutoff",
-      "season": "2026-27"
-    },
-    {
-      "end_date": "2027-02-21",
-      "event": "877",
-      "reason": "not_finished_by_cutoff",
-      "season": "2026-27"
-    },
-    {
-      "end_date": "2027-02-21",
-      "event": "878",
-      "reason": "not_finished_by_cutoff",
-      "season": "2026-27"
-    },
-    {
-      "end_date": "2027-02-21",
-      "event": "879",
-      "reason": "not_finished_by_cutoff",
-      "season": "2026-27"
-    },
-    {
-      "end_date": "2027-02-21",
-      "event": "880",
-      "reason": "not_finished_by_cutoff",
-      "season": "2026-27"
-    },
-    {
-      "end_date": "2027-02-21",
-      "event": "881",
-      "reason": "not_finished_by_cutoff",
-      "season": "2026-27"
-    },
-    {
-      "end_date": "2027-02-21",
-      "event": "882",
-      "reason": "not_finished_by_cutoff",
-      "season": "2026-27"
-    },
-    {
-      "end_date": "2027-02-21",
-      "event": "883",
-      "reason": "not_finished_by_cutoff",
-      "season": "2026-27"
-    },
-    {
-      "end_date": "2027-02-21",
-      "event": "884",
-      "reason": "not_finished_by_cutoff",
-      "season": "2026-27"
-    },
-    {
-      "end_date": "2027-02-21",
-      "event": "885",
-      "reason": "not_finished_by_cutoff",
-      "season": "2026-27"
-    },
-    {
       "end_date": "2026-11-29",
       "event": "899",
-      "reason": "not_finished_by_cutoff",
+      "reason": "not_started_by_cutoff",
       "season": "2026-27"
     },
     {
       "end_date": "2026-12-13",
       "event": "900",
-      "reason": "not_finished_by_cutoff",
+      "reason": "not_started_by_cutoff",
       "season": "2026-27"
     },
     {
       "end_date": "2026-12-13",
       "event": "901",
-      "reason": "not_finished_by_cutoff",
+      "reason": "not_started_by_cutoff",
       "season": "2026-27"
     },
     {
       "end_date": "2026-12-13",
       "event": "902",
-      "reason": "not_finished_by_cutoff",
+      "reason": "not_started_by_cutoff",
       "season": "2026-27"
     },
     {
       "end_date": "2026-12-13",
       "event": "903",
-      "reason": "not_finished_by_cutoff",
+      "reason": "not_started_by_cutoff",
       "season": "2026-27"
     }
   ],
   "historical_complete": false,
+  "include_available_results": true,
   "previously_processed": [
     "287",
     "364",
@@ -185,8 +60,10 @@
       "season": "2019-20"
     },
     {
-      "end_date": "2020-11-01",
-      "event": "406",
+      "date_status": "undated",
+      "end_date": "",
+      "event": "405",
+      "scope": "available_results",
       "season": "2020-21"
     },
     {
@@ -230,8 +107,10 @@
       "season": "2019-20"
     },
     {
-      "end_date": "2021-04-29",
-      "event": "378",
+      "date_status": "undated",
+      "end_date": "",
+      "event": "408",
+      "scope": "available_results",
       "season": "2020-21"
     },
     {
@@ -260,6 +139,13 @@
       "season": "2025-26"
     },
     {
+      "date_status": "ongoing",
+      "end_date": "2027-02-21",
+      "event": "867",
+      "scope": "available_results",
+      "season": "2026-27"
+    },
+    {
       "end_date": "2018-09-23",
       "event": "198",
       "season": "2018-19"
@@ -270,8 +156,8 @@
       "season": "2019-20"
     },
     {
-      "end_date": "2021-04-29",
-      "event": "397",
+      "end_date": "2020-11-01",
+      "event": "406",
       "season": "2020-21"
     },
     {
@@ -300,6 +186,13 @@
       "season": "2025-26"
     },
     {
+      "date_status": "ongoing",
+      "end_date": "2027-02-21",
+      "event": "868",
+      "scope": "available_results",
+      "season": "2026-27"
+    },
+    {
       "end_date": "2018-09-23",
       "event": "199",
       "season": "2018-19"
@@ -310,8 +203,8 @@
       "season": "2019-20"
     },
     {
-      "end_date": "2021-04-30",
-      "event": "373",
+      "end_date": "2021-04-29",
+      "event": "378",
       "season": "2020-21"
     },
     {
@@ -340,6 +233,13 @@
       "season": "2025-26"
     },
     {
+      "date_status": "ongoing",
+      "end_date": "2027-02-21",
+      "event": "869",
+      "scope": "available_results",
+      "season": "2026-27"
+    },
+    {
       "end_date": "2018-09-30",
       "event": "218",
       "season": "2018-19"
@@ -350,8 +250,8 @@
       "season": "2019-20"
     },
     {
-      "end_date": "2021-04-30",
-      "event": "374",
+      "end_date": "2021-04-29",
+      "event": "397",
       "season": "2020-21"
     },
     {
@@ -380,6 +280,13 @@
       "season": "2025-26"
     },
     {
+      "date_status": "ongoing",
+      "end_date": "2027-02-21",
+      "event": "870",
+      "scope": "available_results",
+      "season": "2026-27"
+    },
+    {
       "end_date": "2018-10-14",
       "event": "220",
       "season": "2018-19"
@@ -391,7 +298,7 @@
     },
     {
       "end_date": "2021-04-30",
-      "event": "375",
+      "event": "373",
       "season": "2020-21"
     },
     {
@@ -420,6 +327,13 @@
       "season": "2025-26"
     },
     {
+      "date_status": "ongoing",
+      "end_date": "2027-02-21",
+      "event": "871",
+      "scope": "available_results",
+      "season": "2026-27"
+    },
+    {
       "end_date": "2018-11-04",
       "event": "225",
       "season": "2018-19"
@@ -431,7 +345,7 @@
     },
     {
       "end_date": "2021-04-30",
-      "event": "376",
+      "event": "374",
       "season": "2020-21"
     },
     {
@@ -460,6 +374,13 @@
       "season": "2025-26"
     },
     {
+      "date_status": "ongoing",
+      "end_date": "2027-02-21",
+      "event": "872",
+      "scope": "available_results",
+      "season": "2026-27"
+    },
+    {
       "end_date": "2018-11-11",
       "event": "226",
       "season": "2018-19"
@@ -471,7 +392,7 @@
     },
     {
       "end_date": "2021-04-30",
-      "event": "377",
+      "event": "375",
       "season": "2020-21"
     },
     {
@@ -500,6 +421,13 @@
       "season": "2025-26"
     },
     {
+      "date_status": "ongoing",
+      "end_date": "2027-02-21",
+      "event": "873",
+      "scope": "available_results",
+      "season": "2026-27"
+    },
+    {
       "end_date": "2018-11-25",
       "event": "228",
       "season": "2018-19"
@@ -511,7 +439,7 @@
     },
     {
       "end_date": "2021-04-30",
-      "event": "379",
+      "event": "376",
       "season": "2020-21"
     },
     {
@@ -540,6 +468,13 @@
       "season": "2025-26"
     },
     {
+      "date_status": "ongoing",
+      "end_date": "2027-02-21",
+      "event": "874",
+      "scope": "available_results",
+      "season": "2026-27"
+    },
+    {
       "end_date": "2018-12-02",
       "event": "232",
       "season": "2018-19"
@@ -551,7 +486,7 @@
     },
     {
       "end_date": "2021-04-30",
-      "event": "380",
+      "event": "377",
       "season": "2020-21"
     },
     {
@@ -580,6 +515,13 @@
       "season": "2025-26"
     },
     {
+      "date_status": "ongoing",
+      "end_date": "2027-02-21",
+      "event": "875",
+      "scope": "available_results",
+      "season": "2026-27"
+    },
+    {
       "end_date": "2018-12-02",
       "event": "233",
       "season": "2018-19"
@@ -591,7 +533,7 @@
     },
     {
       "end_date": "2021-04-30",
-      "event": "381",
+      "event": "379",
       "season": "2020-21"
     },
     {
@@ -620,6 +562,13 @@
       "season": "2025-26"
     },
     {
+      "date_status": "ongoing",
+      "end_date": "2027-02-21",
+      "event": "876",
+      "scope": "available_results",
+      "season": "2026-27"
+    },
+    {
       "end_date": "2018-12-02",
       "event": "234",
       "season": "2018-19"
@@ -631,7 +580,7 @@
     },
     {
       "end_date": "2021-04-30",
-      "event": "382",
+      "event": "380",
       "season": "2020-21"
     },
     {
@@ -660,6 +609,13 @@
       "season": "2025-26"
     },
     {
+      "date_status": "ongoing",
+      "end_date": "2027-02-21",
+      "event": "877",
+      "scope": "available_results",
+      "season": "2026-27"
+    },
+    {
       "end_date": "2018-12-02",
       "event": "236",
       "season": "2018-19"
@@ -671,7 +627,7 @@
     },
     {
       "end_date": "2021-04-30",
-      "event": "383",
+      "event": "381",
       "season": "2020-21"
     },
     {
@@ -700,6 +656,13 @@
       "season": "2025-26"
     },
     {
+      "date_status": "ongoing",
+      "end_date": "2027-02-21",
+      "event": "878",
+      "scope": "available_results",
+      "season": "2026-27"
+    },
+    {
       "end_date": "2018-12-02",
       "event": "237",
       "season": "2018-19"
@@ -711,7 +674,7 @@
     },
     {
       "end_date": "2021-04-30",
-      "event": "384",
+      "event": "382",
       "season": "2020-21"
     },
     {
@@ -740,6 +703,13 @@
       "season": "2025-26"
     },
     {
+      "date_status": "ongoing",
+      "end_date": "2027-02-21",
+      "event": "879",
+      "scope": "available_results",
+      "season": "2026-27"
+    },
+    {
       "end_date": "2018-12-16",
       "event": "238",
       "season": "2018-19"
@@ -751,7 +721,7 @@
     },
     {
       "end_date": "2021-04-30",
-      "event": "385",
+      "event": "383",
       "season": "2020-21"
     },
     {
@@ -780,6 +750,13 @@
       "season": "2025-26"
     },
     {
+      "date_status": "ongoing",
+      "end_date": "2027-02-21",
+      "event": "880",
+      "scope": "available_results",
+      "season": "2026-27"
+    },
+    {
       "end_date": "2019-01-13",
       "event": "244",
       "season": "2018-19"
@@ -791,7 +768,7 @@
     },
     {
       "end_date": "2021-04-30",
-      "event": "386",
+      "event": "384",
       "season": "2020-21"
     },
     {
@@ -820,6 +797,13 @@
       "season": "2025-26"
     },
     {
+      "date_status": "ongoing",
+      "end_date": "2027-02-21",
+      "event": "881",
+      "scope": "available_results",
+      "season": "2026-27"
+    },
+    {
       "end_date": "2019-02-03",
       "event": "245",
       "season": "2018-19"
@@ -831,7 +815,7 @@
     },
     {
       "end_date": "2021-04-30",
-      "event": "388",
+      "event": "385",
       "season": "2020-21"
     },
     {
@@ -860,6 +844,13 @@
       "season": "2025-26"
     },
     {
+      "date_status": "ongoing",
+      "end_date": "2027-02-21",
+      "event": "882",
+      "scope": "available_results",
+      "season": "2026-27"
+    },
+    {
       "end_date": "2019-02-10",
       "event": "247",
       "season": "2018-19"
@@ -871,7 +862,7 @@
     },
     {
       "end_date": "2021-04-30",
-      "event": "389",
+      "event": "386",
       "season": "2020-21"
     },
     {
@@ -900,6 +891,13 @@
       "season": "2025-26"
     },
     {
+      "date_status": "ongoing",
+      "end_date": "2027-02-21",
+      "event": "883",
+      "scope": "available_results",
+      "season": "2026-27"
+    },
+    {
       "end_date": "2019-02-10",
       "event": "248",
       "season": "2018-19"
@@ -911,7 +909,7 @@
     },
     {
       "end_date": "2021-04-30",
-      "event": "390",
+      "event": "388",
       "season": "2020-21"
     },
     {
@@ -940,6 +938,13 @@
       "season": "2025-26"
     },
     {
+      "date_status": "ongoing",
+      "end_date": "2027-02-21",
+      "event": "884",
+      "scope": "available_results",
+      "season": "2026-27"
+    },
+    {
       "end_date": "2019-02-10",
       "event": "249",
       "season": "2018-19"
@@ -951,7 +956,7 @@
     },
     {
       "end_date": "2021-04-30",
-      "event": "391",
+      "event": "389",
       "season": "2020-21"
     },
     {
@@ -980,6 +985,13 @@
       "season": "2025-26"
     },
     {
+      "date_status": "ongoing",
+      "end_date": "2027-02-21",
+      "event": "885",
+      "scope": "available_results",
+      "season": "2026-27"
+    },
+    {
       "end_date": "2019-02-10",
       "event": "250",
       "season": "2018-19"
@@ -991,7 +1003,7 @@
     },
     {
       "end_date": "2021-04-30",
-      "event": "394",
+      "event": "390",
       "season": "2020-21"
     },
     {
@@ -1031,7 +1043,7 @@
     },
     {
       "end_date": "2021-04-30",
-      "event": "395",
+      "event": "391",
       "season": "2020-21"
     },
     {
@@ -1071,7 +1083,7 @@
     },
     {
       "end_date": "2021-04-30",
-      "event": "396",
+      "event": "394",
       "season": "2020-21"
     },
     {
@@ -1111,7 +1123,7 @@
     },
     {
       "end_date": "2021-04-30",
-      "event": "398",
+      "event": "395",
       "season": "2020-21"
     },
     {
@@ -1151,7 +1163,7 @@
     },
     {
       "end_date": "2021-04-30",
-      "event": "399",
+      "event": "396",
       "season": "2020-21"
     },
     {
@@ -1191,7 +1203,7 @@
     },
     {
       "end_date": "2021-04-30",
-      "event": "400",
+      "event": "398",
       "season": "2020-21"
     },
     {
@@ -1231,7 +1243,7 @@
     },
     {
       "end_date": "2021-04-30",
-      "event": "401",
+      "event": "399",
       "season": "2020-21"
     },
     {
@@ -1271,7 +1283,7 @@
     },
     {
       "end_date": "2021-04-30",
-      "event": "402",
+      "event": "400",
       "season": "2020-21"
     },
     {
@@ -1311,7 +1323,7 @@
     },
     {
       "end_date": "2021-04-30",
-      "event": "403",
+      "event": "401",
       "season": "2020-21"
     },
     {
@@ -1351,7 +1363,7 @@
     },
     {
       "end_date": "2021-04-30",
-      "event": "404",
+      "event": "402",
       "season": "2020-21"
     },
     {
@@ -1390,8 +1402,8 @@
       "season": "2019-20"
     },
     {
-      "end_date": "2021-06-21",
-      "event": "409",
+      "end_date": "2021-04-30",
+      "event": "403",
       "season": "2020-21"
     },
     {
@@ -1430,8 +1442,8 @@
       "season": "2019-20"
     },
     {
-      "end_date": "2021-06-28",
-      "event": "410",
+      "end_date": "2021-04-30",
+      "event": "404",
       "season": "2020-21"
     },
     {
@@ -1470,8 +1482,8 @@
       "season": "2019-20"
     },
     {
-      "end_date": "2021-07-12",
-      "event": "412",
+      "end_date": "2021-06-21",
+      "event": "409",
       "season": "2020-21"
     },
     {
@@ -1510,6 +1522,11 @@
       "season": "2019-20"
     },
     {
+      "end_date": "2021-06-28",
+      "event": "410",
+      "season": "2020-21"
+    },
+    {
       "end_date": "2022-03-13",
       "event": "498",
       "season": "2021-22"
@@ -1543,6 +1560,11 @@
       "end_date": "2020-02-23",
       "event": "300",
       "season": "2019-20"
+    },
+    {
+      "end_date": "2021-07-12",
+      "event": "412",
+      "season": "2020-21"
     },
     {
       "end_date": "2022-03-27",
@@ -2580,5 +2602,9 @@
       "season": "2021-22"
     }
   ],
-  "schema_version": 1
+  "schema_version": 2,
+  "supersedes": {
+    "path": "data/import-plan-finished-2026-11-20.json",
+    "sha256": "52235c3c2bf5a9964cedb46b168421d7e3973d1efe3c610093ac91534cfc3eee"
+  }
 }

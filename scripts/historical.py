@@ -146,6 +146,10 @@ class History(Importer):
                 result=game_score(cells)
                 if result is None:
                     self.counts['unplayed_or_bye']+=1;continue
+                if getattr(self,'result_cutoff',None) and result['date']>self.result_cutoff:
+                    self.issue(event,phase,'result_after_snapshot_cutoff',game=game,
+                               date=result['date'],cutoff=self.result_cutoff,source_id=key)
+                    continue
                 common={'id':'ttscore-game-'+game,'event_id':'ttscore-'+event,'phase':phase,'category':category,'round':cells[0],
                         'source_url':BASE+url,'source_id':key,**result}
                 if discipline==1:
@@ -211,10 +215,13 @@ class History(Importer):
             visited.add(nexturl)
             body,key=self.client.get(nexturl[len(BASE):])
 
-    def event(self,event,category_limit=None,as_of=None):
+    def event(self,event,category_limit=None,as_of=None,available_results=False):
         record=self.data['events']['ttscore-'+event]
-        if not record.get('end_date') or record['end_date'] >= (as_of or dt.date.today().isoformat()):
-            raise DataError('Event is ongoing, future-dated, or undated; do not infer final outcomes')
+        cutoff=as_of or dt.date.today().isoformat()
+        unfinished=not record.get('end_date') or record['end_date']>=cutoff
+        if unfinished and (not available_results or record.get('start_date','')>cutoff):
+            raise DataError('Event is ongoing, future-dated, or undated; review dated available results explicitly')
+        self.result_cutoff=cutoff if unfinished else None
         body,key=self.client.get('/customer/24/event/'+event)
         self.counts={'singles':0,'doubles':0,'unplayed_or_bye':0,'groups_visited':0,'categories_discovered':0,'categories_selected':0,'categories_visited':0}
         phases=[]
@@ -240,6 +247,9 @@ class History(Importer):
         self.coverage.setdefault('events',{})[event]={**self.counts,'phases':[p[0] for p in phases],
                     'issues':len(self.coverage['issues'])-start,'status':'partial' if len(self.coverage['issues'])>start or category_limit else 'public_views_traversed',
                     'historical_complete':False}
+        if unfinished:
+            self.coverage['events'][event].update(scope='available_results',snapshot_date=cutoff,
+                date_status='undated' if not record.get('end_date') else 'ongoing',status='partial')
         return self.coverage['events'][event]
 
 

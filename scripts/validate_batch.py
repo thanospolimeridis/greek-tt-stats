@@ -61,9 +61,10 @@ def audit(data, baseline, plan, *, allow_pending=False):
     if batch['failed'] != failures or failures:
         raise DataError('Batch has unresolved retrieval or validation failures')
     counts = {kind: Counter(r['event_id'].removeprefix('ttscore-') for r in data[kind]) for kind in ('matches','doubles','fixtures')}
+    unprocessed=set(pending)|{item['event'] for item in plan['deferred']}
     for kind, totals in counts.items():
         original=Counter(r['event_id'].removeprefix('ttscore-') for r in baseline[kind])
-        if any(totals[ident]>original[ident] for ident in pending):
+        if any(totals[ident]>original[ident] for ident in unprocessed):
             raise DataError(f'New {kind} appear for an unchecked competition')
     issues = Counter(i['event'] for i in coverage['issues'])
     for ident in queue:
@@ -79,6 +80,16 @@ def audit(data, baseline, plan, *, allow_pending=False):
             raise DataError(f'Event {ident}: unsupported completeness claim')
         if record['categories_visited'] > record['categories_selected'] or record['categories_selected'] > record['categories_discovered']:
             raise DataError(f'Event {ident}: inconsistent category traversal')
+    for item in plan['queue']:
+        ident=item['event']
+        if ident not in checked or item.get('scope')!='available_results':continue
+        record=checked[ident]
+        if (record.get('scope')!='available_results' or record.get('snapshot_date')!=plan['as_of']
+                or record.get('date_status')!=item['date_status'] or record.get('status')!='partial'):
+            raise DataError(f'Event {ident}: available results must retain their partial scope and cutoff')
+        if any(row['date']>plan['as_of'] for kind in ('matches','doubles','fixtures')
+               for row in data[kind] if row['event_id']=='ttscore-'+ident):
+            raise DataError(f'Event {ident}: result after snapshot cutoff')
     for a, b in (('matches', 'doubles'), ('matches', 'fixtures'), ('doubles', 'fixtures')):
         if {r['id'] for r in data[a]} & {r['id'] for r in data[b]}:
             raise DataError(f'Game IDs overlap between {a} and {b}')
@@ -119,14 +130,16 @@ def replay_archive(input_dir, baseline_dir, plan, cache):
     checked=set(manifest['coverage'].get('events',{}))
     order=manifest['coverage']['batch'].get('processed_order',[item['event'] for item in plan['queue']])
     queue=[ident for ident in order if ident in checked and ident not in prior]
+    available={item['event'] for item in plan['queue'] if item.get('scope')=='available_results'}
     with tempfile.TemporaryDirectory() as temporary:
         folder=Path(temporary)
         for position, ident in enumerate(queue,1):
             checkpoint=folder/f'{ident}.json'
-            result=subprocess.run([sys.executable,str(ROOT/'scripts'/'batch_import.py'),
+            command=[sys.executable,str(ROOT/'scripts'/'batch_import.py'),
                 '--worker',ident,'--base',str(baseline_dir),'--cache',str(cache),
-                '--checkpoint-file',str(checkpoint),'--as-of',plan['as_of'],'--offline'],
-                capture_output=True,text=True)
+                '--checkpoint-file',str(checkpoint),'--as-of',plan['as_of'],'--offline']
+            if ident in available:command.append('--available-results')
+            result=subprocess.run(command,capture_output=True,text=True)
             if result.returncode:
                 raise DataError(f'Cached replay failed for event {ident}: {result.stderr[-2000:]}')
             merge_event(rebuilt,json.loads(checkpoint.read_text()),ident)

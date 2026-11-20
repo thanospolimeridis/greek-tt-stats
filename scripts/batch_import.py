@@ -34,7 +34,7 @@ def catalog_fingerprint(path):
     return digest(json.dumps(sorted(rows,key=lambda r:r['id']),sort_keys=True,ensure_ascii=False).encode())
 
 
-def make_plan(base, as_of):
+def make_plan(base, as_of, include_available=False):
     with (base/'events.csv').open(encoding='utf-8') as source:
         rows=list(csv.DictReader(source))
     prior=json.loads((base/'provenance.json').read_text())['coverage']
@@ -45,16 +45,24 @@ def make_plan(base, as_of):
         item={'event':ident,'season':row['season'],'end_date':row['end_date']}
         if ident in previous:continue
         if not row['end_date'] or row['end_date']>=as_of:
-            deferred.append({**item,'reason':'undated' if not row['end_date'] else 'not_finished_by_cutoff'})
+            if include_available and (not row.get('start_date') or row['start_date']<=as_of):
+                groups[row['season']].append({**item,'scope':'available_results',
+                    'date_status':'undated' if not row['end_date'] else 'ongoing'})
+            else:
+                reason=('not_started_by_cutoff' if include_available and row.get('start_date','')>as_of
+                        else 'undated' if not row['end_date'] else 'not_finished_by_cutoff')
+                deferred.append({**item,'reason':reason})
         else:groups[row['season']].append(item)
     for rows in groups.values():rows.sort(key=lambda x:(x['end_date'],int(x['event'])))
     queue=[]
     while any(groups.values()):
         for season in sorted(groups):
             if groups[season]:queue.append(groups[season].pop(0))
-    return {'schema_version':1,'as_of':as_of,'catalog_sha256':catalog_fingerprint(base/'events.csv'),
+    result={'schema_version':1,'as_of':as_of,'catalog_sha256':catalog_fingerprint(base/'events.csv'),
             'previously_processed':sorted(previous,key=int),'queue':queue,'deferred':deferred,
             'historical_complete':False}
+    if include_available:result.update(schema_version=2,include_available_results=True)
+    return result
 
 
 def merge_event(base, saved, event):
@@ -123,7 +131,8 @@ def worker(args):
     version=adapter_hash()
     if out.exists() and not args.offline:
         saved=json.loads(out.read_text())
-        if saved.get('adapter_sha256')==version:
+        if (saved.get('adapter_sha256')==version and saved.get('as_of')==args.as_of
+                and saved.get('available_results')==args.available_results):
             print(json.dumps({'event':ident,'checkpoint':'reused'}),flush=True);return
     client=Client(args.cache,args.offline)
     imp=History(client)
@@ -132,13 +141,14 @@ def worker(args):
         events={r['id']:{k:v for k,v in r.items() if v} for r in csv.DictReader(source)}
     if 'ttscore-'+ident not in events:raise DataError('Unknown catalog event')
     imp.data['events']={'ttscore-'+ident:events['ttscore-'+ident]}
-    imp.event(ident,as_of=args.as_of)
+    imp.event(ident,as_of=args.as_of,available_results=args.available_results)
     # Supply the catalog request that establishes this event's metadata.
     source=events['ttscore-'+ident]['source_id']
     manifest=json.loads((args.base/'provenance.json').read_text())
     client.records[source]=manifest['requests'][source]
     with tempfile.TemporaryDirectory() as tmp:imp.export(Path(tmp))
-    atomic_json(out,{'event':ident,'adapter_sha256':version,'data':imp.data,
+    atomic_json(out,{'event':ident,'adapter_sha256':version,'as_of':args.as_of,
+                     'available_results':args.available_results,'data':imp.data,
                      'coverage':imp.coverage,'requests':client.records})
     print(json.dumps(imp.coverage['events'][ident],ensure_ascii=False),flush=True)
 
@@ -155,16 +165,21 @@ def main():
     ap.add_argument('--as-of',default=dt.date.today().isoformat())
     ap.add_argument('--limit',type=int,help='Stop after this many newly processed competitions')
     ap.add_argument('--priority',action='append',default=[],help='Check an existing eligible event before resuming the remaining queue; repeatable')
+    ap.add_argument('--include-available',action='store_true',help='For a new plan, also inspect active/undated events for explicitly dated results through the cutoff')
     ap.add_argument('--offline',action='store_true')
     ap.add_argument('--worker',help=argparse.SUPPRESS)
     ap.add_argument('--checkpoint-file',type=Path,help=argparse.SUPPRESS)
+    ap.add_argument('--available-results',action='store_true',help=argparse.SUPPRESS)
     args=ap.parse_args()
     if args.worker:
         worker(args);return
     if args.limit is not None and args.limit<1:ap.error('--limit must be positive')
-    if args.plan.exists():plan=json.loads(args.plan.read_text())
+    if args.plan.exists():
+        plan=json.loads(args.plan.read_text())
+        if args.include_available and not plan.get('include_available_results'):
+            raise DataError('Existing plan is frozen; use a new --plan path to review the expanded scope')
     else:
-        plan=make_plan(args.base,args.as_of);atomic_json(args.plan,plan)
+        plan=make_plan(args.base,args.as_of,args.include_available);atomic_json(args.plan,plan)
     if catalog_fingerprint(args.base/'events.csv')!=plan['catalog_sha256']:
         raise DataError('Catalog differs from the frozen plan; review and create a new plan')
     client=Client(args.cache,args.offline)
@@ -173,15 +188,19 @@ def main():
     for item in prioritized_queue(plan,args.priority):
         ident=item['event'];version=adapter_hash()
         existing=base.coverage.get('events',{}).get(ident,{})
-        if existing.get('adapter_sha256')==version and not args.offline:continue
+        available=item.get('scope')=='available_results'
+        same_scope=(existing.get('scope','finished')==item.get('scope','finished')
+                    and (not available or existing.get('snapshot_date')==plan['as_of']))
+        if existing.get('adapter_sha256')==version and same_scope and not args.offline:continue
         if args.stop_file.exists():break
-        checkpoint=args.checkpoint_dir/f'{ident}-{version[:16]}.json'
+        checkpoint=args.checkpoint_dir/f'{ident}-{version[:16]}-{plan["as_of"]}.json'
         status={'event':ident,'season':item['season'],'state':'retrieving','coverage':batch_coverage(base,plan)}
         atomic_json(args.state,status)
         print('START',ident,item['season'],flush=True)
         command=[sys.executable,str(Path(__file__).resolve()),'--worker',ident,'--base',str(args.base),
                  '--cache',str(args.cache),'--checkpoint-file',str(checkpoint),'--as-of',plan['as_of']]
         if args.offline:command.append('--offline')
+        if available:command.append('--available-results')
         # A fresh interpreter loads the current adapter at each event boundary.
         result=subprocess.run(command)
         if result.returncode:
