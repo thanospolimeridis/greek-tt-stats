@@ -12,6 +12,7 @@ from pathlib import Path
 import re
 from ttscore import BASE, ROOT, Client, Document, Node, Importer, SourceAccessError, clean, digest, options, schedule_rows
 from import_csv import DataError, TYPES, build, parse_games
+from compact_brackets import compact_games
 
 
 def game_score(cells):
@@ -96,6 +97,26 @@ def group_players(body):
 
 
 class History(Importer):
+    def import_compact(self,event,phase,category,group,candidate,bindings,participants,key,source):
+        """Use a fully resolved singles bracket, otherwise retain detail retrieval."""
+        if not candidate or bindings!={candidate['game']:candidate['participants']}:return False
+        try:
+            p1,p2=[participants[i] for i in candidate['participants']]
+            if p1['team']!=0 or p2['team']!=0:return False
+            result=game_score(candidate['cells'])
+            if not result:return False
+        except (DataError,KeyError,ValueError,TypeError):return False
+        if getattr(self,'result_cutoff',None) and result['date']>self.result_cutoff:
+            # Keep the established detail-page evidence for excluded rows.
+            return False
+        self.put('matches',{'id':'ttscore-game-'+candidate['game'],'event_id':'ttscore-'+event,
+            'phase':phase,'category':category,'round':'0','source_url':source,'source_id':key,**result,
+            'player1_id':p1['player'],'player2_id':p2['player'],
+            'winner_id':p1['player'] if int(result['score1'])>int(result['score2']) else p2['player'],
+            'club1_id':p1['club'],'club2_id':p2['club']})
+        self.counts['compact_bracket_matches']=self.counts.get('compact_bracket_matches',0)+1
+        return True
+
     def put(self,kind,row):
         if kind in ('matches','doubles','fixtures') and row['id'] in self.data[kind]:
             old=self.data[kind][row['id']]
@@ -200,11 +221,13 @@ class History(Importer):
                 ident=re.search(r'loadPlayer\(24,\d+,(\d+)',a.attrs.get('onclick',''))
                 if ident:mapping[ident[1]]=clean(a.text())
             groups=ko_groups(body) if series else {g:None for g in re.findall(r"loadSchedule\('(\d+)'",body)}
+            compact=compact_games(body) if series and getattr(self,'compact_brackets',False) else {}
             scoped_players={} if series else group_players(body)
             if not groups and body.strip():
                 self.issue(event,phase,'no_groups_in_response',category=label,source_id=key)
             for group,bindings in groups.items():
-                self.import_schedule(event,phase,label,group,mapping if series else scoped_players.get(group,{}),participants,bindings)
+                if not self.import_compact(event,phase,label,group,compact.get(group),bindings,participants,key,BASE+path):
+                    self.import_schedule(event,phase,label,group,mapping if series else scoped_players.get(group,{}),participants,bindings)
                 self.counts['groups_visited']+=1
             links=re.findall(r"nextPage\('([^']+)'",body)
             if not links:break
@@ -247,6 +270,8 @@ class History(Importer):
         self.coverage.setdefault('events',{})[event]={**self.counts,'phases':[p[0] for p in phases],
                     'issues':len(self.coverage['issues'])-start,'status':'partial' if len(self.coverage['issues'])>start or category_limit else 'public_views_traversed',
                     'historical_complete':False}
+        if getattr(self,'compact_brackets',False):
+            self.coverage['events'][event]['retrieval_mode']='compact_brackets_v1'
         if unfinished:
             self.coverage['events'][event].update(scope='available_results',snapshot_date=cutoff,
                 date_status='undated' if not record.get('end_date') else 'ongoing',status='partial')

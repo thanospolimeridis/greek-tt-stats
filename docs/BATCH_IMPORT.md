@@ -9,8 +9,8 @@ Active and undated events use the explicit `available_results` scope. Only resul
 ## Run or resume
 
 ```sh
-# Process up to nine event boundaries, with a validated export after each event.
-python3 scripts/batch_import.py --limit 9
+# Process up to 18 new competitions, with a validated export after each event.
+python3 scripts/batch_import.py --limit 18
 
 # Continue the entire remaining queue.
 python3 scripts/batch_import.py
@@ -27,6 +27,8 @@ The default reviewed baseline is `imports/`; the evolving validated bundle is `c
 A checkpoint may be reused only with the same adapter fingerprint. A changed adapter is replayed from cached source responses before its results are reused. Offline runs always re-normalize event source data; they do not rely on normalized checkpoints. Request throttling carries across worker restarts, and the collector remains sequential with at least one second between request starts.
 
 Worker checkpoints also bind the cutoff and available-results scope. Release replay repeats those options, and the audit rejects future results or new rows in a still-deferred competition.
+
+New competitions use `compact_brackets_v1`: valid singles scores are read directly from the public knockout/consolation bracket. Existing competitions retain their recorded retrieval mode and original per-record source evidence. The mode is saved in event coverage and worker checkpoints and repeated during offline replay. Adapter refreshes do not consume the `--limit` allowance for new competitions.
 
 `--priority` changes processing order without changing the frozen eligible scope or dropping other competitions. It can be repeated. Coverage records the actual merge order, and release replay uses that order to preserve athlete names, aliases and source identity evidence exactly. Stop the existing collector at an event boundary before restarting with priorities; run only one online collector against a cache at a time.
 
@@ -49,9 +51,25 @@ The inventory fingerprint excludes inferred event type, so discovering a league 
 - Individual records require consistent point scores, final set totals, source participant identities and legal match termination. Duplicate game IDs cannot change score, winner, event, or doubles membership.
 - Walkovers, noncountable rubbers, unresolved identities, unknown layouts, missing results, and inconsistent scores remain explicit source issues. The importer never supplies fictional scores to fill them.
 - A fixture whose two club labels are identical is kept as an identity-review gap until distinct team identities can be established from public evidence. Its independently valid player results are still imported when registration IDs, point scores and the aggregate sheet agree, retaining their source link without a fabricated fixture relationship. The coverage issue counts those recovered results. No invented club suffixes are created.
-- The schedule-wide JSON feed was inspected but contains scheduling information rather than score evidence. Bracket shorthand is not used as a substitute for explicit game-score tables.
+- The schedule-wide JSON feed was inspected but contains scheduling information rather than score evidence. Valid singles bracket scores use the compact adapter described below; other results retain explicit game-score tables.
 
 `coverage.batch` records attempted and pending counts, pending event IDs, and deferred reasons. Each competition retains phase/category traversal, result counts, and issue counts. “Checked” does not mean a complete historical record. A competition with zero usable results stays visible in the coverage report.
+
+## Fewer public requests
+
+TTScore places a winning player's previous-match point scores in the next bracket column. Positive numbers give the loser's points in games won by that player; negative numbers give that player's points in games they lost. Both identities, the current match's winner flag, the next-column participant, a valid date and a legal completed match must agree. Deuce points and negative zero are preserved. Every decoded result passes the same point-score, set-total and termination validator as an explicit score table.
+
+The adapter only skips a detail request for a unique single-game group with two resolved singles participants. Team matches, doubles, byes, walkovers, missing dates, conflicting bindings, malformed scores and unknown layouts fall back to the existing detail importer. Compact results cite the original bracket response hash and public bracket URL; no synthetic source response is generated. `compact_bracket_matches` records how many detail requests were avoided, without changing any completeness claim.
+
+The initial offline comparison covered 403 bracket pages: 7,214 decoded results exactly matched their cached detail records, including dates and every point score. Two invalid compact results correctly required fallback. This would avoid about 52% of the 13,860 captured source requests in that sample; actual speed depends on competition format. Full-event comparisons for events 462, 551 and 898 preserved all normalized identities, scores and review issues. Event 898 needed 114 requests instead of 328. The one-request-per-second limit is unchanged.
+
+Repeat the comparison against available private cache evidence:
+
+```sh
+python3 scripts/benchmark_brackets.py --input capture/batch-imports/provenance.json
+```
+
+The benchmark is offline and fails on differences. A public all-seasons export has not been found; an authorized federation/TTScore export could remove more requests and help establish coverage of unlisted events.
 
 ## Validate and publish a staged release
 

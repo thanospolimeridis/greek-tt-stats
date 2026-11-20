@@ -16,7 +16,7 @@ from import_csv import DataError
 
 def adapter_hash():
     return digest(b''.join((ROOT/'scripts'/name).read_bytes() for name in
-                          ('batch_import.py','historical.py','ttscore.py','import_csv.py')))
+                          ('batch_import.py','historical.py','compact_brackets.py','ttscore.py','import_csv.py')))
 
 
 def atomic_json(path, value):
@@ -132,10 +132,12 @@ def worker(args):
     if out.exists() and not args.offline:
         saved=json.loads(out.read_text())
         if (saved.get('adapter_sha256')==version and saved.get('as_of')==args.as_of
-                and saved.get('available_results')==args.available_results):
+                and saved.get('available_results')==args.available_results
+                and saved.get('compact_brackets',False)==args.compact_brackets):
             print(json.dumps({'event':ident,'checkpoint':'reused'}),flush=True);return
     client=Client(args.cache,args.offline)
     imp=History(client)
+    imp.compact_brackets=args.compact_brackets
     imp.progress=lambda phase,category:print(json.dumps({'event':ident,'phase':phase,'category':category,'state':'checked_category'},ensure_ascii=False),flush=True)
     with (args.base/'events.csv').open(encoding='utf-8') as source:
         events={r['id']:{k:v for k,v in r.items() if v} for r in csv.DictReader(source)}
@@ -148,7 +150,7 @@ def worker(args):
     client.records[source]=manifest['requests'][source]
     with tempfile.TemporaryDirectory() as tmp:imp.export(Path(tmp))
     atomic_json(out,{'event':ident,'adapter_sha256':version,'as_of':args.as_of,
-                     'available_results':args.available_results,'data':imp.data,
+                     'available_results':args.available_results,'compact_brackets':args.compact_brackets,'data':imp.data,
                      'coverage':imp.coverage,'requests':client.records})
     print(json.dumps(imp.coverage['events'][ident],ensure_ascii=False),flush=True)
 
@@ -170,6 +172,7 @@ def main():
     ap.add_argument('--worker',help=argparse.SUPPRESS)
     ap.add_argument('--checkpoint-file',type=Path,help=argparse.SUPPRESS)
     ap.add_argument('--available-results',action='store_true',help=argparse.SUPPRESS)
+    ap.add_argument('--compact-brackets',action='store_true',help=argparse.SUPPRESS)
     args=ap.parse_args()
     if args.worker:
         worker(args);return
@@ -188,12 +191,14 @@ def main():
     for item in prioritized_queue(plan,args.priority):
         ident=item['event'];version=adapter_hash()
         existing=base.coverage.get('events',{}).get(ident,{})
+        compact=not existing or existing.get('retrieval_mode')=='compact_brackets_v1'
         available=item.get('scope')=='available_results'
         same_scope=(existing.get('scope','finished')==item.get('scope','finished')
                     and (not available or existing.get('snapshot_date')==plan['as_of']))
         if existing.get('adapter_sha256')==version and same_scope and not args.offline:continue
         if args.stop_file.exists():break
-        checkpoint=args.checkpoint_dir/f'{ident}-{version[:16]}-{plan["as_of"]}.json'
+        mode='compact' if compact else 'details'
+        checkpoint=args.checkpoint_dir/f'{ident}-{version[:16]}-{plan["as_of"]}-{mode}.json'
         status={'event':ident,'season':item['season'],'state':'retrieving','coverage':batch_coverage(base,plan)}
         atomic_json(args.state,status)
         print('START',ident,item['season'],flush=True)
@@ -201,6 +206,7 @@ def main():
                  '--cache',str(args.cache),'--checkpoint-file',str(checkpoint),'--as-of',plan['as_of']]
         if args.offline:command.append('--offline')
         if available:command.append('--available-results')
+        if compact:command.append('--compact-brackets')
         # A fresh interpreter loads the current adapter at each event boundary.
         result=subprocess.run(command)
         if result.returncode:
@@ -213,7 +219,7 @@ def main():
         batch_coverage(candidate,plan)
         candidate.export(args.output)
         base=candidate
-        completed+=1
+        completed+=not bool(existing)
         atomic_json(args.state,{'event':ident,'state':'checkpointed','coverage':batch_coverage(base,plan),
                                'counts':{k:len(v) for k,v in base.data.items()}})
         print('CHECKPOINT',ident,base.coverage['batch']['attempted'],'/',len(plan['queue']),flush=True)

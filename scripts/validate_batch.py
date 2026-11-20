@@ -139,6 +139,8 @@ def replay_archive(input_dir, baseline_dir, plan, cache):
                 '--worker',ident,'--base',str(baseline_dir),'--cache',str(cache),
                 '--checkpoint-file',str(checkpoint),'--as-of',plan['as_of'],'--offline']
             if ident in available:command.append('--available-results')
+            if manifest['coverage']['events'][ident].get('retrieval_mode')=='compact_brackets_v1':
+                command.append('--compact-brackets')
             result=subprocess.run(command,capture_output=True,text=True)
             if result.returncode:
                 raise DataError(f'Cached replay failed for event {ident}: {result.stderr[-2000:]}')
