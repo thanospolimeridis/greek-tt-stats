@@ -9,14 +9,31 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from ttscore import Client, Importer, event_rows, options, schedule_rows, DataError, SourceAccessError, digest, team_totals
 
 class SourceTests(unittest.TestCase):
-    def test_identical_club_labels_are_quarantined_before_publishing_fixture(self):
-        class Client:
-            def get(self,*args):raise AssertionError('Ambiguous teams must not be published')
-        imp=Importer(Client())
-        with self.assertRaisesRegex(DataError,'do_not_distinguish_teams'):
-            imp.fixture('1','2',['1','26-10-04 / 12:00','1','Club A - Club A','','1-4'],
-                        'schedule','https://app.ttscore.io/test','Men',{'fixtures_discovered':0})
-        self.assertEqual(imp.data['fixtures'],{})
+    def test_ambiguous_teams_do_not_discard_verified_individual_results(self):
+        for doubles in (False,True):
+            entry,_=self.sample()
+            if doubles:
+                entry['team_games'].update(Home_2='13',Away_2='14')
+                entry['homep_2']={'AM':'113','FirstName':'C','LastName':'Test'}
+                entry['awayp_2']={'AM':'114','FirstName':'D','LastName':'Test'}
+            class Client:
+                def get(self,path,*args):
+                    return ('/admin/ajax/team_games.php?game=2','sheet') if path.startswith('/game-team') else (json.dumps({'data':[entry]}),'results')
+            imp=Importer(Client());summary={'fixtures_discovered':0,'fixtures_imported':0,'singles_imported':0}
+            cells=['1','26-10-04 / 12:00','1','Club A - Club A','','1-0']
+            imp.fixture('1','2',cells,'schedule','https://app.ttscore.io/test','Men',summary)
+            kind='doubles' if doubles else 'matches';row=next(iter(imp.data[kind].values()))
+            self.assertEqual(imp.data['fixtures'],{})
+            self.assertNotIn('fixture_id',row)
+            self.assertEqual(row['source_url'],'https://app.ttscore.io/game-team.php?game=2&customer=24')
+            self.assertEqual(imp.coverage['issues'][0]['individual_results_imported'],1)
+            self.assertEqual(len(imp.data['clubs']),1)
+            # A repeated group/knockout reference must not duplicate results or gaps.
+            imp.fixture('1','2',cells,'schedule','https://app.ttscore.io/test','Men',summary)
+            self.assertEqual(len(imp.data[kind]),1)
+            self.assertEqual(len(imp.coverage['issues']),1)
+            with self.assertRaisesRegex(DataError,'conflicting_duplicate_fixture'):
+                imp.fixture('1','2',[*cells[:5],'4-0'],'schedule','https://app.ttscore.io/test','Men',summary)
     def test_future_fixture_does_not_fetch_or_publish_results(self):
         class Client:
             def get(self,*args):raise AssertionError('Future fixture must not fetch a score sheet')

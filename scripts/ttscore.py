@@ -310,7 +310,11 @@ class Importer:
     def fixture(self,event,game,cells,key,source,category,summary,phase=None):
         summary['fixtures_discovered']+=1
         fixture_id='ttscore-game-'+game
-        if fixture_id in self.data['fixtures']:
+        signature=(cells[1].split(' / ')[0],cells[3],re.sub(r'\s+','',cells[5]))
+        previous=getattr(self,'fixture_signatures',{}).get(fixture_id)
+        if previous is not None and previous!=signature:
+            raise DataError('conflicting_duplicate_fixture')
+        if fixture_id in self.data['fixtures'] or fixture_id in getattr(self,'unresolved_fixture_ids',set()):
             return
         cutoff=getattr(self,'result_cutoff',None)
         date=dt.datetime.strptime(cells[1].split(' / ')[0],'%y-%m-%d').date().isoformat() if cutoff else None
@@ -326,8 +330,7 @@ class Importer:
             return
         date=date or dt.datetime.strptime(cells[1].split(' / ')[0],'%y-%m-%d').date().isoformat()
         clubs=[self.club(n) for n in names]
-        if clubs[0]==clubs[1]:
-            raise DataError('fixture_club_labels_do_not_distinguish_teams')
+        ambiguous_teams=clubs[0]==clubs[1]
         if not getattr(self,'sheet_checked',False):
             detail,_=self.client.get(f'/game-team.php?game={game}&customer=24')
             if '/admin/ajax/team_games.php?game=' not in detail:
@@ -346,14 +349,28 @@ class Importer:
         fixture={'id':fixture_id,'event_id':'ttscore-'+event,'date':date,'home_club_id':clubs[0],
                  'away_club_id':clubs[1],'status':'completed','home_score':score[1],'away_score':score[2],
                  'source_url':source,'source_id':key}
-        self.put('fixtures',fixture)
-        summary['fixtures_imported']+=1
+        if not hasattr(self,'fixture_signatures'):self.fixture_signatures={}
+        self.fixture_signatures[fixture_id]=signature
+        identity_issue=None
+        if ambiguous_teams:
+            # Athlete IDs and scores can be sound even when team labels collide.
+            # Preserve those results without inventing a fixture or distinct clubs.
+            identity_issue={'event':event,'game':game,'reason':'fixture_club_labels_do_not_distinguish_teams',
+                            'source_id':key,'match_sheet_source_id':rawkey,'individual_results_imported':0}
+            self.coverage['issues'].append(identity_issue)
+            if not hasattr(self,'unresolved_fixture_ids'):self.unresolved_fixture_ids=set()
+            self.unresolved_fixture_ids.add(fixture_id)
+        else:
+            self.put('fixtures',fixture)
+            summary['fixtures_imported']+=1
         for entry in payload['data']:
             try:
                 row=self.team_match(entry,event,fixture,rawkey,category,cells[0])
                 if row:
+                    if ambiguous_teams:row.pop('fixture_id',None)
                     if phase:row['phase']=phase
                     self.put('doubles' if 'winner_side' in row else 'matches',row)
+                    if identity_issue is not None:identity_issue['individual_results_imported']+=1
                     summary['singles_imported']+= 'winner_side' not in row
                     summary['doubles_imported']=summary.get('doubles_imported',0)+('winner_side' in row)
                 else:
