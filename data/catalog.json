@@ -1,0 +1,128 @@
+{
+  "events": [
+    {
+      "id": "ttscore-857",
+      "name": "ΤΕΛΙΚΟΣ ΑΝΟΙΚΤΩΝ ΠΡΩΤΑΘΛΗΜΑΤΩΝ 2025-26",
+      "season": "2025-26",
+      "type": "finals",
+      "region": "Φλώρινα",
+      "start_date": "2026-04-25",
+      "end_date": "2026-04-26",
+      "source_url": "https://app.ttscore.io/customer/24/event/857",
+      "source_status": "verified_event_metadata"
+    },
+    {
+      "id": "ttscore-819",
+      "name": "ΑΝΟΙΚΤΟ ΠΡΩΤΑΘΛΗΜΑ ΒΟΛΟΥ 2025",
+      "season": "2025-26",
+      "type": "open",
+      "region": "Βόλος",
+      "start_date": "2025-11-29",
+      "end_date": "2025-11-30",
+      "source_url": "https://app.ttscore.io/customer/24/event/819",
+      "source_status": "verified_event_metadata"
+    },
+    {
+      "id": "ttscore-778",
+      "name": "Α1 ΓΥΝΑΙΚΩΝ 2025-26",
+      "season": "2025-26",
+      "type": "league",
+      "region": "Ελλάδα",
+      "start_date": "2025-11-22",
+      "end_date": "2026-03-29",
+      "source_url": "https://app.ttscore.io/customer/24/event/778",
+      "source_status": "verified_event_metadata"
+    },
+    {
+      "id": "ttscore-777",
+      "name": "Α1 ΑΝΔΡΩΝ 2025-26",
+      "season": "2025-26",
+      "type": "league",
+      "region": "Ελλάδα",
+      "start_date": "2025-11-22",
+      "end_date": "2026-03-29",
+      "source_url": "https://app.ttscore.io/customer/24/event/777",
+      "source_status": "verified_event_metadata"
+    },
+    {
+      "id": "ttscore-809",
+      "name": "ΤΟΠΙΚΟ ΚΥΠΕΛΛΟ ΑΤΤΙΚΗΣ 2025-26",
+      "season": "2025-26",
+      "type": "cup",
+      "region": "Αττική",
+      "start_date": "2025-10-20",
+      "end_date": "2026-04-20",
+      "source_url": "https://app.ttscore.io/customer/24/event/809",
+      "source_status": "verified_event_metadata"
+    },
+    {
+      "id": "ttscore-788",
+      "name": "Α΄ ΤΟΠΙΚΟ ΑΝΔΡΩΝ 2025-26",
+      "season": "2025-26",
+      "type": "league",
+      "region": "Αττική",
+      "start_date": "2025-09-27",
+      "end_date": "2026-03-29",
+      "source_url": "https://app.ttscore.io/customer/24/event/788",
+      "source_status": "verified_event_metadata"
+    },
+    {
+      "id": "ttscore-742",
+      "name": "ΑΝΟΙΚΤΟ ΠΡΩΤΑΘΛΗΜΑ ΑΛΕΞΑΝΔΡΟΥΠΟΛΗΣ 2025",
+      "season": "2024-25",
+      "type": "open",
+      "region": "Αλεξανδρούπολη",
+      "start_date": "2025-02-08",
+      "end_date": "2025-02-09",
+      "source_url": "https://app.ttscore.io/customer/24/event/742",
+      "source_status": "verified_event_metadata"
+    },
+    {
+      "id": "ttscore-699",
+      "name": "Β΄ ΕΘΝΙΚΗ ΑΝΔΡΩΝ 2024-25",
+      "season": "2024-25",
+      "type": "league",
+      "region": "Αττική",
+      "start_date": "2024-10-12",
+      "end_date": "2025-02-16",
+      "source_url": "https://app.ttscore.io/customer/24/event/699",
+      "source_status": "verified_event_metadata"
+    },
+    {
+      "id": "ttscore-695",
+      "name": "Α1 ΑΝΔΡΩΝ 2024-25",
+      "season": "2024-25",
+      "type": "league",
+      "region": "Ελλάδα",
+      "start_date": "2024-10-12",
+      "end_date": "2025-05-18",
+      "source_url": "https://app.ttscore.io/customer/24/event/695",
+      "source_status": "verified_event_metadata"
+    },
+    {
+      "id": "ttscore-630",
+      "name": "ΑΝΟΙΚΤΟ ΠΡΩΤΑΘΛΗΜΑ ΒΟΛΟΣ 2023-24",
+      "season": "2023-24",
+      "type": "open",
+      "region": "Βόλος",
+      "start_date": "2023-10-21",
+      "end_date": "2023-10-22",
+      "source_url": "https://app.ttscore.io/customer/24/event/630",
+      "source_status": "verified_event_metadata"
+    }
+  ],
+  "players": [],
+  "clubs": [],
+  "matches": [],
+  "rankings": [],
+  "fixtures": [],
+  "meta": {
+    "product": "Greek Table Tennis Statistics",
+    "generated_at": "2026-11-20T10:22:03+00:00",
+    "source": "TTScore public event pages + explicitly imported records",
+    "data_coverage": "event_catalog_only",
+    "verified_results": 0,
+    "events_with_results": 0,
+    "disclaimer": "Event listings do not imply match-result coverage. Rankings must come from official published snapshots."
+  }
+}
