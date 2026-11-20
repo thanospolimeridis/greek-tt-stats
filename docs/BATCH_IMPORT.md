@@ -99,6 +99,24 @@ node tests/smoke.js
 
 The helper freezes one complete checkpoint under `capture/releases/`, checking CSV hashes and rejecting a mixed export if collection advances during the copy. It verifies the original baseline, every referenced raw response, and a fresh offline replay before updating `imports/` and README coverage. Omitting `--promote` performs the audit without changing published inputs. Only the seven normalized CSVs and provenance are copied; unrelated files and raw responses cannot enter a release. Rebuild, test, commit and push after promotion, then verify GitHub Actions and the live files before recording the deployment as successful. Keep the original baseline unchanged throughout the batch. This helper makes no network requests and does not schedule future work.
 
+## Unattended collection
+
+`scripts/continue_archive.py` runs the queue unattended. It collects a batch of competitions, stops at an event boundary, and publishes that batch with the release helper above. Publishing includes the rebuild, both test suites, a determinism check, the commit and push to `main`, a wait for both GitHub workflows, and a byte-for-byte check of the live site. It then starts the next batch.
+
+```sh
+python3 scripts/continue_archive.py --batch 50 --detach   # background, under caffeinate
+tail -f capture/supervisor.log capture/batch-progress.log
+touch capture/pause-import       # stop after the current competition
+```
+
+How it handles problems:
+
+- **Outages:** TTScore outages and network failures (HTTP 429/5xx, timeouts, dropped connections) are retried after `--retry-wait` minutes. It stops after `--max-retries` consecutive failures that make no progress. Validated events from an interrupted batch are published at the next clean batch boundary.
+- **Everything else stops for review:** validation errors, corrupt cache entries, robots.txt or redirect refusals, failed workflows and live-byte mismatches. Status is in `capture/supervisor-state.json`.
+- **No double runs:** it adopts a collector that is already running instead of starting a second one, and it refuses to run beside another supervisor.
+
+Restarting after `pause-import` publishes any validated competitions that are not yet published, then continues. The supervisor is not part of the adapter fingerprint, so editing it never re-normalizes checked events. Edits to the six adapter files do. Make those only at a release boundary.
+
 The website paginates long player histories and coverage tables. Hosted detail views load content-addressed static JSON for the selected event, player, or club; H2H uses the complete selected player's history. Missing downloads show a retry message, never an empty-history claim. Detailed request provenance is downloadable as `provenance.json`; `coverage.json` exposes coverage and exclusions. The complete portable page remains available as `index.html` in local builds and `offline.html` on the hosted site. It retains coverage, source links, and all statistical records without duplicating the full request log.
 
 Hosted pages check a small static release marker every five minutes and offer “Load update” when a newer archive is published. They preserve the current page until the visitor chooses to load it. The portable HTML remains self-contained.
