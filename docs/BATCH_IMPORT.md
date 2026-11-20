@@ -56,6 +56,18 @@ The release audit rejects lost or changed baseline records, incomplete queue tra
 
 Review preservation of the existing archive and source issues before copying staged CSVs and `provenance.json` into `imports/`. Rebuild with `scripts/import_csv.py` and `scripts/build.py`, then commit and push to the existing GitHub Pages workflow. Neither GitHub Actions nor ordinary site builds contact TTScore.
 
+For repeated updates while collection is running, use the release helper with the original baseline:
+
+```sh
+python3 scripts/release_batch.py --baseline capture/batch-baseline --allow-pending --promote
+python3 scripts/import_csv.py
+python3 scripts/build.py
+python3 -m unittest discover -s tests -v
+node tests/smoke.js
+```
+
+The helper freezes one complete checkpoint under `capture/releases/`, checking CSV hashes and rejecting a mixed export if collection advances during the copy. It verifies the original baseline, every referenced raw response, and a fresh offline replay before updating `imports/` and README coverage. Omitting `--promote` performs the audit without changing published inputs. Only the seven normalized CSVs and provenance are copied; unrelated files and raw responses cannot enter a release. Rebuild, test, commit and push after promotion, then verify GitHub Actions and the live files before recording the deployment as successful. Keep the original baseline unchanged throughout the batch. This helper makes no network requests and does not schedule future work.
+
 The website paginates long player histories and coverage tables. Hosted detail views load content-addressed static JSON for the selected event, player, or club; H2H uses the complete selected player's history. Missing downloads show a retry message, never an empty-history claim. Detailed request provenance is downloadable as `provenance.json`; `coverage.json` exposes coverage and exclusions. The complete portable page remains available as `index.html` in local builds and `offline.html` on the hosted site. It retains coverage, source links, and all statistical records without duplicating the full request log.
 
 Hosted pages check a small static release marker every five minutes and offer “Load update” when a newer archive is published. They preserve the current page until the visitor chooses to load it. The portable HTML remains self-contained.

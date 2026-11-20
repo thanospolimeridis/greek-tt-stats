@@ -90,6 +90,7 @@ GitHub Pages supports public repositories on GitHub Free: [official documentatio
 | `scripts/historical.py` | Resumable group, knockout, consolation and doubles imports |
 | `scripts/batch_import.py` | Season-balanced queue, event checkpoints and validated staged exports |
 | `scripts/validate_batch.py` | Baseline preservation, coverage reconciliation and source-cache audit |
+| `scripts/release_batch.py` | Consistent checkpoint snapshots, offline release audits and promotion |
 | `data/import-plan.json` | Frozen remaining competition queue and deferred listings |
 | `data/backfill-plan.json` | Reviewed tournament selection across all nine listed seasons |
 | `scripts/import_csv.py` | Validation and deterministic canonical dataset |
