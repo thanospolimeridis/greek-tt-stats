@@ -59,7 +59,25 @@ const totalDoubles=()=>db.meta.table_counts?.doubles??(db.doubles||[]).length;
 // The hosted site loads one public static result file per detail view. The
 // portable page has no partitions and follows the original synchronous path.
 const resultCache=new Map();
-let activePart=null,pendingPart=null,loadVersion=0,loadError=false;
+let activePart=null,pendingPart=null,loadVersion=0,loadError=false,updateAvailable=false;
+function updateNotice(){
+ if(!updateAvailable)return '';
+ const el=state.lang==='el';
+ return `<div class="container"><div class="statusbox" role="status"><span>${el?'Υπάρχουν νεότερα δεδομένα στο αρχείο.':'An updated archive is available.'}</span><button class="ghost-btn small" id="archive-update">${el?'Φόρτωση νέας έκδοσης':'Load update'}</button></div></div>`;
+}
+async function checkForUpdate(){
+ if(updateAvailable)return;
+ try{
+  const response=await fetch('version.json',{cache:'no-store'});
+  if(!response.ok)return;
+  const version=await response.json();
+  if(typeof version.release_id==='string'&&version.release_id!==db.meta.release_id){
+   updateAvailable=true;
+   // Do not interrupt a search or an open filter while announcing new data.
+   if(!document.activeElement?.matches('input,select,textarea'))render();
+  }
+ }catch{/* A failed update check must not interrupt the current archive. */}
+}
 function useResults(payload){
  for(const kind of ['matches','doubles','fixtures'])db[kind]=payload[kind];
  indexResults();
@@ -88,7 +106,7 @@ function prepareResults(route){
  }
  const el=state.lang==='el';
  const message=loadError?(el?'Δεν ήταν δυνατή η φόρτωση των αποτελεσμάτων. Ανανεώστε τη σελίδα για νέα προσπάθεια.':'Results could not be loaded. Reload the page to try again.'):(el?'Φόρτωση αποτελεσμάτων…':'Loading results…');
- app.innerHTML=header()+`<main class="container main"><div class="white-panel" role="${loadError?'alert':'status'}"><p>${esc(message)}</p>${loadError?`<button class="ghost-btn" id="archive-reload">${el?'Ανανέωση σελίδας':'Reload page'}</button>`:''}</div></main>`+footer();
+ app.innerHTML=header()+updateNotice()+`<main class="container main"><div class="white-panel" role="${loadError?'alert':'status'}"><p>${esc(message)}</p>${loadError?`<button class="ghost-btn" id="archive-reload">${el?'Ανανέωση σελίδας':'Reload page'}</button>`:''}</div></main>`+footer();
  return true;
 }
 
@@ -174,11 +192,15 @@ function coverageDetails(){
 }
 function aboutPage(){return `<main class="container main">${crumb([['home',t('home')],['about',t('about')]])}<div class="paneltop"><div><span class="kicker">${esc(t('openData'))}</span><h2>${esc(t('dataTransparency'))}</h2></div></div><div class="info-grid" style="margin-top:0"><div class="white-panel"><h3>${esc(t('dataTransparency'))}</h3><p>${esc(t('dataTransparencyText'))}</p><p>${esc(t('statsNotComplete'))}</p><div class="link-row">${external('https://app.ttscore.io/customer/24',t('viewSource'))}</div></div><div class="white-panel"><h3>${esc(t('importStatus'))}</h3><div class="progress"><span>${db.events.length} ${esc(t('events'))}</span><span>${db.players.length} ${esc(t('players'))}</span><span>${totalSingles()} ${esc(t('results'))}</span><span>${totalDoubles()} ${esc(t('doubles'))}</span><span>${db.rankings.length} ${esc(t('rankings'))}</span></div><p style="margin-top:20px">${esc(t('coverage'))} · ${esc((db.meta.dataset_sha256||'').slice(0,16))}</p></div><div class="white-panel"><h3>${esc(t('architecture'))}</h3><p>${esc(t('architectureText'))}</p><p>${esc(t('openData'))}</p></div><div class="white-panel"><h3>${esc(t('importPlan'))}</h3><p>${esc(t('importPlanText'))}</p><p class="source-note">CSV → Python validation → static HTML → GitHub Pages.</p></div></div>${coverageDetails()}${db.meta.partitions?`<p class="source-note"><a class="text-link" href="offline.html" download>${state.lang==='el'?'Λήψη πλήρους αρχείου για χρήση χωρίς σύνδεση':'Download complete archive for offline use'} (HTML)</a></p>`:''}</main>`;}
 function notFound(){return `<main class="container main">${crumb([['home',t('home')],['home','404']])}${empty('tableEmpty')}<a href="#home" class="text-link">${esc(t('goBack'))}</a></main>`;}
-function render(){document.documentElement.lang=state.lang;const route=hashRoute();if(prepareResults(route))return;const views={home:landing,events:eventsPage,players:()=>rosterPage('players'),clubs:()=>rosterPage('clubs'),rankings:rankingsPage,h2h:h2hPage,about:aboutPage};const content=views[route.view]?views[route.view]():route.view==='event'?eventPage(route.id):route.view==='player'?playerPage(route.id):route.view==='club'?clubPage(route.id):notFound();app.innerHTML=header()+content+footer();if(route.view==='h2h'){const a=document.getElementById('h2h-player1'),b=document.getElementById('h2h-player2');if(a)a.value=state.player1;if(b)b.value=state.player2;}}
+function render(){document.documentElement.lang=state.lang;const route=hashRoute();if(prepareResults(route))return;const views={home:landing,events:eventsPage,players:()=>rosterPage('players'),clubs:()=>rosterPage('clubs'),rankings:rankingsPage,h2h:h2hPage,about:aboutPage};const content=views[route.view]?views[route.view]():route.view==='event'?eventPage(route.id):route.view==='player'?playerPage(route.id):route.view==='club'?clubPage(route.id):notFound();app.innerHTML=header()+updateNotice()+content+footer();if(route.view==='h2h'){const a=document.getElementById('h2h-player1'),b=document.getElementById('h2h-player2');if(a)a.value=state.player1;if(b)b.value=state.player2;}}
 window.addEventListener('hashchange',()=>{state.page=0;state.phaseFilter='all';state.query='';state.season='all';state.type='all';window.scrollTo({top:0,behavior:'auto'});render();});
 function focusRerender(id){const el=document.getElementById(id);const start=el&&typeof el.selectionStart==='number'?el.selectionStart:undefined;render();const next=document.getElementById(id);if(next){next.focus();if(start!==undefined)next.setSelectionRange(start,start)}}
 document.addEventListener('input',e=>{if(e.target.matches('#search-events,#search-roster')){state.page=0;state.query=e.target.value;focusRerender(e.target.id)}});
 document.addEventListener('change',e=>{state.page=0;if(e.target.id==='phase-filter'){state.phaseFilter=e.target.value;render()}if(e.target.id==='ranking-date'){state.rankDate=e.target.value;render()}if(e.target.id==='season-filter'){state.season=e.target.value;render()}if(e.target.id==='type-filter'){state.type=e.target.value;render()}if(e.target.id==='ranking-category'){state.rankCategory=e.target.value;state.rankDate='latest';render()}if(e.target.id==='h2h-player1'){state.player1=e.target.value;render()}if(e.target.id==='h2h-player2'){state.player2=e.target.value;render()}});
-document.addEventListener('click',e=>{if(e.target.closest('#archive-reload')){location.reload();return;}if(e.target.closest('#page-prev')){state.page--;render()}if(e.target.closest('#page-next')){state.page++;render()}if(e.target.closest('#lang-switch')){state.lang=state.lang==='el'?'en':'el';try{localStorage.setItem('tt_lang',state.lang)}catch{}render()}});
+document.addEventListener('click',e=>{if((e.target.closest('#archive-reload')||e.target.closest('#archive-update'))){location.reload();return;}if(e.target.closest('#page-prev')){state.page--;render()}if(e.target.closest('#page-next')){state.page++;render()}if(e.target.closest('#lang-switch')){state.lang=state.lang==='el'?'en':'el';try{localStorage.setItem('tt_lang',state.lang)}catch{}render()}});
 render();
+if(db.meta.partitions&&db.meta.release_id&&typeof setInterval==='function'){
+ setInterval(checkForUpdate,5*60*1000);
+ checkForUpdate();
+}
 })();

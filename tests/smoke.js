@@ -9,14 +9,14 @@ const published=JSON.parse(fs.readFileSync(path.join(root,'data','catalog.json')
 const db={events:JSON.parse(fs.readFileSync(path.join(root,'data','verified_events.json'),'utf8')),players:[],clubs:[],matches:[],fixtures:[],rankings:[],meta:{data_coverage:'event_catalog_only'}};
 let checks=0;
 function check(value,message){assert(value,message);checks++}
-function render(route,data=db,lang='el',fetcher){
+function render(route,data=db,lang='el',fetcher,extras={}){
   const container={innerHTML:''};
   const handlers={};
   const context={
     document:{documentElement:{lang:'el'},getElementById(id){return id==='site-data'?{textContent:JSON.stringify(data)}:id==='app'?container:null},addEventListener(name,fn){handlers[name]=fn}},
     window:{addEventListener(name,fn){handlers[name]=fn},scrollTo(){}},
     localStorage:{getItem(){return lang},setItem(){}},
-    location:{hash:'#'+route},Intl,URL,encodeURIComponent,decodeURIComponent,console,fetch:fetcher
+    location:{hash:'#'+route},Intl,URL,encodeURIComponent,decodeURIComponent,console,fetch:fetcher,...extras
   };
   vm.runInNewContext(script,context,{timeout:5000});
   return {get html(){return container.innerHTML},handlers,context,
@@ -119,6 +119,11 @@ async function hostedChecks(){
  const compare=render('h2h',hosted,'en',async()=>({ok:true,json:async()=>payload}));
  compare.change('h2h-player1','p2');compare.change('h2h-player2','p1');await flush();
  check(compare.html.includes('Player Two · 0')&&compare.html.includes('✕ 1–3'),'Hosted H2H uses complete first-player history and excludes walkovers');
+ hosted.meta.release_id='old-release';let interval=0;
+ const updated=render('home',hosted,'en',async url=>({ok:true,json:async()=>({release_id:'new-release'})}),
+  {setInterval(fn,delay){interval=delay;}});
+ await flush();
+ check(interval===300000&&updated.html.includes('An updated archive is available.')&&updated.html.includes('Load update'),'Hosted pages announce later releases without automatic navigation');
  console.log(`PASS: ${checks} total frontend behavior checks`);
 }
 hostedChecks().catch(error=>{console.error(error);process.exitCode=1;});

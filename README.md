@@ -5,13 +5,13 @@ Free, open-source Greek table tennis statistics: **Python ingestion + a static, 
 ## Current coverage — 20 November 2026
 
 - **518 publicly listed TTScore events**, reconciled across 2018–19 through 2026–27.
-- **One additional legacy event** retained from the original prototype, labelled absent from the current catalog (519 displayed total).
-- **5,565 completed singles matches, 117 doubles matches and 58 team fixtures**, from 19 competitions across all nine listed seasons.
-- **2,519 athletes**, linked by federation registration number where available, and **148 exact club names**.
+- **1 additional legacy event** retained from the original prototype, labelled absent from the current catalog (519 displayed total).
+- **7,466 completed singles matches, 160 doubles matches and 67 team fixtures**, from 25 competitions across all nine listed seasons.
+- **2,555 athletes**, linked by federation registration number where available, and **152 exact club names**.
 - **4,909 ranking records**: men and women, 1 August and 1 October 2026.
-- All four previously excluded league doubles are recovered with member IDs. The other 113 doubles preserve source pair labels without invented athlete links.
-- **239 walkovers, three inconsistent score records and four unresolved/unplayed fixtures** are flagged and excluded from played-match statistics; 28 tournament unplayed/bye slots and 134 unused league slots are not results.
-- The current resumable batch has checked **8 of 481 additional eligible competitions**. **473 remain queued**, and 26 listings are explicitly deferred because their dates are unknown or they had not finished by the 20 November cutoff.
+- **5 doubles matches identify all four members**; 155 preserve source pair labels without invented athlete links.
+- **394 source issues** are recorded, including walkovers, unresolved fixtures and inconsistent scores. Coverage reports retain exclusion reasons and unplayed/bye counts.
+- The current resumable batch has checked **14 of 481 additional eligible competitions**. **467 remain queued**, and 26 listings are explicitly deferred because their dates are unknown or they had not finished by the 20 November cutoff.
 
 **Historical results are incomplete.** Collection continues through the remaining queue, with validated checkpoints published periodically. Additional ranking snapshots also remain unimported. The season-by-season table on About shows the exact scope. No results are invented. Validation checks source consistency, not independent historical truth. The About page exposes scope and exclusions, with downloadable coverage and provenance reports.
 

@@ -23,6 +23,7 @@ class BuildTests(unittest.TestCase):
             payload=json.loads(re.search(r'id="site-data">(.*?)</script>',hosted,re.S)[1])
             self.assertEqual(payload['matches'],[])
             self.assertEqual(payload['meta']['event_match_counts'],{'e1':1})
+            self.assertEqual(json.loads((root/'dist'/'version.json').read_text())['release_id'],payload['meta']['release_id'])
             def part(kind,ident):
                 return json.loads((root/'dist'/payload['meta']['partitions'][kind][ident]).read_text())
             self.assertEqual(part('event','e1'),{k:data[k] for k in ('matches','doubles','fixtures')})

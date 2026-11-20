@@ -57,6 +57,12 @@ class ReleaseAuditTests(unittest.TestCase):
                 with self.assertRaises(DataError):
                     audit(current, baseline, plan, allow_pending=True)
 
+    def test_uncheckpointed_results_cannot_enter_release(self):
+        current, baseline, plan=self.sample()
+        current['matches'].append({'id':'unchecked','event_id':'ttscore-3','score1':3})
+        with self.assertRaisesRegex(DataError,'unchecked competition'):
+            audit(current, baseline, plan, allow_pending=True)
+
     def test_cache_must_match_published_response_hash(self):
         request={'url':'https://app.ttscore.io/robots.txt','method':'GET','form':None}
         key=sha256(json.dumps(request,sort_keys=True).encode())

@@ -58,7 +58,12 @@ def build_site(root=ROOT):
     hosted['meta']['table_counts']={kind:len(data.get(kind,[])) for kind in ('matches','doubles','fixtures')}
     from collections import Counter
     hosted['meta']['event_match_counts']=dict(Counter(m['event_id'] for m in data.get('matches',[]) if m['status']=='completed'))
+    hosted['meta']['release_id']=hashlib.sha256(html.encode()).hexdigest()
     hosted_html=render(hosted)
+    marker=dist/'version.json.tmp'
+    marker.write_text(json.dumps({'release_id':hosted['meta']['release_id'],
+        'dataset_sha256':hosted['meta'].get('dataset_sha256')},sort_keys=True)+'\n')
+    marker.replace(dist/'version.json')
     if provenance:
         for name,value in (('provenance.json',provenance),('coverage.json',provenance.get('coverage',{}))):
             serialized_report=json.dumps(value,ensure_ascii=False,indent=2,sort_keys=True)+'\n'

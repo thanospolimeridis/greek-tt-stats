@@ -47,13 +47,15 @@ The inventory fingerprint excludes inferred event type, so discovering a league 
 
 ```sh
 python3 scripts/import_csv.py --input capture/batch-imports --output /tmp/ttscore-batch-catalog.json
-python3 scripts/validate_batch.py --cache capture/ttscore --output capture/release-audit.json
+python3 scripts/validate_batch.py --cache capture/ttscore --replay --output capture/release-audit.json
 python3 -m unittest discover -s tests -v
 node tests/smoke.js
 ```
 
-The release audit rejects lost or changed baseline records, incomplete queue traversal, misleading event totals, and changed source evidence. Use `--allow-pending` only to inspect an intermediate checkpoint. Preserve the original baseline when promoting a release if you need to repeat the preservation check afterward.
+The release audit rejects lost or changed baseline records, incomplete queue traversal, misleading event totals, and changed source evidence. `--replay` normalizes source responses again in offline workers and requires byte-identical CSVs and full provenance. It merges once at the end, avoiding repeated large archive writes during release checks. Use `--allow-pending` only to inspect or publish an explicitly partial checkpoint. Preserve the original baseline when promoting a release, and pass it with `--baseline PATH` to repeat preservation and replay checks afterward.
 
 Review preservation of the existing archive and source issues before copying staged CSVs and `provenance.json` into `imports/`. Rebuild with `scripts/import_csv.py` and `scripts/build.py`, then commit and push to the existing GitHub Pages workflow. Neither GitHub Actions nor ordinary site builds contact TTScore.
 
 The website paginates long player histories and coverage tables. Hosted detail views load content-addressed static JSON for the selected event, player, or club; H2H uses the complete selected player's history. Missing downloads show a retry message, never an empty-history claim. Detailed request provenance is downloadable as `provenance.json`; `coverage.json` exposes coverage and exclusions. The complete portable page remains available as `index.html` in local builds and `offline.html` on the hosted site. It retains coverage, source links, and all statistical records without duplicating the full request log.
+
+Hosted pages check a small static release marker every five minutes and offer “Load update” when a newer archive is published. They preserve the current page until the visitor chooses to load it. The portable HTML remains self-contained.

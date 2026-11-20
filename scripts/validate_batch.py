@@ -58,6 +58,10 @@ def audit(data, baseline, plan, *, allow_pending=False):
     if batch['failed'] != failures or failures:
         raise DataError('Batch has unresolved retrieval or validation failures')
     counts = {kind: Counter(r['event_id'].removeprefix('ttscore-') for r in data[kind]) for kind in ('matches','doubles','fixtures')}
+    for kind, totals in counts.items():
+        original=Counter(r['event_id'].removeprefix('ttscore-') for r in baseline[kind])
+        if any(totals[ident]>original[ident] for ident in pending):
+            raise DataError(f'New {kind} appear for an unchecked competition')
     issues = Counter(i['event'] for i in coverage['issues'])
     for ident in queue:
         if ident not in checked:
@@ -94,20 +98,63 @@ def audit_cache(requests, cache):
     return len(requests)
 
 
+def replay_archive(input_dir, baseline_dir, plan, cache):
+    """Re-normalize cached source data, then compare one merged export byte for byte.
+
+    A single final export avoids rewriting the growing archive after every event
+    during a release check. Online collection still checkpoints every event.
+    """
+    import subprocess
+    import sys
+    import tempfile
+    from batch_import import merge_event, batch_coverage
+    from historical import History, restore_base
+    from ttscore import Client
+    manifest=json.loads((input_dir/'provenance.json').read_text())
+    rebuilt=History(Client(cache,offline=True));restore_base(rebuilt,baseline_dir)
+    prior=set(rebuilt.coverage.get('events',{}))|set(rebuilt.coverage.get('leagues',{}))
+    checked=set(manifest['coverage'].get('events',{}))
+    queue=[item['event'] for item in plan['queue'] if item['event'] in checked and item['event'] not in prior]
+    with tempfile.TemporaryDirectory() as temporary:
+        folder=Path(temporary)
+        for position, ident in enumerate(queue,1):
+            checkpoint=folder/f'{ident}.json'
+            result=subprocess.run([sys.executable,str(ROOT/'scripts'/'batch_import.py'),
+                '--worker',ident,'--base',str(baseline_dir),'--cache',str(cache),
+                '--checkpoint-file',str(checkpoint),'--as-of',plan['as_of'],'--offline'],
+                capture_output=True,text=True)
+            if result.returncode:
+                raise DataError(f'Cached replay failed for event {ident}: {result.stderr[-2000:]}')
+            merge_event(rebuilt,json.loads(checkpoint.read_text()),ident)
+            print(f'REPLAY {position}/{len(queue)}: {ident}',file=sys.stderr)
+        batch_coverage(rebuilt,plan)
+        import contextlib
+        with contextlib.redirect_stdout(sys.stderr):rebuilt.export(folder/'archive')
+        for name in [*manifest['csv_sha256'],'provenance.json']:
+            if (input_dir/name).read_bytes()!=(folder/'archive'/name).read_bytes():
+                raise DataError(f'Offline replay differs from release: {name}')
+    return len(queue)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--input', type=Path, default=ROOT/'capture'/'batch-imports')
     parser.add_argument('--baseline', type=Path, default=ROOT/'imports')
     parser.add_argument('--plan', type=Path, default=ROOT/'data'/'import-plan.json')
     parser.add_argument('--cache', type=Path, help='Also verify every referenced raw response; never publishes raw data')
+    parser.add_argument('--replay', action='store_true', help='Re-normalize cached events and require byte-identical CSVs and provenance; requires --cache')
     parser.add_argument('--allow-pending', action='store_true', help='Audit an intermediate checkpoint without claiming the queue is finished')
     parser.add_argument('--output', type=Path)
     args = parser.parse_args()
+    if args.replay and not args.cache:parser.error('--replay requires --cache')
     data = build(args.input, ROOT/'data'/'verified_events.json')
     baseline = build(args.baseline, ROOT/'data'/'verified_events.json')
-    report = audit(data, baseline, json.loads(args.plan.read_text()), allow_pending=args.allow_pending)
+    plan=json.loads(args.plan.read_text())
+    report = audit(data, baseline, plan, allow_pending=args.allow_pending)
     if args.cache:
         report['source_responses_verified'] = audit_cache(data['meta']['provenance']['requests'], args.cache)
+    if args.replay:
+        report['offline_replayed_competitions']=replay_archive(args.input,args.baseline,plan,args.cache)
     output = json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2)+'\n'
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
