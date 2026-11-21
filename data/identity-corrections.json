@@ -1,0 +1,171 @@
+{
+  "version": 1,
+  "reviewed": "2026-11-21",
+  "note": "Source identities that were reviewed and found to be one athlete or one club, with the evidence. build.py applies them to the published site; the CSVs keep what the source said. \"distinct\" lists same-name athletes at the same club that were reviewed and are different people; they can never be merged here.",
+  "players": [
+    {
+      "from": "httf-07930",
+      "to": "httf-7930",
+      "from_name": "ΠΑΠΑΔΗΜΗΤΡΙΟΥ ΙΩΑΝΝΑ",
+      "to_name": "ΠΑΠΑΔΗΜΗΤΡΙΟΥ ΙΩΑΝΝΑ",
+      "basis": "registration_number_leading_zero",
+      "evidence": "07930 and 7930 are the same number written with and without a leading zero. Same name; both numbers play for ΑΣ ΠΕΡΑ. 07930 appears only on the match sheets of event 449 (2021-22, 2 singles) and in no ranking snapshot."
+    },
+    {
+      "from": "httf-162833",
+      "to": "httf-16283",
+      "from_name": "ΑΚΟΥΔΗΣ ΙΩΑΝΝΗΣ",
+      "to_name": "ΑΚΟΥΔΗΣ ΙΩΑΝΝΗΣ",
+      "basis": "registration_number_out_of_range",
+      "evidence": "162833 is above the highest registration number in any official ranking (29010) and is 16283 with one extra digit. Same name; both numbers play for ΓΣ ΑΤΡΟΜΗΤΟΣ ΑΒΑΝΤΟΣ. 162833 appears only on the match sheets of event 789 (2025-26, 16 singles) and in no ranking snapshot."
+    },
+    {
+      "from": "httf-191549",
+      "to": "httf-19154",
+      "from_name": "ΤΣΑΜΑΚΟΣ ΔΗΜΗΤΡΙΟΣ",
+      "to_name": "ΤΣΑΜΑΚΟΣ ΔΗΜΗΤΡΙΟΣ",
+      "basis": "registration_number_out_of_range",
+      "evidence": "191549 is above the highest registration number in any official ranking (29010) and is 19154 with one extra digit. Same name; both numbers play for ΑΟΕΑ ΚΩ. 191549 appears only on the match sheets of event 675 (2023-24, 2 singles) and in no ranking snapshot."
+    },
+    {
+      "from": "httf-252320",
+      "to": "httf-25232",
+      "from_name": "ΜΑΝΩΛΟΠΟΥΛΟΣ ΕΥΣΤΑΘΙΟΣ-ΕΦΡΑΙΜ",
+      "to_name": "ΜΑΝΩΛΟΠΟΥΛΟΣ ΕΥΣΤΑΘΙΟΣ-ΕΦΡΑΙΜ",
+      "basis": "registration_number_out_of_range",
+      "evidence": "252320 is above the highest registration number in any official ranking (29010) and is 25232 with one extra digit. Same name; both numbers play for ΑΣ ΤΟ ΓΥΜΝΑΣΙΟ. 252320 appears only on the match sheets of event 508 (2021-22, 6 singles) and in no ranking snapshot."
+    },
+    {
+      "from": "httf-261710",
+      "to": "httf-26171",
+      "from_name": "ΜΠΑΧΤΣΕΒΑΝΗ ΘΕΟΔΩΡΑ",
+      "to_name": "ΜΠΑΧΤΣΕΒΑΝΗ ΘΕΟΔΩΡΑ",
+      "basis": "registration_number_out_of_range",
+      "evidence": "261710 is above the highest registration number in any official ranking (29010) and is 26171 with one extra digit. Same name; both numbers play for ΑΕΚ. 261710 appears only on the match sheets of event 696 (2024-25, 3 singles) and in no ranking snapshot."
+    },
+    {
+      "from": "httf-284244",
+      "to": "httf-28424",
+      "from_name": "ΜΕΛΙΝΑ ΖΩΗ ΚΡΕΜΑΣΤΙΩΤΗ",
+      "to_name": "ΚΡΕΜΑΣΤΙΩΤΗ ΜΕΛΙΝΑ ΖΩΗ",
+      "basis": "registration_number_out_of_range",
+      "evidence": "284244 is above the highest registration number in any official ranking (29010) and is 28424 with one extra digit. Same name in a different word order; both numbers play for ΑΟ ΠΟΣΕΙΔΩΝ ΛΟΥΤΡΑΚΙΟΥ. 284244 appears only on the match sheets of event 710 (2024-25, 4 singles) and in no ranking snapshot."
+    },
+    {
+      "from": "httf-80188",
+      "to": "httf-8018",
+      "from_name": "ΤΖΑΡΑΣ ΔΗΜΗΤΡΙΟΣ",
+      "to_name": "ΤΖΑΡΑΣ ΔΗΜΗΤΡΙΟΣ",
+      "basis": "registration_number_out_of_range",
+      "evidence": "80188 is above the highest registration number in any official ranking (29010) and is 8018 with one extra digit. Same name; both numbers play for ΑΟ ΑΝΘΟΥΠΟΛΗΣ. 80188 appears only on the match sheets of event 520 (2022-23, 8 singles) and in no ranking snapshot."
+    }
+  ],
+  "clubs": [
+    {
+      "from": "club-name-1afbe867023a5196",
+      "to": "club-name-38cbef94da31d56c",
+      "from_name": "Α.Ο.ΚΑΡΕΑ",
+      "to_name": "ΑΟ ΚΑΡΕΑ",
+      "basis": "same_name_different_punctuation",
+      "evidence": "The two names are identical once punctuation, spacing and accents are removed. This spelling appears only in 2018-19 (36 team fixtures) and in no ranking snapshot; the two never meet in a fixture."
+    },
+    {
+      "from": "club-name-3f8251f062b1eed6",
+      "to": "club-name-e4bb7051f4833b09",
+      "from_name": "ΠΑΝΑΘΗΝΑΪΚΟΣ Α.Ο.",
+      "to_name": "ΠΑΝΑΘΗΝΑΙΚΟΣ ΑΟ",
+      "basis": "same_name_different_punctuation",
+      "evidence": "The two names are identical once punctuation, spacing and accents are removed. This spelling appears in no fixture and in no ranking snapshot; the two never meet in a fixture."
+    },
+    {
+      "from": "club-name-5db3fa52b4344f98",
+      "to": "club-name-bd240d708dbb0758",
+      "from_name": "Α.Ο. ΔΟΞΑ ΠΕΥΚΗΣ",
+      "to_name": "ΑΟ ΔΟΞΑ ΠΕΥΚΗΣ",
+      "basis": "same_name_different_punctuation",
+      "evidence": "The two names are identical once punctuation, spacing and accents are removed. This spelling appears only in 2018-19 (16 team fixtures) and in no ranking snapshot; the two never meet in a fixture."
+    },
+    {
+      "from": "club-name-7010c1e3a033f901",
+      "to": "club-name-da23a09e6699f2df",
+      "from_name": "Α.Ο. ΠΟΣΕΙΔΩΝΑΣ ΤΗΝΟΥ",
+      "to_name": "ΑΟ ΠΟΣΕΙΔΩΝΑΣ ΤΗΝΟΥ",
+      "basis": "same_name_different_punctuation",
+      "evidence": "The two names are identical once punctuation, spacing and accents are removed. This spelling appears only in 2018-19 (1 team fixture) and in no ranking snapshot; the two never meet in a fixture."
+    },
+    {
+      "from": "club-name-8f52eeec9a3e6b9a",
+      "to": "club-name-e6977ed6e3277d25",
+      "from_name": "Α.Ο.ΑΧΑΙΑΣ Η ΓΑΛΗΝΗ",
+      "to_name": "ΑΟ ΑΧΑΙΑΣ Η ΓΑΛΗΝΗ",
+      "basis": "same_name_different_punctuation",
+      "evidence": "The two names are identical once punctuation, spacing and accents are removed. This spelling appears only in 2018-19 (22 team fixtures) and in no ranking snapshot; the two never meet in a fixture."
+    },
+    {
+      "from": "club-name-d6bfe0bc0bc0dc27",
+      "to": "club-name-6b77a9e049d926b7",
+      "from_name": "Α.Ο.ΘΕΡΜΗΣ ΘΕΡΜΑΙΟΣ",
+      "to_name": "ΑΟ ΘΕΡΜΗΣ ΘΕΡΜΑΙΟΣ",
+      "basis": "same_name_different_punctuation",
+      "evidence": "The two names are identical once punctuation, spacing and accents are removed. This spelling appears only in 2018-19 (18 team fixtures) and in no ranking snapshot; the two never meet in a fixture."
+    },
+    {
+      "from": "club-name-ea0722018ee59ccd",
+      "to": "club-name-2094ebf0f1b1668c",
+      "from_name": "ΑΕ. ΠΟΝΤΙΩΝ ΜΕΛΙΣΣΙΩΝ ΑΤΤΙΚΗΣ",
+      "to_name": "Α.Ε. ΠΟΝΤΙΩΝ ΜΕΛΙΣΣΙΩΝ ΑΤΤΙΚΗΣ",
+      "basis": "same_name_different_punctuation",
+      "evidence": "The two names are identical once punctuation, spacing and accents are removed. This spelling appears only in 2018-19 (18 team fixtures) and in no ranking snapshot; the two never meet in a fixture."
+    },
+    {
+      "from": "club-name-f368eedf09fa3bb1",
+      "to": "club-name-b364feec7350f493",
+      "from_name": "Γ.Α.Σ ΕΛΕΥΣΊΣ -ΔΉΜΗΤΡΑ 1972",
+      "to_name": "ΓΑΣ ΕΛΕΥΣΙΣ -ΔΗΜΗΤΡΑ 1972",
+      "basis": "same_name_different_punctuation",
+      "evidence": "The two names are identical once punctuation, spacing and accents are removed. This spelling appears only in 2018-19 (1 team fixture) and in no ranking snapshot; the two never meet in a fixture."
+    },
+    {
+      "from": "club-name-f92a3ccf898201e2",
+      "to": "club-name-d0ac121b3dceed95",
+      "from_name": "Α.Ο.ΞΥΛΟΚΑΣΤΡΟΥ",
+      "to_name": "ΑΟ ΞΥΛΟΚΑΣΤΡΟΥ",
+      "basis": "same_name_different_punctuation",
+      "evidence": "The two names are identical once punctuation, spacing and accents are removed. This spelling appears only in 2018-19 (2 team fixtures) and in no ranking snapshot; the two never meet in a fixture."
+    }
+  ],
+  "distinct": [
+    {
+      "ids": [
+        "httf-15146",
+        "httf-28152"
+      ],
+      "name": "ΖΑΧΑΡΟΠΟΥΛΟΣ ΖΑΧΑΡΙΑΣ",
+      "evidence": "Both are ranked separately in the same official ranking snapshots."
+    },
+    {
+      "ids": [
+        "httf-21847",
+        "httf-27119"
+      ],
+      "name": "ΤΟΜΑΡΑΣ ΓΕΩΡΓΙΟΣ",
+      "evidence": "Both are ranked separately in the same official ranking snapshots."
+    },
+    {
+      "ids": [
+        "httf-23135",
+        "httf-27573"
+      ],
+      "name": "ΜΙΧΑΗΛΙΔΗΣ ΚΩΝΣΤΑΝΤΙΝΟΣ",
+      "evidence": "Both are ranked separately in the same official ranking snapshots."
+    },
+    {
+      "ids": [
+        "httf-28546",
+        "httf-6979"
+      ],
+      "name": "ΒΑΤΣΑΚΛΗΣ ΚΩΝΣΤΑΝΤΙΝΟΣ",
+      "evidence": "6979 played the men's 50-59 category in 2022; 28546 has been ranked in the youngest boys' list since 2024."
+    }
+  ]
+}

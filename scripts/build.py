@@ -8,6 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import identity_corrections  # noqa: E402
 import ranking_history  # noqa: E402
 import standings  # noqa: E402
 
@@ -184,10 +185,33 @@ def list_summaries(data):
             {ident: [played[ident], won[ident]] for ident in sorted(played)})
 
 
+def slim(hosted):
+    """Leave out of the hosted page the audit fields it never shows.
+
+    coverage.json, provenance.json and the offline copy keep every one of them. New
+    containers are built, so the rows shared with the offline copy stay untouched.
+    """
+    for kind in ('players', 'events'):
+        if kind in hosted:
+            hosted[kind] = [{k: v for k, v in row.items() if k not in ('source_id', 'identity_basis')} for row in hosted[kind]]
+    provenance = hosted['meta'].get('provenance') or {}
+    if isinstance(provenance.get('coverage'), dict):
+        coverage = {k: v for k, v in provenance['coverage'].items() if k != 'issues'}
+        if isinstance(coverage.get('events'), dict):
+            coverage['events'] = {i: {k: v for k, v in e.items() if k != 'adapter_sha256'} for i, e in coverage['events'].items()}
+        if isinstance(coverage.get('batch'), dict):
+            coverage['batch'] = {k: v for k, v in coverage['batch'].items() if k != 'processed_order'}
+        if isinstance(coverage.get('rankings'), list):
+            coverage['rankings'] = [{k: v for k, v in r.items() if k != 'source_id'} for r in coverage['rankings']]
+        hosted['meta']['provenance'] = {**provenance, 'coverage': coverage}
+    return hosted
+
+
 def build_site(root=ROOT):
     data = json.loads((root/'data'/'catalog.json').read_text(encoding='utf-8'))
     data.setdefault('meta', {})
-    data['meta']['event_player_counts'], data['meta']['player_summary'] = list_summaries(data)
+    # Placeholders keep the key order; the counts are filled in once identities are corrected.
+    data['meta']['event_player_counts'] = data['meta']['player_summary'] = None
     provenance=data.get('meta',{}).get('provenance',{})
     # Keep the detailed audit downloadable without parsing every request in the UI.
     if provenance:
@@ -198,6 +222,11 @@ def build_site(root=ROOT):
     # League standings as the source publishes them, also outside the collector (see standings.py).
     table=standings.load(root/'imports'/'standings',data)
     standings.merge(data,table)
+    # Reviewed corrections of source identities, applied last so they reach every table
+    # (see identity_corrections.py). Everything below counts corrected identities.
+    corrections=identity_corrections.load(root/'data'/'identity-corrections.json',data)
+    identity_corrections.apply(data,corrections)
+    data['meta']['event_player_counts'], data['meta']['player_summary'] = list_summaries(data)
     css = (root/'src'/'style.css').read_text(encoding='utf-8')
     js = (root/'src'/'app.js').read_text(encoding='utf-8')
     template = (root/'src'/'template.html').read_text(encoding='utf-8')
@@ -224,6 +253,7 @@ def build_site(root=ROOT):
             # snapshot date file carry the rest.
             'rankings':pack_rankings([r for r in data.get('rankings',[]) if r['date']==latest[r['category']]])}
     if table:hosted['standings']=[]  # each league's file carries its own rows
+    slim(hosted)
     hosted['meta']['partitions']=partition_results(data,dist,context,squads)
     dates_by_category={}
     for row in data.get('rankings',[]):
@@ -248,11 +278,13 @@ def build_site(root=ROOT):
                 temporary.write_text(serialized_report,encoding='utf-8')
                 temporary.replace(report)
     # Published in dist/ only: an untracked file in the checkout would stop the collector.
-    for name,extra in (('ranking-history-provenance.json',history),('standings-provenance.json',table)):
+    for name,extra in (('ranking-history-provenance.json',history and history['manifest']),
+                       ('standings-provenance.json',table and table['manifest']),
+                       ('identity-corrections.json',corrections and corrections['table'])):
         if extra:
             report=dist/name
             temporary=report.with_suffix('.json.tmp')
-            temporary.write_text(json.dumps(extra['manifest'],ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+            temporary.write_text(json.dumps(extra,ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
             temporary.replace(report)
     for path,content in ((root/'index.html',html),(dist/'offline.html',html),(dist/'index.html',hosted_html)):
         temporary = path.with_suffix('.html.tmp')
