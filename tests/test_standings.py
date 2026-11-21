@@ -171,7 +171,7 @@ class LoadTests(unittest.TestCase):
 
 
 class BuildTests(unittest.TestCase):
-    def test_only_league_files_carry_standings(self):
+    def test_only_league_and_club_files_carry_standings(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root/'data').mkdir()
@@ -189,6 +189,9 @@ class BuildTests(unittest.TestCase):
             self.assertEqual([(r['club_name'], r['points']) for r in league['standings']], [('Club A', 6), ('Club Z', 4)])
             other = json.loads((root/'dist'/payload['meta']['partitions']['event']['ttscore-8']).read_text())
             self.assertNotIn('standings', other)
+            # A club's file carries the whole table of each group it played in, to show its position.
+            club = json.loads((root/'dist'/payload['meta']['partitions']['club'][CLUB_A]).read_text())
+            self.assertEqual([r['club_name'] for r in club['standings']], ['Club A', 'Club Z'])
             offline = json.loads(re.search(r'id="site-data">(.*?)</script>', portable, re.S)[1])
             self.assertEqual(len(offline['standings']), 2)
             self.assertTrue((root/'dist'/'standings-provenance.json').exists())

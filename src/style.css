@@ -219,6 +219,7 @@ td a{color:var(--accent);font-weight:750}
 .standings-group td:nth-child(n+3),.standings-group th:nth-child(n+3){text-align:right;width:1%}
 .standings-group td:first-child,.standings-group th:first-child{width:1%}
 .th-short{display:none;text-decoration:none}
+.club-table td:nth-child(n+2),.club-table th:nth-child(n+2){text-align:right;width:1%;white-space:nowrap}
 
 /* Lists: one surface with hairline rows instead of a card per item. */
 .list-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:26px 0 12px}
@@ -391,6 +392,12 @@ details.rtable{max-width:none}
  .standings-group th,.standings-group td{padding:11px 8px}
  .standings-group td:first-child,.standings-group th:first-child{padding-left:14px}
  .standings-group td:last-child,.standings-group th:last-child{padding-right:14px}
+ .club-table .th-full{display:none}
+ .club-table .th-short{display:inline}
+ .club-table .opt{display:none}
+ .club-table th,.club-table td{padding:11px 8px}
+ .club-table td:first-child,.club-table th:first-child{padding-left:14px}
+ .club-table td:last-child,.club-table th:last-child{padding-right:14px}
  .list-cols{display:none}
  .ellipsis{white-space:normal}
  .event-row{grid-template-columns:34px minmax(0,1fr);align-items:start;column-gap:12px;row-gap:4px;padding:11px 14px}

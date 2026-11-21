@@ -202,6 +202,34 @@ check(scopedBreakdown.html.includes('Games won–lost</span><b>4–4</b>'),'Brea
 scopedBreakdown.click('scope-individual');
 check(scopedBreakdown.html.includes('Games won–lost</span><b>1–3</b>'),'Breakdown follows the competition type filter');
 check(render('player/p1',insight,'el').html.includes('Ανάλυση αγώνων'),'Greek breakdown heading');
+const clubData=structuredClone(sample);
+clubData.events.push({id:'ttscore-9001',name:'Old League',season:'2024-25',start_date:'2024-10-01'},{id:'ttscore-9002',name:'Cup <b>',season:'2025-26',start_date:'2026-01-10'});
+clubData.clubs.push({id:'c3',name:'Third Club'});
+clubData.players.push({id:'p3',name:'Third Opponent',club_id:'c1'});
+clubData.rankings.push({id:'r9',player_id:'p3',category:'Men',date:'2026-02-03',rank:7,points:150,source_url:'https://app.ttscore.io/test'});
+const fixture=(id,event,home,away,hs,as,date,group)=>({id,event_id:event,home_club_id:home,away_club_id:away,status:'completed',date,home_score:hs,away_score:as,source_url:`https://app.ttscore.io/tournament_groups_league.php?group=${group}&customer=24`});
+clubData.fixtures=[fixture('f1','ttscore-777','c1','c2',4,1,'2026-02-03',55),fixture('f2','ttscore-777','c3','c1',4,2,'2026-02-10',55),
+ fixture('f3','ttscore-9002','c1','c3',3,0,'2026-01-10',70),fixture('f4','ttscore-9001','c2','c1',1,4,'2024-11-01',40)];
+clubData.standings=[row('55',1,4,'Test Club',{club_id:'c1'}),row('55',2,9,'Other Club',{club_id:'c2'}),row('55',3,4,'Third Club',{club_id:'c3'}),
+ row('40',1,7,'Test Club',{club_id:'c1',event_id:'ttscore-9001',category:'Old Men'}),row('40',2,3,'Other Club',{club_id:'c2',event_id:'ttscore-9001',category:'Old Men'})];
+clubData.club_players={c1:[['ttscore-777','p1',4,3],['ttscore-9002','p1',2,2],['ttscore-777','p3',3,0],['ttscore-9001','p1',5,1]]};
+const club=render('club/c1',clubData,'en');
+const metric=(label,value)=>club.html.includes(`<span>${label}</span><strong>${value}</strong>`);
+check(club.html.includes('value="2025-26" selected')&&metric('Wins',2)&&metric('Losses',1),'Club page opens on its latest season');
+check(club.html.includes('Team competitions · 2')&&club.html.includes('<strong>2=</strong><span class="smallmuted"> / 3</span></td><td class="opt">1</td><td class="opt">0</td><td class="opt">0</td><td><strong>4</strong></td><td>1–1</td>'),'League rows show the source position and the record in imported fixtures of that group');
+check(club.html.includes('Cup &lt;b&gt;')&&!club.html.includes('Cup <b>')&&club.html.includes('<td>—</td><td class="opt">—</td><td class="opt">—</td><td class="opt">—</td><td>—</td><td>1–0</td>')&&club.html.indexOf('Cup &lt;b&gt;</a>')<club.html.indexOf('Α1 ΑΝΔΡΩΝ 2025-26</a>'),'Competitions without a published table show only the archive record, newest first');
+check(club.html.includes('Players in team matches · 2')&&club.html.includes('<td class="opt">2</td><td>6</td><td><span class="score">5–1</span></td><td class="opt">83%</td>'),'Team match counts are summed per player for the season');
+check(club.html.indexOf('✕ 2–4')>0&&club.html.indexOf('✕ 2–4')<club.html.indexOf('✓ 4–1')&&club.html.includes('✓ 3–0')&&!club.html.includes('4–2'),'Fixtures are shown from the club\'s side, newest first');
+check(club.html.indexOf('#7 Men')>0&&club.html.indexOf('#7 Men')<club.html.indexOf('#15 Men'),'Roster follows the latest official ranking');
+club.change('club-season','all');
+check(club.html.includes('Team competitions · 3')&&club.html.includes('<strong>1</strong><span class="smallmuted"> / 2</span>')&&metric('Wins',3)&&club.html.includes('<td class="opt">3</td><td>11</td><td><span class="score">6–5</span></td><td class="opt">55%</td>')&&club.html.includes('<div class="smalltext">2024-25 · Old Men</div>'),'All seasons combine every competition and player count');
+club.change('club-season','2024-25');
+check(club.html.includes('Team competitions · 1')&&!club.html.includes('Cup &lt;b&gt;')&&metric('Wins',1)&&metric('Losses',0),'Season filter narrows competitions, players and fixtures');
+const busy=structuredClone(clubData);busy.fixtures=Array.from({length:51},(_,i)=>fixture('b'+i,'ttscore-777','c1','c2',4,0,'2026-02-03',55));
+const busyClub=render('club/c1',busy,'en');
+check(busyClub.html.includes('Team fixtures · 51')&&busyClub.html.includes('id="page-next"')&&busyClub.html.includes('<span>Wins</span><strong>51</strong>'),'Long fixture lists paginate while totals stay complete');
+check(render('club/c1',clubData,'el').html.includes('Αθλητές σε ομαδικούς αγώνες'),'Greek club page labels');
+check(render('club/c3',clubData,'en').html.includes('Team competitions · 2')&&!render('club/c3',clubData,'en').html.includes('Players in team matches'),'Clubs without team match counts skip that section');
 async function hostedChecks(){
  const hosted=structuredClone(sample);
  hosted.meta={...hosted.meta,verified_results:123,table_counts:{doubles:4},event_match_counts:{'ttscore-777':1},
@@ -236,6 +264,10 @@ async function hostedChecks(){
  hostedInsight.meta={...hostedInsight.meta,partitions:{player:{p1:'records/p1i.json'},event:{},club:{}}};
  const hostedBreakdown=render('player/p1',hostedInsight,'en',async()=>({ok:true,json:async()=>({matches:insight.matches,doubles:[],fixtures:[],match_ranks:insight.match_ranks})}));await flush();
  check(hostedBreakdown.html.includes('Best wins')&&hostedBreakdown.html.includes('<strong>#2</strong>'),'Hosted profiles read match positions from the player file');
+ const hostedClub=structuredClone(clubData);hostedClub.fixtures=[];hostedClub.standings=[];delete hostedClub.club_players;
+ hostedClub.meta={...hostedClub.meta,partitions:{player:{},event:{},club:{c1:'records/c1x.json'}}};
+ const hostedClubPage=render('club/c1',hostedClub,'en',async()=>({ok:true,json:async()=>({matches:[],doubles:[],fixtures:clubData.fixtures,standings:clubData.standings,club_players:{c1:clubData.club_players.c1}})}));await flush();
+ check(hostedClubPage.html.includes('<strong>2=</strong>')&&hostedClubPage.html.includes('Players in team matches · 2'),'Hosted club pages read positions and team counts from the club file');
  hosted.meta.release_id='old-release';let interval=0;
  const updated=render('home',hosted,'en',async url=>({ok:true,json:async()=>({release_id:'new-release'})}),
   {setInterval(fn,delay){interval=delay;}});

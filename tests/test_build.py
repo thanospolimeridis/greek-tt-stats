@@ -6,7 +6,7 @@ import tempfile
 import unittest
 import re
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
-from build import build_site, match_ranks, pack_match_ranks
+from build import build_site, club_players, match_ranks, pack_match_ranks
 
 class BuildTests(unittest.TestCase):
     def test_hosted_partitions_preserve_results_and_membership(self):
@@ -106,4 +106,34 @@ class MatchRankTests(unittest.TestCase):
             self.assertEqual(part('player','px')['match_ranks']['rows'],{'one':[0,0,None,5]})
             self.assertNotIn('match_ranks',part('player','py'))
             self.assertNotIn('match_ranks',part('event','e1'))
+            self.assertEqual(portable,build_site(root))
+
+
+def team_single(ident,event,first,second,winner,fixture='f1',status='completed'):
+    return {'id':ident,'event_id':event,'date':'2026-01-01','player1_id':first,'player2_id':second,'club1_id':'c1','club2_id':'c2',
+            'winner_id':winner,'fixture_id':fixture,'status':status}
+
+class ClubPlayerTests(unittest.TestCase):
+    def matches(self):
+        return [team_single('m1','e1','p1','p2','p1'),team_single('m2','e1','p1','p3','p3'),team_single('m3','e2','p1','p2','p1'),
+                team_single('m4','e1','p1','p2','p1',fixture=''),          # individual event: no team fixture
+                team_single('m5','e1','p1','p2','p1',status='walkover')]   # not completed
+    def test_counts_completed_team_singles_per_club_event_and_player(self):
+        self.assertEqual(club_players({'matches':self.matches()}),
+            {'c1':[['e1','p1',2,1],['e2','p1',1,1]],'c2':[['e1','p2',1,0],['e1','p3',1,1],['e2','p2',1,0]]})
+        self.assertEqual(club_players({}),{})
+    def test_each_club_file_carries_only_its_own_counts(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);(root/'data').mkdir()
+            shutil.copytree(Path(__file__).resolve().parents[1]/'src',root/'src')
+            fixture={'id':'f1','event_id':'e1','home_club_id':'c1','away_club_id':'c2'}
+            (root/'data'/'catalog.json').write_text(json.dumps({'matches':self.matches(),'doubles':[],'fixtures':[fixture],'meta':{}}))
+            portable=build_site(root)
+            read=lambda page:json.loads(re.search(r'id="site-data">(.*?)</script>',page,re.S)[1])
+            hosted=read((root/'dist'/'index.html').read_text())
+            self.assertEqual(sorted(read(portable)['club_players']),['c1','c2'])
+            self.assertNotIn('club_players',hosted)
+            part=lambda ident:json.loads((root/'dist'/hosted['meta']['partitions']['club'][ident]).read_text())
+            self.assertEqual(part('c1')['club_players'],{'c1':[['e1','p1',2,1],['e2','p1',1,1]]})
+            self.assertEqual(part('c2')['fixtures'],[fixture])
             self.assertEqual(portable,build_site(root))

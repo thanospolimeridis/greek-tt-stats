@@ -74,7 +74,29 @@ def pack_match_ranks(context, ids=None):
     return {'format': MATCH_RANK_FORMAT, 'dates': list(dates), 'categories': list(categories), 'rows': rows}
 
 
-def partition_results(data, dist, context=None):
+def club_players(data):
+    """Who played team matches for each club: {club id: [[event id, player id, played, won]]}.
+
+    Counts completed singles that belong to a team fixture, with the club taken from
+    the match sheet. Club pages need them without loading every player's matches.
+    """
+    from collections import defaultdict
+    counts = defaultdict(lambda: [0, 0])
+    for m in data.get('matches', []):
+        if m['status'] != 'completed' or not m.get('fixture_id'):
+            continue
+        for player, club in ((m['player1_id'], m.get('club1_id')), (m['player2_id'], m.get('club2_id'))):
+            if club:
+                row = counts[club, m['event_id'], player]
+                row[0] += 1
+                row[1] += m.get('winner_id') == player
+    table = defaultdict(list)
+    for (club, event, player), (played, won) in sorted(counts.items()):
+        table[club].append([event, player, played, won])
+    return dict(table)
+
+
+def partition_results(data, dist, context=None, squads=None):
     """Build static route files; shared rows are copied, never inferred or aggregated."""
     from collections import defaultdict
     groups = {kind:defaultdict(lambda: {'matches':[], 'doubles':[], 'fixtures':[]})
@@ -103,8 +125,17 @@ def partition_results(data, dist, context=None):
         packed = pack_match_ranks(context or {}, [m['id'] for m in records['matches']])
         if packed['rows']:records['match_ranks'] = packed
     # Only league files gain the key, so every other event file keeps its bytes.
+    by_group = defaultdict(list)
     for row in data.get('standings',[]):
         groups['event'][row['event_id']].setdefault('standings',[]).append(row)
+        by_group[row['group_id']].append(row)
+    # A club's file carries the whole table of every group it played in, so its
+    # position can be shown with the same rule as on the league page.
+    for rows in by_group.values():
+        for club in sorted({r['club_id'] for r in rows if r['club_id']}):
+            groups['club'][club].setdefault('standings',[]).extend(rows)
+    for club, rows in (squads or {}).items():
+        groups['club'][club]['club_players'] = {club: rows}
     folder=dist/'records';folder.mkdir(exist_ok=True)
     paths={kind:{} for kind in groups}
     for kind, entries in groups.items():
@@ -156,9 +187,10 @@ def build_site(root=ROOT):
         serialized=json.dumps(payload,ensure_ascii=False,separators=(',',':')).replace('<','\\u003c').replace('>','\\u003e').replace('&','\\u0026')
         replacements={'/*INLINE_CSS*/':css,'/*INLINE_JS*/':js,'/*INLINE_JSON*/':serialized}
         return re.sub(r'/\*INLINE_(?:CSS|JS|JSON)\*/',lambda m:replacements[m[0]],template)
-    context=match_ranks(data)
+    context,squads=match_ranks(data),club_players(data)
     html=render({**data,'rankings':pack_rankings(data.get('rankings',[])),
-                 **({'match_ranks':pack_match_ranks(context)} if context else {})})
+                 **({'match_ranks':pack_match_ranks(context)} if context else {}),
+                 **({'club_players':squads} if squads else {})})
     dist = root/'dist'
     dist.mkdir(exist_ok=True)
     latest={}
@@ -169,7 +201,7 @@ def build_site(root=ROOT):
             # snapshot date file carry the rest.
             'rankings':pack_rankings([r for r in data.get('rankings',[]) if r['date']==latest[r['category']]])}
     if table:hosted['standings']=[]  # each league's file carries its own rows
-    hosted['meta']['partitions']=partition_results(data,dist,context)
+    hosted['meta']['partitions']=partition_results(data,dist,context,squads)
     dates_by_category={}
     for row in data.get('rankings',[]):
         dates_by_category.setdefault(row['category'],set()).add(row['date'])
