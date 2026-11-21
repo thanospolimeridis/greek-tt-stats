@@ -106,6 +106,8 @@ const coveragePage=render('about',coverageSample,'en');
 check(coveragePage.html.includes('1/2 additional competitions checked'),'Batch progress is explicit');
 check(coveragePage.html.includes('Not finished by the reference date'),'Deferred competitions are distinguished from imported events');
 check(coveragePage.html.includes('does not establish complete history'),'Traversal is not labelled historical completeness');
+check(['home','events','players','clubs','rankings'].every(route=>!render(route,coverageSample).html.includes('class="statusbox"')),'No partial-coverage box on pages that list results');
+check(render('home').html.includes('class="statusbox"'),'An archive without results still says so');
 check(render('event/ttscore-9999',coverageSample,'en').html.includes('Not finished by the reference date'),'Event page explains deferral');
 coverageSample.meta.provenance.coverage.events['777'].scope='available_results';
 coverageSample.meta.provenance.coverage.events['777'].snapshot_date='2026-11-20';
