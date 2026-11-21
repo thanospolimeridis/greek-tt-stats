@@ -46,7 +46,7 @@ a.event-row:hover,a.player-row:hover{border-color:#acd5cd;transform:translateY(-
 .mc-games{font-size:12px;color:#5d767d;font-variant-numeric:tabular-nums}
 .profile-head{display:flex;gap:20px;align-items:center}
 .profile-grid{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:18px;align-items:start}
-@media (max-width:1100px){.profile-grid{grid-template-columns:1fr}}@media (max-width:940px){.points{flex-basis:110px}}
+@media (max-width:1100px){.profile-grid{grid-template-columns:minmax(0,1fr)}}@media (max-width:940px){.points{flex-basis:110px}}
 @media (max-width:700px){
  .event-row{gap:12px;padding:12px}.event-badge{flex-basis:56px;height:56px}.event-badge b{font-size:17px}.event-badge span{font-size:10px}.event-row-go{display:none}
  .event-row-meta{flex-wrap:wrap}.ellipsis{white-space:normal}
