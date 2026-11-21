@@ -62,6 +62,18 @@ def ranking_line(data, history_dir=ROOT/'imports'/'ranking-history'):
     return f'- **{rows:,} official ranking records**: {len(categories)} age categories, {span}.', bool(history)
 
 
+def corrections_line(path=ROOT/'data'/'identity-corrections.json'):
+    """Reviewed identity corrections applied at build time (see identity_corrections.py), if any."""
+    if not path.exists():
+        return ''
+    table = json.loads(path.read_text(encoding='utf-8'))
+    players, clubs = len(table.get('players', [])), len(table.get('clubs', []))
+    if not players+clubs:
+        return ''
+    return (f'- **{players+clubs:,} reviewed identity corrections** on the published site: {players:,} athletes the source recorded '
+            f"under a second registration number and {clubs:,} clubs under a second spelling. The CSVs keep the source's identities.\n")
+
+
 def coverage_section(data, today):
     coverage = data['meta']['provenance']['coverage']
     batch = coverage['batch']
@@ -75,16 +87,28 @@ def coverage_section(data, today):
     rankings, history = ranking_line(data)
     progress = ('Collection continues through the remaining queue, with validated checkpoints published periodically.'
                 if batch['pending'] else 'The eligible competition queue has been checked; source gaps and deferred listings remain.')
+    partial = (f'Results from active or undated events are limited to explicit, validated scores dated on or before {cutoff} '
+               'and remain partial snapshots.')
+    if batch.get('kind') == 'refresh':
+        # A refresh re-checks what was still open and adds what is new; the archive's totals are in the lines above.
+        scope = (f"- The latest refresh checked **{batch['attempted']:,} of {batch['eligible']:,} competitions** that were still in "
+                 f"progress or newly listed, {batch.get('rechecked', 0):,} of them already in the archive. "
+                 f"**{batch['pending']:,} remain queued**, and {len(batch['deferred']):,} listings remain explicitly deferred; "
+                 f'the coverage report gives their reasons. {partial}')
+    else:
+        scope = (f"- The current resumable batch has checked **{batch['attempted']:,} of {batch['eligible']:,} additional eligible "
+                 f"competitions**. **{batch['pending']:,} remain queued**, and {len(batch['deferred']):,} listings remain explicitly "
+                 f'deferred; the coverage report gives their reasons. {partial}')
     return f'''## Current coverage — {today.strftime('%-d %B %Y')}
 
 - **{catalog:,} publicly listed TTScore events**, reconciled across 2018–19 through 2026–27.
 - **{legacy} additional legacy event** retained from the original prototype, labelled absent from the current catalog ({counts['events']:,} displayed total).
 - **{counts['matches']:,} completed singles matches, {counts['doubles']:,} doubles matches and {counts['fixtures']:,} team fixtures**, from {competitions:,} competitions across all nine listed seasons.
 - **{counts['players']:,} athletes**, linked by federation registration number where available, and **{counts['clubs']:,} exact club names**.
-{rankings}
+{corrections_line()}{rankings}
 - **{resolved:,} doubles matches identify all four members**; {unresolved:,} preserve source pair labels without invented athlete links.
 - **{len(coverage['issues']):,} source issues** are recorded, including walkovers, unresolved fixtures and inconsistent scores. Coverage reports retain exclusion reasons and unplayed/bye counts.
-- The current resumable batch has checked **{batch['attempted']:,} of {batch['eligible']:,} additional eligible competitions**. **{batch['pending']:,} remain queued**, and {len(batch['deferred']):,} listings remain explicitly deferred; the coverage report gives their reasons. Results from active or undated events are limited to explicit, validated scores dated on or before {cutoff} and remain partial snapshots.
+{scope}
 
 **Historical results are incomplete.** {progress}{'' if history else ' Additional ranking snapshots also remain unimported.'} The season-by-season table on About shows the exact scope. No results are invented. Validation checks source consistency, not independent historical truth. The About page exposes scope and exclusions, with downloadable coverage and provenance reports.
 
@@ -116,7 +140,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--input', type=Path, default=ROOT/'capture'/'batch-imports')
     parser.add_argument('--baseline', type=Path, required=True, help='Original baseline, retained before any release promotion')
-    parser.add_argument('--cache', type=Path, default=ROOT/'capture'/'ttscore')
+    parser.add_argument('--cache', type=Path, nargs='+', default=[ROOT/'capture'/'ttscore'],
+                        help='Source cache folders: the first is replayed, and every one is searched for published evidence')
+    parser.add_argument('--destination', type=Path, default=ROOT/'imports', help='Published inputs to compare with and promote into')
+    parser.add_argument('--readme', type=Path, default=ROOT/'README.md')
     parser.add_argument('--plan', type=Path, default=ROOT/'data'/'import-plan.json')
     parser.add_argument('--releases', type=Path, default=ROOT/'capture'/'releases')
     parser.add_argument('--allow-pending', action='store_true')
@@ -129,15 +156,15 @@ def main():
     plan = json.loads(args.plan.read_text())
     report = audit(data, baseline, plan, allow_pending=args.allow_pending)
     if args.promote:
-        published=build(ROOT/'imports',seed)
+        published=build(args.destination,seed)
         report['previous_release_preserved']=audit(data,published,plan,
             allow_pending=args.allow_pending)['baseline_preserved']
     report['source_responses_verified'] = audit_cache(data['meta']['provenance']['requests'], args.cache)
-    report['offline_replayed_competitions'] = replay_archive(release, args.baseline, plan, args.cache)
+    report['offline_replayed_competitions'] = replay_archive(release, args.baseline, plan, args.cache[0])
     report['provenance_sha256'] = sha256((release/'provenance.json').read_bytes())
     (release/'audit.json').write_text(json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2)+'\n')
     if args.promote:
-        promote(release, report, ROOT/'imports', ROOT/'README.md', seed)
+        promote(release, report, args.destination, args.readme, seed)
     print(json.dumps({'release':str(release), 'promoted':args.promote, 'checked':report['checked'],
                       'pending':report['pending'], 'counts':report['counts']}, ensure_ascii=False))
 

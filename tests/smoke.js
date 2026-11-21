@@ -78,6 +78,16 @@ check(prevented&&enter.context.location.hash==='#h2h/p1','Enter in a comparison 
 enter.handlers.keydown({key:'Enter',preventDefault(){throw new Error('no result to pick')},target:{id:'h2h-search2',matches:()=>true,parentElement:{querySelector:()=>null}}});
 check(enter.context.location.hash==='#h2h/p1','Enter without results changes nothing');
 check(render('player/p1',sample,'en').html.includes('href="#h2h/p1"'),'The profile opens the comparison with its athlete chosen');
+// Freshness: the dates come from the build; nothing is shown when the build gave none.
+const dated=structuredClone(sample);dated.meta={...dated.meta,data_through:{results:'2026-11-15',checked:'2026-11-20',rankings:'2026-10-01'}};
+check(render('home',dated,'en').html.includes('<p class="fresh-note">Results through 15 Nov 2026 · source checked 20 Nov 2026 · ranking of 1 Oct 2026</p>'),'Home says how fresh the results, the source check and the ranking are');
+check(render('home',dated).html.includes('Αποτελέσματα έως 15 Νοε 2026 · έλεγχος πηγής 20 Νοε 2026 · κατάταξη 1 Οκτ 2026')&&render('about',dated,'en').html.includes('Results through 15 Nov 2026'),'Freshness is shown in Greek and on About');
+dated.meta.data_through={results:'2026-11-15'};
+check(render('home',dated,'en').html.includes('<p class="fresh-note">Results through 15 Nov 2026</p>')&&!render('home',sample,'en').html.includes('fresh-note'),'Only the dates the build knows are shown');
+const refreshed=structuredClone(sample);refreshed.meta={...refreshed.meta,provenance:{coverage:{event_catalog:{count:1,seasons:['2025-26']},batch:{attempted:19,eligible:19,pending:0,deferred:[],as_of:'2026-11-27',kind:'refresh'}}}};
+check(render('about',refreshed,'en').html.includes('19/19 competitions in progress or new checked in the latest refresh'),'About describes a refresh as a refresh');
+delete refreshed.meta.provenance.coverage.batch.kind;
+check(render('about',refreshed,'en').html.includes('19/19 additional competitions checked'),'About keeps the archive wording for an archive batch');
 // Page titles
 for(const [route,lang,title] of [['home','el','Greek TT Archive — Ελληνική Επιτραπέζια Αντισφαίριση'],['home','en','Greek TT Archive — Greek table tennis results'],['player/p1','en','Γιώργος Παίκτης · Greek TT Archive'],['club/c2','en','Other Club · Greek TT Archive'],['rankings','el','Κατατάξεις · Greek TT Archive'],['h2h','en','Head to head · Greek TT Archive'],['player/missing','en','404 · Greek TT Archive'],['nowhere','en','404 · Greek TT Archive']]){
   check(render(route,sample,lang).context.document.title===title,'Page title for '+route+' ('+lang+')');

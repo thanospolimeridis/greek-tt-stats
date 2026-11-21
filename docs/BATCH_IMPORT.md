@@ -74,7 +74,7 @@ python3 scripts/benchmark_brackets.py --input capture/batch-imports/provenance.j
 
 The benchmark is offline and fails on differences. A public all-seasons export has not been found; an authorized federation/TTScore export could remove more requests and help establish coverage of unlisted events.
 
-## Validate and publish a staged release
+## Validate and stage a release
 
 ```sh
 python3 scripts/import_csv.py --input capture/batch-imports --output /tmp/ttscore-batch-catalog.json
@@ -85,7 +85,7 @@ node tests/smoke.js
 
 The release audit rejects lost or changed baseline records, incomplete queue traversal, misleading event totals, and changed source evidence. `--replay` normalizes source responses again in offline workers and requires byte-identical CSVs and full provenance. It merges once at the end, avoiding repeated large archive writes during release checks. Use `--allow-pending` only to inspect or publish an explicitly partial checkpoint. Preserve the original baseline when promoting a release, and pass it with `--baseline PATH` to repeat preservation and replay checks afterward.
 
-Review preservation of the existing archive and source issues before copying staged CSVs and `provenance.json` into `imports/`. Rebuild with `scripts/import_csv.py` and `scripts/build.py`, then commit and push to the existing GitHub Pages workflow. Neither GitHub Actions nor ordinary site builds contact TTScore.
+Review preservation of the existing archive and source issues before copying staged CSVs and `provenance.json` into `imports/`. Rebuild with `scripts/import_csv.py` and `scripts/build.py`, then commit and push to `develop`; the public site changes only with a release. Neither GitHub Actions nor ordinary site builds contact TTScore.
 
 For repeated updates while collection is running, use the release helper with the original baseline:
 
@@ -97,11 +97,55 @@ python3 -m unittest discover -s tests -v
 node tests/smoke.js
 ```
 
-The helper freezes one complete checkpoint under `capture/releases/`, checking CSV hashes and rejecting a mixed export if collection advances during the copy. It verifies the original baseline, every referenced raw response, and a fresh offline replay before updating `imports/` and README coverage. Omitting `--promote` performs the audit without changing published inputs. Only the seven normalized CSVs and provenance are copied; unrelated files and raw responses cannot enter a release. Rebuild, test, commit and push after promotion, then verify GitHub Actions and the live files before recording the deployment as successful. Keep the original baseline unchanged throughout the batch. This helper makes no network requests and does not schedule future work.
+The helper freezes one complete checkpoint under `capture/releases/`, checking CSV hashes and rejecting a mixed export if collection advances during the copy. It verifies the original baseline, every referenced raw response, and a fresh offline replay before updating `imports/` and README coverage. Omitting `--promote` performs the audit without changing published inputs. Only the seven normalized CSVs and provenance are copied; unrelated files and raw responses cannot enter a release. Rebuild, test, commit and push to `develop` after promotion, then check the validation workflow. Keep the original baseline unchanged throughout the batch. This helper makes no network requests and does not schedule future work.
+
+## Refresh cycles
+
+The archive plan above checks every competition once. While a season is running, `scripts/refresh.py` adds a cycle on top of it:
+
+```sh
+python3 scripts/refresh.py                       # what a refresh would queue; makes no requests
+python3 scripts/refresh.py run                   # one cycle through yesterday, staged on develop
+python3 scripts/refresh.py run --as-of 2026-11-29 --no-stage
+python3 scripts/refresh.py rehearse              # the whole cycle offline in a scratch folder
+```
+
+One cycle, in order:
+
+1. **Listing.** The public catalog is read again. New competitions are added and changed listing fields (dates, names) are taken over; both are recorded in the plan as `catalog_changes`. A competition that is no longer listed stops the refresh for review.
+2. **Plan.** `data/import-plan.json` is replaced by a refresh plan (`kind: refresh`, `schema_version: 3`) that records the hash of the plan before it. It queues competitions that were open at their last check and ones never checked that have started. One that has finished since gets a complete check in place of its partial snapshot. Competitions already checked as finished are never queued again, and an undated listing from an earlier season is left alone. Listings that have not started are deferred.
+3. **Results.** The queue is collected by `batch_import.py` into the cycle's own cache folder, `capture/refresh/<cutoff>/cache`. The first cache, `capture/ttscore`, and the caches of earlier cycles are never written to, so a page fetched again does not overwrite the response that earlier results cite.
+4. **Audit and replay.** The release helper runs as for any batch, with every cache folder listed. It replays the cycle's competitions offline and requires byte-identical CSVs and provenance. The listing step is replayed from the cycle cache as well.
+5. **Rankings and standings.** New official ranking snapshots are added to `imports/ranking-history/`. The standings of the leagues the cycle checked are read again from the pages it already fetched (`import_standings.py --update`), so tables and fixtures show the same day and no extra requests are made.
+6. **Staging.** The site is rebuilt twice for the determinism check, both test suites run, and the changed inputs are committed and pushed to `develop` as `HEAD:develop`. The cycle then waits for the validation workflow. Nothing is published; that is a release (README, "Releases and versions").
+
+The default cutoff is yesterday in Athens. Results entered during a match day can still be incomplete at the source, and a half-entered team fixture can look like a finished one.
+
+### What a refresh may change
+
+Nothing published may be lost or altered. The audit allows three exceptions, each named by the frozen plan:
+
+- **Listing fields** in `catalog_changes`.
+- **Source evidence retrieved again during the cycle.** A request made again replaces its earlier record only when the request is identical and its retrieval time is not before the plan's `created_at`.
+- **Results a reviewer let follow the source**, listed by record ID under `accepted_source_changes`.
+
+If the source has changed a published result, or no longer shows one, the collector stops and names the records. Compare them with the source. To accept the source's version, add their IDs to `accepted_source_changes` in `data/import-plan.json` and run the same command again: the listed records are then replaced or removed, and the audit lets exactly those through.
+
+### Fewer requests
+
+A competition checked again asks for the sheet of every fixture. The sheets behind fixtures the archive already publishes are copied into the cycle's cache with their original retrieval record, so a weekly refresh costs the listing pages plus the new fixtures. A correction the source makes later to an old sheet is not seen this way; `--recheck-sheets` fetches every sheet again. A fixture whose listed score no longer matches its carried-forward sheet fails the usual cross-check, its published rows drop out of the worker's result, and the refresh stops as described above.
+
+### Resuming and disk use
+
+Run the same command again to resume: finished competitions are kept, and every later step can be repeated safely. `touch capture/pause-import` stops the collector before its next competition. Source or network outages are retried (`--retries`, `--retry-wait`).
+
+A staged cycle keeps its evidence in `capture/refresh/<cutoff>/`: the cache, the plan, the audit report and the log. The baseline, the staged archive and the checkpoints are deleted, since Git history and an offline replay can produce them again.
+
+`rehearse` runs a whole cycle offline in `capture/refresh-rehearsal/`, with the newest cached responses standing in for the source, and compares the result with `imports/`: all seven tables must come out byte for byte the same. It changes nothing in the repository. Run it after touching the refresh or the collector.
 
 ## Unattended collection
 
-`scripts/continue_archive.py` runs the queue unattended. It collects a batch of competitions, stops at an event boundary, and publishes that batch with the release helper above. Publishing includes the rebuild, both test suites, a determinism check, the commit and push to `main`, a wait for both GitHub workflows, and a byte-for-byte check of the live site. It then starts the next batch.
+`scripts/continue_archive.py` runs a large archive queue unattended; for the weekly refresh use the cycle above. It collects a batch of competitions, stops at an event boundary, and stages that batch with the release helper above. Staging includes the rebuild, both test suites, a determinism check, the commit, the push to `develop` and a wait for the validation workflow. It then starts the next batch. It starts only from a checkout that is exactly at `origin/develop`, and it never publishes.
 
 ```sh
 python3 scripts/continue_archive.py --batch 50 --detach   # background, under caffeinate
@@ -111,11 +155,11 @@ touch capture/pause-import       # stop after the current competition
 
 How it handles problems:
 
-- **Outages:** TTScore outages and network failures (HTTP 429/5xx, timeouts, dropped connections) are retried after `--retry-wait` minutes. It stops after `--max-retries` consecutive failures that make no progress. Validated events from an interrupted batch are published at the next clean batch boundary.
-- **Everything else stops for review:** validation errors, corrupt cache entries, robots.txt or redirect refusals, failed workflows and live-byte mismatches. Status is in `capture/supervisor-state.json`.
+- **Outages:** TTScore outages and network failures (HTTP 429/5xx, timeouts, dropped connections) are retried after `--retry-wait` minutes. It stops after `--max-retries` consecutive failures that make no progress. Validated events from an interrupted batch are staged at the next clean batch boundary.
+- **Everything else stops for review:** validation errors, corrupt cache entries, robots.txt or redirect refusals and a failed validation workflow. Status is in `capture/supervisor-state.json`.
 - **No double runs:** it adopts a collector that is already running instead of starting a second one, and it refuses to run beside another supervisor.
 
-Restarting after `pause-import` publishes any validated competitions that are not yet published, then continues. The supervisor is not part of the adapter fingerprint, so editing it never re-normalizes checked events. Edits to the six adapter files do. Make those only at a release boundary.
+Restarting after `pause-import` stages any validated competitions that are not yet staged, then continues. The supervisor is not part of the adapter fingerprint, so editing it never re-normalizes checked events. Edits to the six adapter files do. Make those only at a release boundary.
 
 The website paginates long player histories and coverage tables. Hosted detail views load content-addressed static JSON for the selected event, player, or club; H2H uses the complete selected player's history. Missing downloads show a retry message, never an empty-history claim. Detailed request provenance is downloadable as `provenance.json`; `coverage.json` exposes coverage and exclusions. The complete portable page remains available as `index.html` in local builds and `offline.html` on the hosted site. It retains coverage, source links, and all statistical records without duplicating the full request log.
 

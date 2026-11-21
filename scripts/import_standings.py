@@ -63,6 +63,7 @@ def main():
     ap.add_argument('--output', type=Path, default=standings.FOLDER)
     ap.add_argument('--cache', type=Path, required=True, help='Response cache (use a separate one for fresh retrievals)')
     ap.add_argument('--event', action='append', help='League event number; default: every league in the catalog')
+    ap.add_argument('--update', action='store_true', help='With --event: replace only those leagues and keep the rest of the folder')
     ap.add_argument('--delay', type=float, default=3, help='Seconds between network requests')
     ap.add_argument('--offline', action='store_true')
     args = ap.parse_args()
@@ -74,8 +75,26 @@ def main():
         raise SystemExit(f'Not league events in the catalog: {unknown}')
     client = Client(args.cache, args.offline, args.delay)
     rows, coverage, rejected = collect(client, args.event or leagues, {c['id'] for c in catalog['clubs']})
+    requests = dict(client.records)
+    if args.update:
+        if not args.event:
+            ap.error('--update needs the leagues to refresh, given with --event')
+        # Keep every other league as it is.
+        chosen = set(args.event)
+        manifest_path = args.output/'provenance.json'
+        previous = (json.loads(manifest_path.read_text(encoding='utf-8')) if manifest_path.exists()
+                    else {'coverage': {}, 'requests': {}})
+        kept = [r for r in standings.read_rows(args.output/'standings.csv') if r['event_id'].removeprefix('ttscore-') not in chosen]
+        for row in kept:  # numbers again, so kept and fresh rows sort and print alike
+            row.update({field: int(row[field]) for field in standings.COUNTS})
+        old_coverage = previous['coverage']
+        coverage += [c for c in old_coverage.get('standings', []) if c['event'] not in chosen]
+        rejected += [r for r in old_coverage.get('standing_rejections', []) if r['event'] not in chosen]
+        # A request made again replaces its earlier record; every other record stays.
+        requests = {**previous['requests'], **requests}
+        rows = kept+rows
     order = lambda r: (int(r['event']), int(r['group']))  # noqa: E731
-    manifest = {'adapter': ADAPTER, 'requests': dict(sorted(client.records.items())),
+    manifest = {'adapter': ADAPTER, 'requests': dict(sorted(requests.items())),
                 'coverage': {'standings': sorted(coverage, key=order)}}
     if rejected:
         manifest['coverage']['standing_rejections'] = sorted(rejected, key=lambda r: (int(r['event']), r['category']))

@@ -6,7 +6,7 @@ import tempfile
 import unittest
 import re
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
-from build import build_site, club_players, match_ranks, pack_match_ranks
+from build import build_site, club_players, data_through, match_ranks, pack_match_ranks
 
 class BuildTests(unittest.TestCase):
     def test_hosted_partitions_preserve_results_and_membership(self):
@@ -80,6 +80,27 @@ class BuildTests(unittest.TestCase):
             self.assertEqual(result,build_site(root))
             self.assertEqual((root/'index.html').read_bytes(),(root/'dist'/'offline.html').read_bytes())
 
+
+class FreshnessTests(unittest.TestCase):
+    def test_dates_come_from_the_records_and_the_last_source_check(self):
+        data={'matches':[{'date':'2026-11-14'},{'date':'2026-11-15'},{}],'fixtures':[{'date':'2026-11-08'}],
+              'rankings':[{'date':'2026-08-01'},{'date':'2026-10-01'}],
+              'meta':{'provenance':{'coverage':{'batch':{'as_of':'2026-11-20'}}}}}
+        self.assertEqual(data_through(data),{'results':'2026-11-15','checked':'2026-11-20','rankings':'2026-10-01'})
+        self.assertEqual(data_through({'matches':[{'date':'2026-11-15'}]}),{'results':'2026-11-15'})
+        self.assertEqual(data_through({}),{})
+    def test_the_site_carries_them_only_when_there_is_something_to_say(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);(root/'data').mkdir()
+            shutil.copytree(Path(__file__).resolve().parents[1]/'src',root/'src')
+            read=lambda page:json.loads(re.search(r'id="site-data">(.*?)</script>',page,re.S)[1])
+            (root/'data'/'catalog.json').write_text(json.dumps({'meta':{}}))
+            self.assertNotIn('data_through',read(build_site(root))['meta'])
+            match={'id':'m1','event_id':'e1','date':'2026-11-15','player1_id':'p1','player2_id':'p2','status':'completed'}
+            (root/'data'/'catalog.json').write_text(json.dumps({'matches':[match],'doubles':[],'fixtures':[],'meta':{}}))
+            portable=build_site(root)
+            self.assertEqual(read(portable)['meta']['data_through'],{'results':'2026-11-15'})
+            self.assertEqual(read((root/'dist'/'index.html').read_text())['meta']['data_through'],{'results':'2026-11-15'})
 
 def position(player,category,date,rank):
     return {'id':f'r-{date}-{category}-{player}','player_id':player,'category':category,'date':date,'rank':rank,'points':1.0,'source_url':'https://app.ttscore.io/test'}

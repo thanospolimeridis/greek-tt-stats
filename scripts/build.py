@@ -185,6 +185,15 @@ def list_summaries(data):
             {ident: [played[ident], won[ident]] for ident in sorted(played)})
 
 
+def data_through(data):
+    """The dates that tell a visitor how fresh the archive is: the newest result, the day
+    the source was last checked for results, and the official ranking in force."""
+    results = max((r['date'] for kind in ('matches', 'doubles', 'fixtures') for r in data.get(kind, []) if r.get('date')), default='')
+    checked = data.get('meta', {}).get('provenance', {}).get('coverage', {}).get('batch', {}).get('as_of', '')
+    rankings = max((r['date'] for r in data.get('rankings', []) if r.get('date')), default='')
+    return {key: value for key, value in (('results', results), ('checked', checked), ('rankings', rankings)) if value}
+
+
 def slim(hosted):
     """Leave out of the hosted page the audit fields it never shows.
 
@@ -227,6 +236,9 @@ def build_site(root=ROOT):
     corrections=identity_corrections.load(root/'data'/'identity-corrections.json',data)
     identity_corrections.apply(data,corrections)
     data['meta']['event_player_counts'], data['meta']['player_summary'] = list_summaries(data)
+    through = data_through(data)
+    if through:
+        data['meta']['data_through'] = through
     css = (root/'src'/'style.css').read_text(encoding='utf-8')
     js = (root/'src'/'app.js').read_text(encoding='utf-8')
     template = (root/'src'/'template.html').read_text(encoding='utf-8')

@@ -65,8 +65,40 @@ def make_plan(base, as_of, include_available=False):
     return result
 
 
-def merge_event(base, saved, event):
-    """Merge only validated, event-scoped rows; preserve existing athlete identities."""
+RESULT_KINDS=('matches','doubles','fixtures')
+
+
+def checked_in_plan(record, item, as_of):
+    """Whether an event's coverage record is the check this plan asks for.
+
+    An archive plan checks every competition once, so any record satisfies it. A refresh
+    plan (scripts/refresh.py) queues competitions that were checked before: an open one
+    needs a snapshot at the plan's own cutoff, and one that has since finished needs a
+    complete check in place of its earlier partial snapshot.
+    """
+    if record is None:return False
+    if item.get('scope')=='available_results':
+        return record.get('scope')=='available_results' and record.get('snapshot_date')==as_of
+    return record.get('scope','finished')=='finished'
+
+
+def merge_event(base, saved, event, accepted=()):
+    """Merge only validated, event-scoped rows; preserve existing athlete identities.
+
+    A competition that is checked again must still show every result the archive holds
+    for it. A result the source has changed or no longer shows stops the merge for review;
+    `accepted` lists the record IDs a reviewer allowed to follow the source (the plan's
+    accepted_source_changes), which are then replaced or removed.
+    """
+    gone={kind:[i for i,row in base.data[kind].items() if row.get('event_id')=='ttscore-'+event
+                and i not in saved['data'].get(kind,{})] for kind in RESULT_KINDS}
+    refused=sorted(i for ids in gone.values() for i in ids if i not in accepted)
+    if refused:
+        raise DataError(f'Event {event}: {len(refused)} published record(s) are no longer in the source: '
+                        f'{", ".join(refused[:20])}{" ..." if len(refused)>20 else ""}; '
+                        'review, then list them under accepted_source_changes in the plan')
+    for kind,ids in gone.items():
+        for ident in ids:del base.data[kind][ident]
     for kind,rows in saved['data'].items():
         for ident,row in rows.items():
             if kind=='events':
@@ -77,7 +109,13 @@ def merge_event(base, saved, event):
                     aliases=set(filter(None,old.get('aliases','').split('|')))|set(filter(None,row.get('aliases','').split('|')))
                     if row['name']!=old['name']:aliases.add(row['name'])
                     old['aliases']='|'.join(sorted(aliases-{old['name']}))
-            else:base.put(kind,row)
+            else:
+                if kind in RESULT_KINDS and ident in accepted:base.data[kind].pop(ident,None)
+                try:base.put(kind,row)
+                except DataError as exc:
+                    if kind not in RESULT_KINDS:raise
+                    raise DataError(f'Event {event}: published {kind} record {ident} differs at the source ({exc}); '
+                                    'review, then list it under accepted_source_changes in the plan') from exc
     base.client.records.update(saved['requests'])
     for key in ('events','leagues','team_tournaments'):
         base.coverage.setdefault(key,{}).update(saved['coverage'].get(key,{}))
@@ -87,21 +125,31 @@ def merge_event(base, saved, event):
     if event not in order:order.append(event)
 
 
+def plan_digest(plan):
+    return digest((json.dumps(plan,sort_keys=True,ensure_ascii=False,indent=2)+'\n').encode())
+
+
 def batch_coverage(base, plan):
     ids=[x['event'] for x in plan['queue']]
     events=base.coverage.get('events',{})
-    attempted=[i for i in ids if i in events]
+    attempted=[x['event'] for x in plan['queue'] if checked_in_plan(events.get(x['event']),x,plan['as_of'])]
+    done=set(attempted);fingerprint=plan_digest(plan)
     # Preserve actual merge order so prioritized imports reproduce athlete aliases
     # and the first observed identity exactly during an offline release replay.
-    order=base.coverage.get('batch',{}).get('processed_order',[])
-    order=[i for i in order if i in attempted]+[i for i in attempted if i not in order]
+    # The order recorded under another plan belongs to that plan's run, not to this one.
+    previous=base.coverage.get('batch',{})
+    order=previous.get('processed_order',[]) if previous.get('plan_sha256') in (None,fingerprint) else []
+    order=[i for i in order if i in done]+[i for i in attempted if i not in order]
     positions={ident:position for position,ident in enumerate(order)}
     base.coverage['issues'].sort(key=lambda issue:positions.get(issue.get('event'),-1))
     failures=[i for i in attempted if events[i].get('status') in ('source_access_failed','validation_failed')]
-    base.coverage['batch']={'runner':'ttscore-batch-v1','plan_sha256':digest((json.dumps(plan,sort_keys=True,ensure_ascii=False,indent=2)+'\n').encode()),
+    base.coverage['batch']={'runner':'ttscore-batch-v1','plan_sha256':fingerprint,
         'as_of':plan['as_of'],'eligible':len(ids),'attempted':len(attempted),'pending':len(ids)-len(attempted),
-        'failed':failures,'deferred':plan['deferred'],'pending_events':[i for i in ids if i not in events],'processed_order':order,
+        'failed':failures,'deferred':plan['deferred'],'pending_events':[i for i in ids if i not in done],'processed_order':order,
         'historical_complete':False}
+    # A refresh says so, and how many of its competitions were already in the archive.
+    if plan.get('kind'):
+        base.coverage['batch'].update(kind=plan['kind'],rechecked=sum(bool(x.get('recheck')) for x in plan['queue'] if x['event'] in done))
     return base.coverage['batch']
 
 
@@ -192,6 +240,7 @@ def main():
         raise DataError('Catalog differs from the frozen plan; review and create a new plan')
     client=Client(args.cache,args.offline)
     base=resume_archive(client,args.output,args.base)
+    accepted=set(plan.get('accepted_source_changes',[]))
     completed=0
     for item in prioritized_queue(plan,args.priority):
         ident=item['event'];version=adapter_hash()
@@ -199,8 +248,7 @@ def main():
         compact=not existing or existing.get('retrieval_mode') in ('compact_brackets_v1','compact_brackets_v2')
         skip_byes=not existing or existing.get('retrieval_mode')=='compact_brackets_v2'
         available=item.get('scope')=='available_results'
-        same_scope=(existing.get('scope','finished')==item.get('scope','finished')
-                    and (not available or existing.get('snapshot_date')==plan['as_of']))
+        same_scope=checked_in_plan(existing or None,item,plan['as_of'])
         if existing.get('adapter_sha256')==version and same_scope and not args.offline:continue
         if args.stop_file.exists():break
         mode='compact-byes' if skip_byes else 'compact' if compact else 'details'
@@ -222,7 +270,10 @@ def main():
         saved=json.loads(checkpoint.read_text())
         # Validate the complete merged archive before replacing the previous export.
         candidate=base
-        merge_event(candidate,saved,ident)
+        try:merge_event(candidate,saved,ident,accepted)
+        except DataError as exc:
+            atomic_json(args.state,{**status,'state':'stopped_on_error','reason':str(exc)})
+            raise
         batch_coverage(candidate,plan)
         candidate.export(args.output)
         base=candidate

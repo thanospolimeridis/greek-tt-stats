@@ -6,6 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 
+from batch_import import RESULT_KINDS, checked_in_plan, plan_digest
 from import_csv import ROOT, TYPES, DataError, build
 
 
@@ -14,12 +15,20 @@ def sha256(value):
 
 
 def audit(data, baseline, plan, *, allow_pending=False):
+    """Check a staged archive against the one it grew from and against its frozen plan.
+
+    Nothing published may be lost or altered. A refresh plan (scripts/refresh.py) names
+    its only exceptions: catalog fields the source changed (catalog_changes), result
+    records a reviewer let follow the source (accepted_source_changes), and source
+    evidence retrieved again during the refresh itself (created_at onwards).
+    """
     provenance = data['meta']['provenance']
     coverage = provenance['coverage']
     batch = coverage['batch']
-    expected_plan_hash = sha256((json.dumps(plan, sort_keys=True, ensure_ascii=False, indent=2)+'\n').encode())
-    if batch['plan_sha256'] != expected_plan_hash:
+    if batch['plan_sha256'] != plan_digest(plan):
         raise DataError('Release coverage does not match the frozen import plan')
+    accepted = set(plan.get('accepted_source_changes', []))
+    relisted = {('ttscore-'+c['event'], c['field']) for c in plan.get('catalog_changes', {}).get('changed', [])}
     if coverage.get('historical_complete') or batch.get('historical_complete'):
         raise DataError('Public traversal cannot establish complete historical coverage')
 
@@ -28,25 +37,39 @@ def audit(data, baseline, plan, *, allow_pending=False):
         current = {r['id']: r for r in data[kind]}
         for original in baseline[kind]:
             actual = current.get(original['id'])
+            if kind in RESULT_KINDS and original['id'] in accepted:
+                continue  # A reviewer let this record follow the source.
             if actual is None:
                 raise DataError(f'Baseline {kind} record missing: {original["id"]}')
             for field, value in original.items():
                 if kind == 'events' and field == 'type':
                     continue  # Source navigation can establish the discipline.
+                if kind == 'events' and (original['id'], field) in relisted:
+                    continue  # The plan records this change of the public listing.
                 if kind == 'players' and field == 'aliases':
                     if set(filter(None, value.split('|'))) <= set(filter(None, actual.get(field, '').split('|'))):
                         continue
                 if actual.get(field, '') != value:
                     raise DataError(f'Baseline {kind} record changed: {original["id"]}.{field}')
         preserved[kind] = len(baseline[kind])
+    superseded = 0
     for key, value in baseline['meta']['provenance']['requests'].items():
-        if provenance['requests'].get(key) != value:
+        actual = provenance['requests'].get(key)
+        if actual == value:
+            continue
+        # Only a refresh may replace evidence, and only with the same request made again in its own cycle.
+        if not (plan.get('created_at') and actual and actual.get('request') == value.get('request')
+                and actual.get('retrieved_at', '') >= plan['created_at']):
             raise DataError(f'Baseline source evidence changed: {key}')
+        superseded += 1
 
     queue = [r['event'] for r in plan['queue']]
     if len(queue) != len(set(queue)):
         raise DataError('Duplicate event in import plan')
-    checked = coverage.get('events', {})
+    records = coverage.get('events', {})
+    # Checked means checked as this plan asks: a refresh queues competitions the archive already holds.
+    checked = {x['event']: records[x['event']] for x in plan['queue']
+               if checked_in_plan(records.get(x['event']), x, plan['as_of'])}
     pending = [i for i in queue if i not in checked]
     if batch['eligible'] != len(queue) or batch['pending_events'] != pending or batch['pending'] != len(pending) or batch['attempted'] != len(queue)-len(pending):
         raise DataError('Batch progress does not agree with event coverage')
@@ -97,17 +120,28 @@ def audit(data, baseline, plan, *, allow_pending=False):
             'eligible':len(queue), 'checked':len(queue)-len(pending), 'pending':len(pending),
             'deferred':len(plan['deferred']), 'historical_complete':False,
             'issues_by_reason':dict(Counter(i['reason'] for i in coverage['issues'])),
+            'source_evidence_superseded':superseded,
             'season_coverage':data['meta']['season_coverage'],
             'dataset_sha256':data['meta']['dataset_sha256']}
 
 
-def audit_cache(requests, cache):
+def audit_cache(requests, caches):
+    """Every published request must have its exact response in one of the cache folders.
+
+    Each refresh keeps its own cache folder, so one request can exist in several with
+    different retrieval times; the published metadata says which retrieval is meant.
+    """
+    caches = [caches] if isinstance(caches, Path) else list(caches)
     for key, expected in requests.items():
         if sha256(json.dumps(expected['request'], sort_keys=True).encode()) != key:
             raise DataError(f'Invalid request identity: {key}')
-        metadata = json.loads((cache/f'{key}.json').read_text())
-        body = (cache/f'{key}.body').read_bytes()
-        if metadata != expected or sha256(body) != expected['sha256'] or len(body) != expected['bytes']:
+        for cache in caches:
+            path = cache/f'{key}.json'
+            if path.exists() and json.loads(path.read_text()) == expected:
+                body = (cache/f'{key}.body').read_bytes()
+                if sha256(body) == expected['sha256'] and len(body) == expected['bytes']:
+                    break
+        else:
             raise DataError(f'Source cache differs from published evidence: {key}')
     return len(requests)
 
@@ -126,10 +160,19 @@ def replay_archive(input_dir, baseline_dir, plan, cache):
     from ttscore import Client
     manifest=json.loads((input_dir/'provenance.json').read_text())
     rebuilt=History(Client(cache,offline=True));restore_base(rebuilt,baseline_dir)
-    prior=set(rebuilt.coverage.get('events',{}))|set(rebuilt.coverage.get('leagues',{}))
+    before=dict(rebuilt.coverage.get('events',{}));leagues=set(rebuilt.coverage.get('leagues',{}))
+    # Start this plan's own processing order, as the collector does before its first event.
+    batch_coverage(rebuilt,plan)
+    items={item['event']:item for item in plan['queue']}
+    accepted=set(plan.get('accepted_source_changes',[]))
     checked=set(manifest['coverage'].get('events',{}))
     order=manifest['coverage']['batch'].get('processed_order',[item['event'] for item in plan['queue']])
-    queue=[ident for ident in order if ident in checked and ident not in prior]
+    # Replay what this plan processed: new competitions, and ones a refresh checked again.
+    def processed(ident):
+        if ident not in checked or ident not in items:return False
+        if ident in before:return not checked_in_plan(before[ident],items[ident],plan['as_of'])
+        return ident not in leagues
+    queue=[ident for ident in order if processed(ident)]
     available={item['event'] for item in plan['queue'] if item.get('scope')=='available_results'}
     with tempfile.TemporaryDirectory() as temporary:
         folder=Path(temporary)
@@ -146,7 +189,7 @@ def replay_archive(input_dir, baseline_dir, plan, cache):
             result=subprocess.run(command,capture_output=True,text=True)
             if result.returncode:
                 raise DataError(f'Cached replay failed for event {ident}: {result.stderr[-2000:]}')
-            merge_event(rebuilt,json.loads(checkpoint.read_text()),ident)
+            merge_event(rebuilt,json.loads(checkpoint.read_text()),ident,accepted)
             print(f'REPLAY {position}/{len(queue)}: {ident}',file=sys.stderr)
         batch_coverage(rebuilt,plan)
         import contextlib
@@ -162,7 +205,8 @@ def main():
     parser.add_argument('--input', type=Path, default=ROOT/'capture'/'batch-imports')
     parser.add_argument('--baseline', type=Path, default=ROOT/'imports')
     parser.add_argument('--plan', type=Path, default=ROOT/'data'/'import-plan.json')
-    parser.add_argument('--cache', type=Path, help='Also verify every referenced raw response; never publishes raw data')
+    parser.add_argument('--cache', type=Path, nargs='+', help='Also verify every referenced raw response; never publishes raw data. '
+                        'The first folder is replayed; list older cache folders after it when a refresh added its own')
     parser.add_argument('--replay', action='store_true', help='Re-normalize cached events and require byte-identical CSVs and provenance; requires --cache')
     parser.add_argument('--allow-pending', action='store_true', help='Audit an intermediate checkpoint without claiming the queue is finished')
     parser.add_argument('--output', type=Path)
@@ -175,7 +219,7 @@ def main():
     if args.cache:
         report['source_responses_verified'] = audit_cache(data['meta']['provenance']['requests'], args.cache)
     if args.replay:
-        report['offline_replayed_competitions']=replay_archive(args.input,args.baseline,plan,args.cache)
+        report['offline_replayed_competitions']=replay_archive(args.input,args.baseline,plan,args.cache[0])
     output = json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2)+'\n'
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)

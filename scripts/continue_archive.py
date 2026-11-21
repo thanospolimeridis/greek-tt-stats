@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
-"""Unattended local supervisor: collect the frozen queue in batches and publish each validated batch.
+"""Unattended local supervisor: collect the frozen queue in batches and stage each validated batch.
 
+Each batch is committed and pushed to `develop`, where the validation workflow runs. Nothing is
+published: the public site changes only with a release (README, "Releases and versions"). For the
+weekly refresh of competitions in progress use scripts/refresh.py; this is for a large archive queue.
 Runs until the queue is exhausted, a failure needs review, or a stop file appears. Transient
 TTScore/network outages are retried after a pause; validation and any other failures stop for review.
 `capture/pause-import` stops at the next competition boundary (honoured by batch_import.py) and
@@ -9,7 +12,6 @@ This file is deliberately outside batch_import.adapter_hash(): editing it never 
 """
 import argparse
 import collections
-import concurrent.futures
 import datetime as dt
 import hashlib
 import json
@@ -19,7 +21,6 @@ import re
 import subprocess
 import sys
 import time
-import urllib.request
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'scripts'))
@@ -33,8 +34,8 @@ PROGRESS=CAPTURE/'batch-progress.log'
 SUPERVISOR_PID=CAPTURE/'supervisor-pid.txt'
 COLLECTOR_PID=CAPTURE/'collector-pid.txt'
 REMOTE='https://github.com/thanospolimeridis/greek-tt-stats.git'
-SITE='https://thanospolimeridis.github.io/greek-tt-stats/'
-WORKFLOWS={'Validate archive','Validate and publish static archive'}
+STAGING_BRANCH='develop'
+VALIDATION='Validate archive'
 ALLOWED={'README.md','data/catalog.json','index.html',
          *(f'imports/{k}.csv' for k in ('events','players','clubs','matches','rankings','fixtures','doubles')),
          'imports/provenance.json'}
@@ -69,16 +70,14 @@ def alive(pidfile,marker,exclude=()):
     return pid if marker in command and '--worker' not in command else None
 
 
-def live_check(path):
-    req=urllib.request.Request(SITE+path,headers={'Cache-Control':'no-cache'})
-    with urllib.request.urlopen(req,timeout=30) as response:body=response.read()
-    if body!=(ROOT/'dist'/path).read_bytes():raise RuntimeError('Live bytes differ: '+path)
-
-
 def publish(batch_size):
-    if run('git','branch','--show-current',output=True)!='main':raise RuntimeError('Branch changed')
+    """Audit, rebuild and test the batch, then commit it and push the commit to the staging branch."""
     if run('git','remote','get-url','origin',output=True)!=REMOTE:raise RuntimeError('Remote changed')
-    if run('git','status','--porcelain',output=True):raise RuntimeError('Working tree needs review before publishing')
+    run('git','fetch','origin',STAGING_BRANCH)
+    # Each batch is staged as one commit on top of the staging branch, so the checkout must be exactly there.
+    if run('git','rev-parse','HEAD',output=True)!=run('git','rev-parse','origin/'+STAGING_BRANCH,output=True):
+        raise RuntimeError(f'Checkout is not at origin/{STAGING_BRANCH}')
+    if run('git','status','--porcelain',output=True):raise RuntimeError('Working tree needs review before staging')
     status('auditing_release')
     with (CAPTURE/'release-current.json').open('w') as out,(CAPTURE/'release-current-replay.log').open('w') as err:
         subprocess.run([sys.executable,'scripts/release_batch.py','--baseline','capture/batch-baseline',
@@ -100,48 +99,30 @@ def publish(batch_size):
     run('git','commit','-m',f'Expand archive to {release["counts"]["matches"]} singles across {release["checked"]} checked competitions')
     commit=run('git','rev-parse','HEAD',output=True)
     for attempt in range(10):
-        try:run('git','push','origin','main');break
+        try:run('git','push','origin','HEAD:'+STAGING_BRANCH);break
         except subprocess.CalledProcessError:
             if attempt==9:raise
             time.sleep(180)
-    status('waiting_for_deployment',commit=commit,checked=release['checked'])
+    status('waiting_for_validation',commit=commit,checked=release['checked'])
     deadline=time.monotonic()+1800
     while time.monotonic()<deadline:
         try:runs=json.loads(run('gh','run','list','--commit',commit,'--limit','10',
                                  '--json','databaseId,name,status,conclusion',output=True))
         except (subprocess.CalledProcessError,ValueError):
             time.sleep(20);continue
-        selected=[r for r in runs if r['name'] in WORKFLOWS]
+        selected=[r for r in runs if r['name']==VALIDATION]
         if any(r['status']=='completed' and r['conclusion']!='success' for r in selected):
-            raise RuntimeError('GitHub validation or deployment failed: '+str(selected))
-        if {r['name'] for r in selected if r['conclusion']=='success'}==WORKFLOWS:break
+            raise RuntimeError('GitHub validation failed: '+str(selected))
+        if any(r['conclusion']=='success' for r in selected):break
         time.sleep(20)
-    else:raise RuntimeError('Timed out waiting for GitHub deployment')
-    payload=json.loads(re.search(r'<script[^>]*id="site-data"[^>]*>(.*?)</script>',
-                                (ROOT/'dist/index.html').read_text(),re.S)[1])
-    paths=['index.html','coverage.json','version.json']
-    last=read('capture/batch-imports/provenance.json')['coverage']['batch']['processed_order'][-1]
-    event_path=payload['meta']['partitions']['event'].get('ttscore-'+last)
-    if event_path:
-        paths.append(event_path)
-        event_data=json.loads((ROOT/'dist'/event_path).read_text())
-        if event_data['matches']:
-            player=event_data['matches'][0]['player1_id']
-            paths.append(payload['meta']['partitions']['player'][player])
-    for attempt in range(8):
-        try:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:list(pool.map(live_check,paths))
-            break
-        except (OSError,RuntimeError):
-            if attempt==7:raise
-            time.sleep(20)
+    else:raise RuntimeError('Timed out waiting for GitHub validation')
     c=release['counts']
-    save('capture/live-check-paths.json',paths)
+    # The file keeps its earlier name: it records the last batch that left this machine, now a staged one.
     save('capture/last-deploy.json',{'commit':commit,'checked':release['checked'],
          'eligible':release['checked']+release['pending'],'singles':c['matches'],'doubles':c['doubles'],
-         'fixtures':c['fixtures'],'deployed_at':dt.datetime.now(dt.timezone.utc).isoformat(),
+         'fixtures':c['fixtures'],'staged_at':dt.datetime.now(dt.timezone.utc).isoformat(),
          'next_update_competitions':batch_size})
-    status('deployed',commit=commit,checked=release['checked'],counts=c)
+    status('staged',commit=commit,checked=release['checked'],counts=c)
 
 
 def next_batch(size):
