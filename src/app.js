@@ -109,11 +109,16 @@ const totalDoubles=()=>db.meta.table_counts?.doubles??(db.doubles||[]).length;
 // The hosted site loads one public static result file per detail view. The
 // portable page has no partitions and follows the original synchronous path.
 const resultCache=new Map();
-let activePart=null,pendingPart=null,loadVersion=0,loadError=false,updateAvailable=false;
+let activePart=null,pendingPart=null,loadVersion=0,loadError=false,updateAvailable=false,newerVersion='';
+// The release this page was built from (VERSION, changed only by scripts/release.py),
+// linked from the footer to the list of what each release changed.
+const CHANGELOG_URL='https://github.com/thanospolimeridis/greek-tt-stats/blob/main/CHANGELOG.md';
+const versionTag=()=>db.meta.version?` · ${external(CHANGELOG_URL,'v'+db.meta.version)}`:'';
 function updateNotice(){
  if(!updateAvailable)return '';
  const el=state.lang==='el';
- return `<div class="container"><div class="statusbox" role="status"><span>${el?'Υπάρχουν νεότερα δεδομένα στο αρχείο.':'An updated archive is available.'}</span><button class="ghost-btn small" id="archive-update">${el?'Φόρτωση νέας έκδοσης':'Load update'}</button></div></div>`;
+ const text=newerVersion?(el?`Η έκδοση ${newerVersion} του αρχείου είναι διαθέσιμη.`:`Version ${newerVersion} of the archive is available.`):(el?'Υπάρχουν νεότερα δεδομένα στο αρχείο.':'An updated archive is available.');
+ return `<div class="container"><div class="statusbox" role="status"><span>${esc(text)}</span><button class="ghost-btn small" id="archive-update">${el?'Φόρτωση νέας έκδοσης':'Load update'}</button></div></div>`;
 }
 async function checkForUpdate(){
  if(updateAvailable)return;
@@ -123,6 +128,8 @@ async function checkForUpdate(){
   const version=await response.json();
   if(typeof version.release_id==='string'&&version.release_id!==db.meta.release_id){
    updateAvailable=true;
+   // Named only when the number changed too: a rebuilt copy of the same release has a new id.
+   if(typeof version.version==='string'&&version.version!==db.meta.version)newerVersion=version.version;
    // Do not interrupt a search or an open filter while announcing new data.
    if(!document.activeElement?.matches('input,select,textarea'))render();
   }
@@ -180,7 +187,7 @@ function navActive(name){const r=hashRoute();return r.view===name||(name==='even
 // Brand mark: a bat and ball, coloured from the stylesheet tokens.
 const LOGO=`<svg viewBox="0 0 24 24" aria-hidden="true"><rect class="logo-handle" x="14.9" y="12.2" width="3.4" height="8.4" rx="1.6" transform="rotate(-45 16.6 16.4)"/><circle class="logo-blade" cx="10.4" cy="10.2" r="6.6"/><circle class="logo-ball" cx="19.4" cy="5.4" r="2.2"/></svg>`;
 function header(){const items=['home','events','players','clubs','rankings','h2h'];return `<header class="topbar"><div class="container top-inner"><a href="#home" class="brand" aria-label="Greek TT Archive"><span class="brandmark">${LOGO}</span><span><span class="brandtitle">GREEK TT <span>ARCHIVE</span></span><span class="brandunder">ΕΠΙΤΡΑΠΕΖΙΑ ΑΝΤΙΣΦΑΙΡΙΣΗ</span></span></a><nav class="nav" aria-label="Main navigation">${items.map((k,i)=>`<a href="#${k}" class="navlink ${navActive(k)} ${i===1?'navmobile':''}">${esc(t(k))}</a>`).join('')}<button id="lang-switch" class="lang" aria-label="Switch language">${state.lang==='el'?'EN':'ΕΛ'}</button></nav></div></header>`;}
-function footer(){return `<footer class="footer"><div class="container footer-inner"><div><strong>Greek TT Archive</strong><p>${esc(t('siteFooter'))}</p></div><div><div class="footer-code">${esc(t('openData'))}</div><p>${external('https://app.ttscore.io/customer/24','TTScore')} · ${link('#about',t('dataTransparency'))} · ${external(REPORT_URL,t('reportIssue'))}</p></div></div></footer>`;}
+function footer(){return `<footer class="footer"><div class="container footer-inner"><div><strong>Greek TT Archive</strong><p>${esc(t('siteFooter'))}</p></div><div><div class="footer-code">${esc(t('openData'))}${versionTag()}</div><p>${external('https://app.ttscore.io/customer/24','TTScore')} · ${link('#about',t('dataTransparency'))} · ${external(REPORT_URL,t('reportIssue'))}</p></div></div></footer>`;}
 // Home search: a few athletes, competitions and clubs for the typed text, each a link.
 // A number alone is also tried as a federation registration number.
 function homeSearch(){
@@ -200,7 +207,9 @@ function hero(){
  return `<section class="hero"><div class="container heroinner"><div class="herocopy"><div class="eyebrow"><span class="tiny-dot"></span>${esc(t('archive'))}</div><h1>${esc(t('heroTitle'))} <strong>${esc(t('heroHighlight'))}</strong></h1><p>${esc(t('heroCopy'))}</p></div><div class="hero-search" role="search"><label class="sr-only" for="search-home">${esc(t('search'))}</label><input class="control" type="search" id="search-home" autocomplete="off" placeholder="${esc(t('search'))}" value="${esc(state.query)}">${homeSearch()}</div><div class="heroact">${quick.map(([href,key])=>`<a class="light-btn" href="#${href}">${esc(t(key))}</a>`).join('')}</div>${statsBand()}</div></section>`;
 }
 function statsBand(){const values=[[db.events.length,'sourceEvents'],[db.players.length,'playersIndexed'],[totalSingles(),'matchesVerified'],[seasons.length,'seasons']];return `<section class="stats-band" aria-label="Archive coverage">${values.map(([v,k])=>`<div class="stat"><div class="statnum">${v.toLocaleString(state.lang==='el'?'el-GR':'en-US')}</div><div class="statlabel">${esc(t(k))}</div></div>`).join('')}</section>`;}
-function statusBox(message){return `<div class="statusbox" role="status"><span class="circle">ⓘ</span><div><strong>${esc(t('coverage'))}:</strong> ${esc(t(message||(totalSingles()?'statsNotComplete':'dataPending')))}</div></div>`;}
+// Shown only when there is nothing to list. The reminder that statistics cover imported matches
+// alone stays in the page notes and on About, not in a box on every page.
+function statusBox(message){const key=message||(totalSingles()?'statsNotComplete':'dataPending');if(key==='statsNotComplete')return '';return `<div class="statusbox" role="status"><span class="circle">ⓘ</span><div><strong>${esc(t('coverage'))}:</strong> ${esc(t(key))}</div></div>`;}
 function paginate(rows){const size=50;const pages=Math.max(1,Math.ceil(rows.length/size));state.page=Math.max(0,Math.min(state.page,pages-1));return {rows:rows.slice(state.page*size,(state.page+1)*size),controls:pages>1?`<div class="filters"><button class="ghost-btn small" id="page-prev" ${state.page===0?'disabled':''}>${esc(t('previous'))}</button><span>${state.page+1} / ${pages} · ${rows.length}</span><button class="ghost-btn small" id="page-next" ${state.page===pages-1?'disabled':''}>${esc(t('next'))}</button></div>`:''};}
 function filteredEvents(kind=state.type){return db.events.filter(e=>(state.season==='all'||e.season===state.season)&&(kind==='all'||eventKind(e)===kind)&&(!state.withResults||(completedByEvent.get(e.id)||0)>0)&&searchHit(e,state.query));}
 function eventFilters(){const kinds=['all',...EVENT_KINDS];return `<div class="searchpanel"><div class="filters" style="margin:0"><label class="sr-only" for="search-events">${esc(t('search'))}</label><input class="control" type="search" id="search-events" placeholder="${esc(t('search'))}" value="${esc(state.query)}"><label class="sr-only" for="season-filter">${esc(t('season'))}</label><select class="control" id="season-filter"><option value="all">${esc(t('allSeasons'))}</option>${seasons.map(s=>`<option value="${esc(s)}" ${s===state.season?'selected':''}>${esc(s)}</option>`).join('')}</select><label class="checkline"><input type="checkbox" id="results-only" ${state.withResults?'checked':''}> ${esc(t('onlyResults'))}</label></div><div class="kind-chips" role="group" aria-label="${esc(t('type'))}">${kinds.map(k=>`<button type="button" class="chip ${state.type===k?'active':''}" data-kind="${k}" aria-pressed="${state.type===k}">${k==='all'?esc(t('filterAll')):`<i class="dot kind-${k}"></i>${esc(t('kind_'+k))}`} · ${filteredEvents(k).length}</button>`).join('')}</div></div>`;}

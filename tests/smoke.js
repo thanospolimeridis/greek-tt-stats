@@ -30,6 +30,8 @@ for(const route of ['home','events','players','clubs','rankings','h2h','about','
 check(render('players').html.includes('Δεν έχουν εισαχθεί'),'Honest empty player state');
 check(render('%broken').html.includes('404'),'Malformed hash does not crash');
 check(render('player/missing').html.includes('404'),'Unknown player');
+const versioned=structuredClone(db);versioned.meta.version='1.4.2';
+check(render('home',versioned).html.includes('CHANGELOG.md" rel="noopener noreferrer" target="_blank">v1.4.2 ↗</a>')&&!render('home').html.includes('CHANGELOG.md'),'The footer names the release and links to its notes; an unversioned copy shows none');
 const sample=structuredClone(db);
 sample.clubs=[{id:'c1',name:'Test Club'},{id:'c2',name:'Other Club'}];
 sample.players=[{id:'p1',name:'Γιώργος Παίκτης',club_id:'c1',aliases:'George Player'},{id:'p2',name:'Player Two',club_id:'c2'}];
@@ -152,6 +154,8 @@ const coveragePage=render('about',coverageSample,'en');
 check(coveragePage.html.includes('1/2 additional competitions checked'),'Batch progress is explicit');
 check(coveragePage.html.includes('Not finished by the reference date'),'Deferred competitions are distinguished from imported events');
 check(coveragePage.html.includes('does not establish complete history'),'Traversal is not labelled historical completeness');
+check(['home','events','players','clubs','rankings'].every(route=>!render(route,coverageSample).html.includes('class="statusbox"')),'No partial-coverage box on pages that list results');
+check(render('home').html.includes('class="statusbox"'),'An archive without results still says so');
 check(render('event/ttscore-9999',coverageSample,'en').html.includes('Not finished by the reference date'),'Event page explains deferral');
 coverageSample.meta.provenance.coverage.events['777'].scope='available_results';
 coverageSample.meta.provenance.coverage.events['777'].snapshot_date='2026-11-20';
@@ -346,6 +350,13 @@ async function hostedChecks(){
   {setInterval(fn,delay){interval=delay;}});
  await flush();
  check(interval===300000&&updated.html.includes('An updated archive is available.')&&updated.html.includes('Load update'),'Hosted pages announce later releases without automatic navigation');
+ hosted.meta.version='1.4.2';
+ const newer=render('home',hosted,'en',async url=>({ok:true,json:async()=>({release_id:'new-release',version:'1.5.0'})}),{setInterval(){}});
+ await flush();
+ check(newer.html.includes('Version 1.5.0 of the archive is available.')&&newer.html.includes('>v1.4.2 ↗</a>'),'The update notice names the newer release while the footer keeps the loaded one');
+ const rebuilt=render('home',hosted,'el',async url=>({ok:true,json:async()=>({release_id:'new-release',version:'1.4.2'})}),{setInterval(){}});
+ await flush();
+ check(rebuilt.html.includes('Υπάρχουν νεότερα δεδομένα στο αρχείο.')&&!rebuilt.html.includes('Η έκδοση'),'A rebuilt copy of the same release is announced without a version number');
  const rankHosted=structuredClone(sample);
  rankHosted.rankings=[sample.rankings[0]];rankHosted.matches=[];rankHosted.fixtures=[];
  rankHosted.meta={...rankHosted.meta,ranking_dates:{Men:['2026-02-03','2026-01-03']},table_counts:{rankings:2},

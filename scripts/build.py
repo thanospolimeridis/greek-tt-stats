@@ -2,6 +2,7 @@
 """Build a portable static page without network access or JS dependencies."""
 import json
 import hashlib
+import re
 import sys
 from pathlib import Path
 
@@ -149,6 +150,25 @@ def partition_results(data, dist, context=None, squads=None):
     return paths
 
 
+VERSION_FORMAT = re.compile(r'(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)')
+
+
+def read_version(root=ROOT):
+    """The site's release version, from the committed VERSION file.
+
+    The file is the only source: reading Git or the clock here would make the same
+    commit build differently in CI. scripts/release.py is what changes it. A copy
+    of the project without the file builds an unversioned site.
+    """
+    path = root/'VERSION'
+    if not path.exists():
+        return None
+    version = path.read_text(encoding='utf-8').strip()
+    if not VERSION_FORMAT.fullmatch(version):
+        raise SystemExit(f'VERSION must hold MAJOR.MINOR.PATCH, found {version!r}')
+    return version
+
+
 def list_summaries(data):
     """Counts for list pages, which load no result files. Completed singles only."""
     from collections import Counter, defaultdict
@@ -216,6 +236,9 @@ def build_site(root=ROOT):
         serialized=json.dumps(payload,ensure_ascii=False,separators=(',',':')).replace('<','\\u003c').replace('>','\\u003e').replace('&','\\u0026')
         replacements={'/*INLINE_CSS*/':css,'/*INLINE_JS*/':js,'/*INLINE_JSON*/':serialized}
         return re.sub(r'/\*INLINE_(?:CSS|JS|JSON)\*/',lambda m:replacements[m[0]],template)
+    # Set here and not by the importer, so a release leaves data/catalog.json untouched.
+    version=read_version(root)
+    if version:data['meta']['version']=version
     context,squads=match_ranks(data),club_players(data)
     html=render({**data,'rankings':pack_rankings(data.get('rankings',[])),
                  **({'match_ranks':pack_match_ranks(context)} if context else {}),
@@ -243,7 +266,8 @@ def build_site(root=ROOT):
     hosted_html=render(hosted)
     marker=dist/'version.json.tmp'
     marker.write_text(json.dumps({'release_id':hosted['meta']['release_id'],
-        'dataset_sha256':hosted['meta'].get('dataset_sha256')},sort_keys=True)+'\n')
+        'dataset_sha256':hosted['meta'].get('dataset_sha256'),
+        **({'version':version} if version else {})},sort_keys=True)+'\n')
     marker.replace(dist/'version.json')
     if provenance:
         for name,value in (('provenance.json',provenance),('coverage.json',provenance.get('coverage',{}))):
