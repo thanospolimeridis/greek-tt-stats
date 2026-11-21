@@ -162,6 +162,24 @@ rankSearch.change('ranking-date','latest');typeRanking('24084');
 check(rankSearch.html.includes('Third Player')&&rankSearch.html.includes('#40')&&!rankSearch.html.includes('Γιώργος Παίκτης'),'Rankings search accepts a registration number');
 typeRanking('nobody here');
 check(rankSearch.html.includes('There are no records matching this selection.'),'Empty search explains there is no match, not missing data');
+// Home: one search across the archive, the top of the latest ranking, and recent competitions.
+const home=render('home',rankSearchData,'en');
+const typeHome=value=>home.handlers.input({target:{id:'search-home',value,matches(){return true}}});
+check(home.html.includes('id="search-home"')&&!home.html.includes('class="searchresults"'),'Home offers a search and lists nothing before typing');
+typeHome('giorgos');
+check(home.html.includes('class="search-hit" href="#player/p1"')&&!home.html.includes('class="search-hit" href="#player/p2"'),'Home search finds an athlete by transliterated name');
+typeHome('24084');
+check(home.html.includes('class="search-hit" href="#player/httf-24084"'),'Home search accepts a registration number');
+typeHome('test club');
+check(home.html.includes('class="search-hit" href="#club/c1"'),'Home search covers clubs');
+typeHome('zzzz');
+check(!home.html.includes('class="search-hit"')&&home.html.includes('There are no records matching this selection.'),'Home search says when nothing matches');
+typeHome('');
+const ranksAt=home.html.indexOf('Top of the rankings'),placeOf=id=>home.html.indexOf('class="rank-row" href="#player/'+id+'"',ranksAt);
+check(ranksAt>0&&placeOf('p2')>0&&placeOf('p2')<placeOf('p1')&&placeOf('p1')<placeOf('httf-24084'),'Home lists the latest official ranking in position order');
+check(!render('home',db,'en').html.includes('Top of the rankings'),'Home has no ranking panel before rankings are imported');
+const homeEvents=render('home',kinds,'en').html;
+check(homeEvents.includes('Open A')&&!homeEvents.includes('Queued D'),'Home leads with competitions that have results');
 const row=(group,slot,points,club,extra={})=>({id:`ttscore-standing-${group}-${slot}`,event_id:'ttscore-777',group_id:group,category:'Men',slot,club_name:club,team_name:club,club_id:'',wins:1,losses:0,disqualified:0,points,as_of:'2026-11-20',source_id:'s',source_url:'https://app.ttscore.io/tournament_groups_league.php?event=777&customer=24',...extra});
 const league=structuredClone(sample);
 league.standings=[row('55',1,4,'Slot One'),row('55',2,9,'Test Club',{club_id:'c1',disqualified:3}),row('55',3,4,'Slot Three',{team_name:'Slot Three B'}),row('55',4,2,'A.C. Dotted',{team_name:'AC Dott'}),
