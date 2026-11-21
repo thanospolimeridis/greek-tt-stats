@@ -8,12 +8,12 @@ Free, open-source Greek table tennis statistics: **Python ingestion + a static, 
 - **1 additional legacy event** retained from the original prototype, labelled absent from the current catalog (519 displayed total).
 - **88,852 completed singles matches, 3,143 doubles matches and 8,824 team fixtures**, from 496 competitions across all nine listed seasons.
 - **3,499 athletes**, linked by federation registration number where available, and **191 exact club names**.
-- **4,909 ranking records**: men and women, 1 August and 1 October 2026.
+- **332,624 official ranking records**: 12 age categories, 79 snapshot dates from 15 September 2018 to 1 October 2026.
 - **1,401 doubles matches identify all four members**; 1,742 preserve source pair labels without invented athlete links.
 - **5,417 source issues** are recorded, including walkovers, unresolved fixtures and inconsistent scores. Coverage reports retain exclusion reasons and unplayed/bye counts.
 - The current resumable batch has checked **502 of 502 additional eligible competitions**. **0 remain queued**, and 5 listings remain explicitly deferred; the coverage report gives their reasons. Results from active or undated events are limited to explicit, validated scores dated on or before 20 November 2026 and remain partial snapshots.
 
-**Historical results are incomplete.** The eligible competition queue has been checked; source gaps and deferred listings remain. Additional ranking snapshots also remain unimported. The season-by-season table on About shows the exact scope. No results are invented. Validation checks source consistency, not independent historical truth. The About page exposes scope and exclusions, with downloadable coverage and provenance reports.
+**Historical results are incomplete.** The eligible competition queue has been checked; source gaps and deferred listings remain. The season-by-season table on About shows the exact scope. No results are invented. Validation checks source consistency, not independent historical truth. The About page exposes scope and exclusions, with downloadable coverage and provenance reports.
 
 ## Use and build
 
