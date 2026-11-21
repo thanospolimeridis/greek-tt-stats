@@ -28,7 +28,7 @@ The latest selector displayed 2026-10-01. Sending that date literally instead of
 
 - Canonical player ID is `httf-<AM/RN>` when a positive registration number exists. Names never establish identity. Missing registration numbers use `ttscore-local-<event>-<participant ID>` and do not merge across events.
 - Different spellings attached to the same registration number become aliases. The earliest imported spelling remains the display name.
-- Club IDs hash exact normalized source names (`club-name-…`). This is explicitly provisional: two spellings can represent one club. No fuzzy merging occurs.
+- Club IDs hash exact normalized source names (`club-name-…`). This is explicitly provisional: two spellings can represent one club. No fuzzy merging occurs. Reviewed corrections with evidence are applied at build time from `data/identity-corrections.json` (see README, Identity corrections); the collector never merges.
 - Player `club_id` is the latest **imported ranking observation**, with `club_as_of`; it is not a claim about present-day membership. Historical matches preserve their own club IDs.
 - Completed singles require positive participant IDs, a declared winner, countable result, consistent final set totals and legal game scores. Unplayed lineup slots produce no fabricated matches.
 - Doubles are stored separately, with resolved team members or explicitly unresolved tournament pair labels. Noncountable/walkover records and inconsistent source rows require review. Review IDs and source hashes are listed in the manifest. Doubles count when reconciling a sourced team fixture, but not in singles/H2H statistics.

@@ -8,6 +8,7 @@ Free, open-source Greek table tennis statistics: **Python ingestion + a static, 
 - **1 additional legacy event** retained from the original prototype, labelled absent from the current catalog (519 displayed total).
 - **88,852 completed singles matches, 3,143 doubles matches and 8,824 team fixtures**, from 496 competitions across all nine listed seasons.
 - **3,499 athletes**, linked by federation registration number where available, and **191 exact club names**.
+- **16 reviewed identity corrections** on the published site: 7 registration numbers that the source mistyped on match sheets and 9 club names written with different punctuation. The CSVs keep the source's identities.
 - **332,624 official ranking records**: 12 age categories, 79 snapshot dates from 15 September 2018 to 1 October 2026.
 - **1,401 doubles matches identify all four members**; 1,742 preserve source pair labels without invented athlete links.
 - **5,417 source issues** are recorded, including walkovers, unresolved fixtures and inconsistent scores. Coverage reports retain exclusion reasons and unplayed/bye counts.
@@ -28,7 +29,7 @@ node tests/smoke.js
 
 Python 3.10+ is sufficient for ingestion/build. Node is only needed for the zero-dependency frontend tests (CI uses Python 3.12 and Node 22). Builds do not contact TTScore.
 
-Implemented views: Greek/English navigation, accent-insensitive Greek and transliterated/alias search, one competitions list for tournaments and leagues (type taken from the source's own result views, never guessed from names), competition pages with per-player summaries, match cards, phase/category filters, doubles and team fixtures, league standings as the source publishes them (wins, losses, Disq and points per team; teams level on points share a position because the source gives no tie-break order), player profiles split by individual/team competitions with per-season tables, a match breakdown (score lines, final-game record, record by the opponent's official ranking position on the match day, best wins, most-played opponents), official ranking points over time across age categories, game-by-game histories, H2H, ranking snapshot selection, and club pages by season (league positions as the source publishes them, who played team matches for the club, fixtures from the club's side, and the roster in official ranking order). Original names and category labels retain their source language. Player club labels are dated ranking observations, not inferred current membership.
+Implemented views: Greek/English navigation, accent-insensitive Greek and transliterated/alias search, one competitions list for tournaments and leagues (type taken from the source's own result views, never guessed from names), competition pages with per-player summaries, match cards, phase/category filters, doubles and team fixtures, league standings as the source publishes them (wins, losses, Disq and points per team; teams level on points share a position because the source gives no tie-break order), player profiles split by individual/team competitions with per-season tables, a match breakdown (score lines, final-game record, record by the opponent's official ranking position on the match day, best wins, most-played opponents), official ranking points over time across age categories, game-by-game histories, head to head by athlete search with a shareable address (`#h2h/<first>/<second>`), ranking snapshot selection, and club pages by season (league positions as the source publishes them, who played team matches for the club, fixtures from the club's side, and the roster in official ranking order). Original names and category labels retain their source language. Player club labels are dated ranking observations, not inferred current membership. Each page sets its own title, and the footer and About page link to the route for corrections and removal requests.
 
 ## Data pipeline
 
@@ -74,6 +75,14 @@ Templates in `imports/*.csv.template` document the supported tables. For separat
 
 Names alone never justify merging athletes. Club IDs based on names remain provisional until official club identity data are available. Maintain correction evidence and review renames explicitly.
 
+## Identity corrections
+
+`data/identity-corrections.json` lists source identities that were reviewed and found to be one athlete or one club, each with its evidence. `scripts/build.py` applies it to the published site; the CSVs, the collector and its replay are untouched. A corrected profile says which source identities it includes, links to a merged identity open the kept one, and the file is published as `identity-corrections.json`.
+
+The current entries follow two strict rules. An athlete entry needs a registration number that cannot be real (above the highest number in any official ranking, or the same number with a leading zero), the same name, the same club, and no appearance in any ranking snapshot. A club entry needs names that are identical once punctuation, spacing and accents are removed, and no fixture between the two. The same file lists same-name athletes at the same club who were reviewed and are different people, so they can never be merged by mistake.
+
+The build refuses an entry that the data contradicts: the two athletes meet or share a doubles match, the merged-away number holds an official ranking, the two clubs meet in a fixture, or a recorded name no longer matches. Add an entry only with evidence of this kind, never for a matching name alone.
+
 ## GitHub and free deployment
 
 [Source repository](https://github.com/thanospolimeridis/greek-tt-stats) · [Configured website](https://thanospolimeridis.github.io/greek-tt-stats/)
@@ -103,12 +112,14 @@ GitHub Pages supports public repositories on GitHub Free: [official documentatio
 | `imports/standings/` | League standings as TTScore publishes them, with their own provenance; never read or written by the batch collector |
 | `scripts/import_standings.py` | Rebuilds `imports/standings/` from the league overview pages (`--offline` replays a cache) |
 | `scripts/standings.py` | Reads the source's standings tables, validates the folder and adds it at build time |
+| `data/identity-corrections.json` | Reviewed identity corrections with their evidence; never read by the batch collector |
+| `scripts/identity_corrections.py` | Validates the corrections against the catalog and applies them at build time |
 | `data/verified_events.json` | Original prototype's seed listings; not evidence of complete coverage |
 | `tests/` | Synthetic parser/validation regressions and frontend behavior checks |
 | `docs/` | Audit, observed source schema and remaining work |
 | `.github/workflows/` | Validation and free static deployment |
 
-The hosted site loads result files for the selected player, competition, or club. Whole-archive totals remain visible, and failed downloads are explicitly distinguished from empty histories. Player histories and coverage tables are paginated; the full request manifest is downloaded separately. The build also produces a complete, self-contained `index.html` for offline use, published as `offline.html` from the About page. No server or frontend dependency is needed for either version. Ranking rows are stored compactly in the site (snapshot date, category and source once per snapshot); each player's file carries their ranking history and each past snapshot date has its own file. Remaining work includes unchecked competitions, unresolved source issues, richer nonplayed outcomes and resolved tournament-doubles identities. Do not label those gaps complete.
+The hosted site loads result files for the selected player, competition, or club. Whole-archive totals remain visible, and failed downloads are explicitly distinguished from empty histories. Player histories and coverage tables are paginated; the full request manifest is downloaded separately. The build also produces a complete, self-contained `index.html` for offline use, published as `offline.html` from the About page. No server or frontend dependency is needed for either version. Ranking rows are stored compactly in the site (snapshot date, category and source once per snapshot); each player's file carries their ranking history and each past snapshot date has its own file. The hosted page leaves out audit fields it never shows (the list of source issues, request hashes per athlete and event); `coverage.json`, `provenance.json` and the offline copy keep them. Remaining work includes unchecked competitions, unresolved source issues, richer nonplayed outcomes and resolved tournament-doubles identities. Do not label those gaps complete.
 
 ## Licence
 

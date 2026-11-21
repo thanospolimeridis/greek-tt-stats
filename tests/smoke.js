@@ -50,11 +50,57 @@ const second=render('player/p2',sample,'en');
 check(second.html.includes('✕ 1–3'),'Score oriented to profile player');
 check(second.html.includes('5–11, 11–5, 8–11, 7–11'),'Game scores oriented to player');
 check(second.html.includes('Walkover'),'Non-completed result visible in history');
-const h2h=render('h2h',sample,'en');h2h.change('h2h-player1','p2');h2h.change('h2h-player2','p1');
+const h2h=render('h2h/p2/p1',sample,'en');
 check(h2h.html.includes('Player Two · 0'),'H2H excludes walkover');
 check(h2h.html.includes('✕ 1–3'),'H2H score orientation');
 check(h2h.html.includes('</table></div></div></main>')&&!/>\}</.test(h2h.html),'H2H results are not followed by a stray template brace');
-h2h.change('h2h-player2','p2');check(h2h.html.includes('two distinct'),'Self-comparison prevented');
+check(render('h2h/p2/p2',sample,'en').html.includes('two distinct'),'Self-comparison prevented');
+check(h2h.context.document.title==='Player Two – Γιώργος Παίκτης · Head to head · Greek TT Archive','A comparison names both athletes in the page title');
+check(!h2h.html.includes('<select')&&h2h.html.includes('href="#h2h/-/p1"')&&h2h.html.includes('href="#h2h/p2"'),'Each chosen athlete can be changed without losing the other');
+// Head to head is a search whose results are links, so every comparison has an address.
+const picker=render('h2h',sample,'en');
+const typeInto=(view,id,value)=>view.handlers.input({target:{id,value,matches:sel=>sel.split(',').includes('#'+id)}});
+check(picker.html.includes('id="h2h-search1"')&&picker.html.includes('id="h2h-search2"')&&!picker.html.includes('<option'),'H2H starts with two searches, not two lists of every athlete');
+typeInto(picker,'h2h-search1','giorgos');
+check(picker.html.includes('href="#h2h/p1"')&&!picker.html.includes('href="#h2h/p2"'),'H2H search finds an athlete by transliterated name and links to the choice');
+typeInto(picker,'h2h-search2','player');
+check(picker.html.includes('href="#h2h/-/p2"')&&picker.html.includes('value="giorgos"'),'The second search keeps the first one as typed');
+picker.context.location.hash='#h2h/p1';picker.handlers.hashchange();
+check(picker.html.includes('class="h2h-picked"')&&picker.html.includes('href="#h2h/p1/p2"')&&picker.html.includes('Player Two · 1'),'With one athlete chosen, the most-played opponents are offered as links');
+typeInto(picker,'h2h-search2','γιωργος');
+check(picker.html.includes('There are no records matching'),'The athlete already chosen is not offered again');
+check(render('h2h/missing/p1',sample,'en').html.includes('id="h2h-search1"'),'An unknown athlete in a comparison link leaves that side to be chosen');
+const enter=render('h2h',sample,'en');let prevented=false;
+enter.handlers.keydown({key:'Enter',preventDefault(){prevented=true},target:{id:'h2h-search1',matches:sel=>sel.split(',').includes('#h2h-search1'),parentElement:{querySelector:sel=>sel==='.h2h-results a'?{getAttribute:()=>'#h2h/p1'}:null}}});
+check(prevented&&enter.context.location.hash==='#h2h/p1','Enter in a comparison search picks the first athlete listed');
+enter.handlers.keydown({key:'Enter',preventDefault(){throw new Error('no result to pick')},target:{id:'h2h-search2',matches:()=>true,parentElement:{querySelector:()=>null}}});
+check(enter.context.location.hash==='#h2h/p1','Enter without results changes nothing');
+check(render('player/p1',sample,'en').html.includes('href="#h2h/p1"'),'The profile opens the comparison with its athlete chosen');
+// Page titles
+for(const [route,lang,title] of [['home','el','Greek TT Archive — Ελληνική Επιτραπέζια Αντισφαίριση'],['home','en','Greek TT Archive — Greek table tennis results'],['player/p1','en','Γιώργος Παίκτης · Greek TT Archive'],['club/c2','en','Other Club · Greek TT Archive'],['rankings','el','Κατατάξεις · Greek TT Archive'],['h2h','en','Head to head · Greek TT Archive'],['player/missing','en','404 · Greek TT Archive'],['nowhere','en','404 · Greek TT Archive']]){
+  check(render(route,sample,lang).context.document.title===title,'Page title for '+route+' ('+lang+')');
+}
+const titled=render('home',sample,'en');titled.context.location.hash='#event/ttscore-777';titled.handlers.hashchange();
+check(titled.context.document.title.endsWith(' · Greek TT Archive')&&!titled.context.document.title.startsWith('404'),'The title follows navigation');
+// Reviewed identity corrections: old links open the kept identity and the page says what it includes.
+const fixed=structuredClone(sample);
+fixed.meta={...fixed.meta,identity_corrections:{players:{'httf-12340':'p1','ttscore-local-7-1':'p1'},clubs:{c1x:'c1'}}};
+fixed.clubs[0].aliases='T.E.S.T Club';
+const oldLink=render('player/httf-12340',fixed,'en');
+check(oldLink.html.includes('Γιώργος Παίκτης')&&oldLink.context.document.title==='Γιώργος Παίκτης · Greek TT Archive','A link to a merged registration number opens the kept athlete');
+check(oldLink.html.includes('Includes matches the source recorded as Reg. 12340, no registration number'),'A corrected profile names the source identities it includes');
+check(!render('player/p2',fixed,'en').html.includes('Includes matches the source recorded'),'Other profiles carry no correction note');
+const oldClub=render('club/c1x',fixed,'en');
+check(oldClub.html.includes('Test Club</h1>')&&oldClub.html.includes('Also written in the source as: T.E.S.T Club'),'A merged club name opens the kept club, which lists the other spelling');
+check(render('h2h/httf-12340/p2',fixed,'en').html.includes('Γιώργος Παίκτης · 1'),'Comparison links accept a merged registration number');
+const fixedSearch=render('clubs',fixed,'en');fixedSearch.search('T.E.S.T');
+check(fixedSearch.html.includes('Test Club')&&!fixedSearch.html.includes('Other Club'),'A club is found by its other source spelling');
+// Corrections and removal requests
+const report='href="https://github.com/thanospolimeridis/greek-tt-stats/issues/new"';
+check(render('home',sample,'en').html.includes(report)&&render('player/p1',sample).html.includes('Διόρθωση ή αφαίρεση στοιχείων'),'Every page links to the corrections and removal route');
+const aboutFixed=render('about',fixed,'en').html;
+check(aboutFixed.includes('Corrections and removal')&&aboutFixed.includes('3 reviewed identity corrections')&&aboutFixed.includes('Reports are public on GitHub'),'About explains corrections and counts the reviewed identity corrections');
+check(!aboutFixed.includes('identity-corrections.json')&&!render('about',sample,'en').html.includes('reviewed identity corrections'),'The corrections download is offered only where the file is published, and no count is shown without corrections');
 const rankings=render('rankings',sample,'en');
 check(rankings.html.includes('#15')&&!rankings.html.includes('#20'),'Latest snapshot default');
 rankings.change('ranking-date','2026-01-03');check(rankings.html.includes('#20')&&!rankings.html.includes('#15'),'Historical snapshot selection');
@@ -273,8 +319,14 @@ async function hostedChecks(){
  check(pending.length===2&&!view.html.includes('Loading results'),'Revisiting a loaded profile uses its cached result file');
  const failed=render('event/ttscore-777',hosted,'en',async()=>({ok:false}));await flush();
  check(failed.html.includes('Results could not be loaded')&&!failed.html.includes('No imported'),'Failed downloads cannot masquerade as missing historical results');
- const compare=render('h2h',hosted,'en',async()=>({ok:true,json:async()=>payload}));
- compare.change('h2h-player1','p2');compare.change('h2h-player2','p1');await flush();
+ const compare=render('h2h/p2/p1',hosted,'en',async()=>({ok:true,json:async()=>payload}));await flush();
+ const requested=[];
+ const oneSide=render('h2h/-/p1',hosted,'en',async url=>{requested.push(url);return {ok:true,json:async()=>payload};});await flush();
+ check(requested.length===1&&requested[0]===hosted.meta.partitions.player.p1&&oneSide.html.includes('href="#h2h/p2/p1"'),'Hosted H2H loads the one chosen athlete and offers their opponents on the empty side');
+ const hostedFixed=structuredClone(hosted);hostedFixed.meta.identity_corrections={players:{'httf-12340':'p1'},clubs:{}};
+ const viaOldLink=render('player/httf-12340',hostedFixed,'en',async url=>{requested.push(url);return {ok:true,json:async()=>payload};});await flush();
+ check(requested[1]===hosted.meta.partitions.player.p1&&viaOldLink.html.includes('Reg. 12340'),'A hosted link to a merged registration number loads the kept athlete\'s file');
+ check(render('about',hostedFixed,'en').html.includes('href="identity-corrections.json" download'),'The hosted About page offers the identity corrections file');
  check(compare.html.includes('Player Two · 0')&&compare.html.includes('✕ 1–3'),'Hosted H2H uses complete first-player history and excludes walkovers');
  const hostedLeague=render('event/ttscore-777',hosted,'en',async()=>({ok:true,json:async()=>({...payload,standings:league.standings})}));await flush();
  check(hostedLeague.html.includes('Slot One')&&hostedLeague.html.includes('id="tab-standings"'),'Hosted league pages read standings from the event file');
