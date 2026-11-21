@@ -83,10 +83,18 @@ The repository includes PR validation and a Pages deployment workflow. Pushes to
 New work is staged on `develop`. Commit and push there: the validation workflow runs, and nothing is published. `main` is the public site, so it moves only when a release is wanted:
 
 ```
-git push origin develop:main
+PUBLISH=1 git push origin develop:main
 ```
 
-That fast-forwards `main` to `develop` and starts the deployment. If the push is refused, `main` holds commits that `develop` lacks; merge `origin/main` into `develop` first. The unattended collector (`scripts/continue_archive.py`) is the one exception: it must run on `main` and pushes there itself, so each batch it finishes is published.
+That fast-forwards `main` to `develop` and starts the deployment. If Git rejects the push as non-fast-forward, `main` holds commits that `develop` lacks; merge `origin/main` into `develop` first.
+
+`scripts/hooks/pre-push` guards this: it refuses any push to `main` that is not made with `PUBLISH=1`. A hook is local to a clone, so install it once per clone (its worktrees share it):
+
+```
+cp scripts/hooks/pre-push "$(git rev-parse --git-common-dir)/hooks/pre-push"
+```
+
+The unattended collector (`scripts/continue_archive.py`) is the one exception to staging: it must run on `main` and pushes there itself, so each batch it finishes is published. With the guard installed it has to be started with `PUBLISH=1`.
 
 GitHub Pages supports public repositories on GitHub Free: [official documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages). Use the default `github.io` address; no purchased domain is required. The application has no hosted backend or recurring service dependency.
 
@@ -115,6 +123,7 @@ GitHub Pages supports public repositories on GitHub Free: [official documentatio
 | `tests/` | Synthetic parser/validation regressions and frontend behavior checks |
 | `docs/` | Audit, observed source schema and remaining work |
 | `.github/workflows/` | Validation and free static deployment |
+| `scripts/hooks/pre-push` | Local guard that refuses pushes to `main` made without `PUBLISH=1` |
 
 The hosted site loads result files for the selected player, competition, or club. Whole-archive totals remain visible, and failed downloads are explicitly distinguished from empty histories. Player histories and coverage tables are paginated; the full request manifest is downloaded separately. The build also produces a complete, self-contained `index.html` for offline use, published as `offline.html` from the About page. No server or frontend dependency is needed for either version. Ranking rows are stored compactly in the site (snapshot date, category and source once per snapshot); each player's file carries their ranking history and each past snapshot date has its own file. Remaining work includes unchecked competitions, unresolved source issues, richer nonplayed outcomes and resolved tournament-doubles identities. Do not label those gaps complete.
 

@@ -1,0 +1,27 @@
+#!/bin/sh
+# Refuse pushes to main unless a release is intended.
+#
+# main is the public site: every push to it is deployed to GitHub Pages.
+# Work is staged on develop and published on purpose with
+#     PUBLISH=1 git push origin develop:main
+#
+# Install (once per clone; the hook is shared by all its worktrees):
+#     cp scripts/hooks/pre-push "$(git rev-parse --git-common-dir)/hooks/pre-push"
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+    if [ "$remote_ref" = "refs/heads/main" ] && [ "${PUBLISH:-}" != "1" ]; then
+        cat >&2 <<'EOF'
+Push to main refused by the pre-push guard.
+
+main is the public site: every push to it is deployed to GitHub Pages.
+Merge your work into develop and push develop instead.
+
+Publishing is the repository owner's decision. Only when they have asked
+for a release:
+
+    PUBLISH=1 git push origin develop:main
+EOF
+        exit 1
+    fi
+done
+exit 0
