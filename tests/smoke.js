@@ -174,6 +174,32 @@ check(table.html.includes('not calculated from the fixtures in this archive')&&t
 table.click('tab-players');check(table.html.includes('Γιώργος Παίκτης')&&!table.html.includes('Slot One'),'The other event tabs stay reachable');
 check(render('event/ttscore-777',league,'el').html.includes('>Βαθμολογία <span'),'Greek standings tab label');
 check(!render('event/ttscore-777',sample,'en').html.includes('tab-standings'),'Events without a published table have no standings tab');
+const insight=structuredClone(sample);
+insight.players.push({id:'p3',name:'Third Opponent'},{id:'p4',name:'<i>Fourth</i>'});
+const single=(id,opp,won,mine,theirs,extra={})=>({id,event_id:'ttscore-777',date:'2026-03-01',player1_id:'p1',player2_id:opp,winner_id:won?'p1':opp,score1:mine,score2:theirs,status:'completed',source_url:'https://app.ttscore.io/test',...extra});
+insight.matches=[single('a','p2',true,3,0),single('b','p2',true,3,2),single('c','p2',false,2,3),single('d','p3',false,0,3),single('e','p3',true,3,1),
+ {...single('f','p4',true,1,3),player1_id:'p4',player2_id:'p1'},single('g','p4',true,4,3,{best_of:7}),single('h','p2',true,3,0,{status:'walkover'})];
+insight.match_ranks={format:'match-ranks-v1',dates:['2026-02-01'],categories:['Men'],rows:{a:[0,0,10,4],b:[0,0,10,20],c:[0,0,10,4],d:[0,0,10,10],e:[0,0,null,7],f:[0,0,2,10]}};
+const breakdown=render('player/p1',insight,'en').html;
+const stat=(label,record)=>breakdown.includes(`${label}</span><span><b>${record}</b>`);
+check(JSON.stringify([...breakdown.matchAll(/class="(?:won|lost)">. (\d+–\d+)<\/span><\/span><b>(\d+)<\/b>/g)].map(m=>m[1]+' x'+m[2]))===JSON.stringify(['3–0 x1','3–1 x2','3–2 x1','4–3 x1','2–3 x1','0–3 x1']),'Score lines count completed singles from the profile player\'s side, wins first');
+check(stat('Matches that went to the final game','2–1')&&breakdown.includes('Games won–lost</span><b>18–13</b>'),'Final-game record respects each match format; walkovers are left out');
+check(stat('Opponent ranked higher','2–1')&&stat('Opponent ranked lower','1–0')&&stat('Opponent in the same position','0–1')&&stat('No comparison','2–0'),'Record is split by the opponent\'s official position on the match day');
+check(JSON.stringify([...breakdown.matchAll(/<strong>#(\d+)<\/strong>/g)].map(m=>m[1]))===JSON.stringify(['2','4','7','20']),'Best wins list the highest-placed beaten opponents first');
+check(breakdown.includes('&lt;i&gt;Fourth&lt;/i&gt;')&&!breakdown.includes('<i>Fourth'),'Opponent names in the breakdown are HTML escaped');
+check(/Most-played opponents<\/h3>.*?Player Two.*?Fourth.*?Third Opponent.*?3 opponents/s.test(breakdown),'Most-played opponents are ordered by matches, then wins');
+check(!breakdown.includes('rating'),'The breakdown never calls official positions a rating');
+const unranked=structuredClone(insight);delete unranked.match_ranks;
+const plain=render('player/p1',unranked,'en').html;
+check(plain.includes('Score lines')&&!plain.includes('Best wins')&&!plain.includes('Opponent ranked higher'),'Ranking panels appear only when positions are known for the player\'s matches');
+const noLevel=structuredClone(insight);delete noLevel.match_ranks.rows.d;
+check(!render('player/p1',noLevel,'en').html.includes('Opponent in the same position'),'The same-position row is shown only when it happened');
+check(!render('player/p1',rankingsOnly,'en').html.includes('Match breakdown'),'Profiles without imported matches show no breakdown');
+const scopedBreakdown=render('player/p1',scoped,'en');
+check(scopedBreakdown.html.includes('Games won–lost</span><b>4–4</b>'),'Breakdown covers every competition type by default');
+scopedBreakdown.click('scope-individual');
+check(scopedBreakdown.html.includes('Games won–lost</span><b>1–3</b>'),'Breakdown follows the competition type filter');
+check(render('player/p1',insight,'el').html.includes('Ανάλυση αγώνων'),'Greek breakdown heading');
 async function hostedChecks(){
  const hosted=structuredClone(sample);
  hosted.meta={...hosted.meta,verified_results:123,table_counts:{doubles:4},event_match_counts:{'ttscore-777':1},
@@ -204,6 +230,10 @@ async function hostedChecks(){
  hostedLeague.context.location.hash='#player/p1';hostedLeague.handlers.hashchange();await flush();
  hostedLeague.context.location.hash='#event/ttscore-777';hostedLeague.handlers.hashchange();
  check(hostedLeague.html.includes('id="tab-standings"'),'Standings survive leaving and reopening the event');
+ const hostedInsight=structuredClone(insight);hostedInsight.matches=[];delete hostedInsight.match_ranks;
+ hostedInsight.meta={...hostedInsight.meta,partitions:{player:{p1:'records/p1i.json'},event:{},club:{}}};
+ const hostedBreakdown=render('player/p1',hostedInsight,'en',async()=>({ok:true,json:async()=>({matches:insight.matches,doubles:[],fixtures:[],match_ranks:insight.match_ranks})}));await flush();
+ check(hostedBreakdown.html.includes('Best wins')&&hostedBreakdown.html.includes('<strong>#2</strong>'),'Hosted profiles read match positions from the player file');
  hosted.meta.release_id='old-release';let interval=0;
  const updated=render('home',hosted,'en',async url=>({ok:true,json:async()=>({release_id:'new-release'})}),
   {setInterval(fn,delay){interval=delay;}});

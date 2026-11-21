@@ -30,7 +30,51 @@ def pack_rankings(rows):
     return {'format': RANKING_FORMAT, 'snapshots': snapshots, 'clubs': clubs, 'rows': packed}
 
 
-def partition_results(data, dist):
+MATCH_RANK_FORMAT = 'match-ranks-v1'
+
+
+def match_ranks(data):
+    """Both players' official positions on the day of each completed singles match.
+
+    The ranking in force is the latest snapshot published on or before the match
+    date. Positions are read from the widest list of that snapshot that holds both
+    players (the senior list of their gender, which includes its juniors), or the
+    one player's widest list when only one is ranked. Matches before the first
+    snapshot, between two unranked players, or between players with no list in
+    common get no entry. This joins two source tables; nothing is estimated.
+    Returns {match id: (snapshot date, category, position 1, position 2)}.
+    """
+    from bisect import bisect_right
+    from collections import Counter, defaultdict
+    positions, sizes = defaultdict(lambda: defaultdict(dict)), Counter()
+    for row in data.get('rankings', []):
+        positions[row['date']][row['player_id']][row['category']] = row['rank']
+        sizes[row['date'], row['category']] += 1
+    dates, context = sorted(positions), {}
+    for m in data.get('matches', []):
+        index = bisect_right(dates, m.get('date') or '')-1
+        if m['status'] != 'completed' or index < 0:
+            continue
+        date = dates[index]
+        first, second = positions[date].get(m['player1_id'], {}), positions[date].get(m['player2_id'], {})
+        lists = [c for c in first if c in second] if first and second else list(first or second)
+        if lists:
+            category = max(lists, key=lambda c: (sizes[date, c], c))
+            context[m['id']] = (date, category, first.get(category), second.get(category))
+    return context
+
+
+def pack_match_ranks(context, ids=None):
+    """Compact form for the site: snapshot dates and categories are stored once."""
+    dates, categories, rows = {}, {}, {}
+    for ident in sorted(context if ids is None else ids):
+        if ident in context:
+            date, category, first, second = context[ident]
+            rows[ident] = [dates.setdefault(date, len(dates)), categories.setdefault(category, len(categories)), first, second]
+    return {'format': MATCH_RANK_FORMAT, 'dates': list(dates), 'categories': list(categories), 'rows': rows}
+
+
+def partition_results(data, dist, context=None):
     """Build static route files; shared rows are copied, never inferred or aggregated."""
     from collections import defaultdict
     groups = {kind:defaultdict(lambda: {'matches':[], 'doubles':[], 'fixtures':[]})
@@ -54,6 +98,10 @@ def partition_results(data, dist):
             else:
                 for ident in (row['home_club_id'], row['away_club_id']):
                     groups['club'][ident][kind].append(row)
+    # A player's file also carries the ranking positions for their own matches.
+    for ident, records in groups['player'].items():
+        packed = pack_match_ranks(context or {}, [m['id'] for m in records['matches']])
+        if packed['rows']:records['match_ranks'] = packed
     # Only league files gain the key, so every other event file keeps its bytes.
     for row in data.get('standings',[]):
         groups['event'][row['event_id']].setdefault('standings',[]).append(row)
@@ -108,7 +156,9 @@ def build_site(root=ROOT):
         serialized=json.dumps(payload,ensure_ascii=False,separators=(',',':')).replace('<','\\u003c').replace('>','\\u003e').replace('&','\\u0026')
         replacements={'/*INLINE_CSS*/':css,'/*INLINE_JS*/':js,'/*INLINE_JSON*/':serialized}
         return re.sub(r'/\*INLINE_(?:CSS|JS|JSON)\*/',lambda m:replacements[m[0]],template)
-    html=render({**data,'rankings':pack_rankings(data.get('rankings',[]))})
+    context=match_ranks(data)
+    html=render({**data,'rankings':pack_rankings(data.get('rankings',[])),
+                 **({'match_ranks':pack_match_ranks(context)} if context else {})})
     dist = root/'dist'
     dist.mkdir(exist_ok=True)
     latest={}
@@ -119,7 +169,7 @@ def build_site(root=ROOT):
             # snapshot date file carry the rest.
             'rankings':pack_rankings([r for r in data.get('rankings',[]) if r['date']==latest[r['category']]])}
     if table:hosted['standings']=[]  # each league's file carries its own rows
-    hosted['meta']['partitions']=partition_results(data,dist)
+    hosted['meta']['partitions']=partition_results(data,dist,context)
     dates_by_category={}
     for row in data.get('rankings',[]):
         dates_by_category.setdefault(row['category'],set()).add(row['date'])
