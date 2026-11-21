@@ -86,6 +86,8 @@ const phaseView=render('event/ttscore-777',phasesSample,'en');
 check(phaseView.html.includes('id="tab-players"')&&phaseView.html.includes('Γιώργος Παίκτης'),'Event opens on the per-player summary');
 phaseView.click('tab-matches');
 check(phaseView.html.includes('3–1'),'Group result visible before filtering');
+check(/class="mr-line win">.*?class="mr-sets">3<.*?class="mr-line ">.*?class="mr-sets">1</.test(phaseView.html),'Match rows list the winner first with the games each player won');
+check(phaseView.html.includes('<b>11</b><span>5</span><b>11</b><b>11</b>')&&phaseView.html.includes('<span>5</span><b>11</b><span>8</span><span>7</span>'),'Each game has its own column and the player who won it is emphasised');
 phaseView.change('phase-filter','knockout');
 check(!phaseView.html.includes('3–1'),'Phase filter excludes group matches');
 
