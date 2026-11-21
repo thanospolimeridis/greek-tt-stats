@@ -100,11 +100,16 @@ const totalDoubles=()=>db.meta.table_counts?.doubles??(db.doubles||[]).length;
 // The hosted site loads one public static result file per detail view. The
 // portable page has no partitions and follows the original synchronous path.
 const resultCache=new Map();
-let activePart=null,pendingPart=null,loadVersion=0,loadError=false,updateAvailable=false;
+let activePart=null,pendingPart=null,loadVersion=0,loadError=false,updateAvailable=false,newerVersion='';
+// The release this page was built from (VERSION, changed only by scripts/release.py),
+// linked from the footer to the list of what each release changed.
+const CHANGELOG_URL='https://github.com/thanospolimeridis/greek-tt-stats/blob/main/CHANGELOG.md';
+const versionTag=()=>db.meta.version?` · ${external(CHANGELOG_URL,'v'+db.meta.version)}`:'';
 function updateNotice(){
  if(!updateAvailable)return '';
  const el=state.lang==='el';
- return `<div class="container"><div class="statusbox" role="status"><span>${el?'Υπάρχουν νεότερα δεδομένα στο αρχείο.':'An updated archive is available.'}</span><button class="ghost-btn small" id="archive-update">${el?'Φόρτωση νέας έκδοσης':'Load update'}</button></div></div>`;
+ const text=newerVersion?(el?`Η έκδοση ${newerVersion} του αρχείου είναι διαθέσιμη.`:`Version ${newerVersion} of the archive is available.`):(el?'Υπάρχουν νεότερα δεδομένα στο αρχείο.':'An updated archive is available.');
+ return `<div class="container"><div class="statusbox" role="status"><span>${esc(text)}</span><button class="ghost-btn small" id="archive-update">${el?'Φόρτωση νέας έκδοσης':'Load update'}</button></div></div>`;
 }
 async function checkForUpdate(){
  if(updateAvailable)return;
@@ -114,6 +119,8 @@ async function checkForUpdate(){
   const version=await response.json();
   if(typeof version.release_id==='string'&&version.release_id!==db.meta.release_id){
    updateAvailable=true;
+   // Named only when the number changed too: a rebuilt copy of the same release has a new id.
+   if(typeof version.version==='string'&&version.version!==db.meta.version)newerVersion=version.version;
    // Do not interrupt a search or an open filter while announcing new data.
    if(!document.activeElement?.matches('input,select,textarea'))render();
   }
@@ -167,7 +174,7 @@ function navActive(name){const r=hashRoute();return r.view===name||(name==='even
 // Brand mark: a bat and ball, coloured from the stylesheet tokens.
 const LOGO=`<svg viewBox="0 0 24 24" aria-hidden="true"><rect class="logo-handle" x="14.9" y="12.2" width="3.4" height="8.4" rx="1.6" transform="rotate(-45 16.6 16.4)"/><circle class="logo-blade" cx="10.4" cy="10.2" r="6.6"/><circle class="logo-ball" cx="19.4" cy="5.4" r="2.2"/></svg>`;
 function header(){const items=['home','events','players','clubs','rankings','h2h'];return `<header class="topbar"><div class="container top-inner"><a href="#home" class="brand" aria-label="Greek TT Archive"><span class="brandmark">${LOGO}</span><span><span class="brandtitle">GREEK TT <span>ARCHIVE</span></span><span class="brandunder">ΕΠΙΤΡΑΠΕΖΙΑ ΑΝΤΙΣΦΑΙΡΙΣΗ</span></span></a><nav class="nav" aria-label="Main navigation">${items.map((k,i)=>`<a href="#${k}" class="navlink ${navActive(k)} ${i===1?'navmobile':''}">${esc(t(k))}</a>`).join('')}<button id="lang-switch" class="lang" aria-label="Switch language">${state.lang==='el'?'EN':'ΕΛ'}</button></nav></div></header>`;}
-function footer(){return `<footer class="footer"><div class="container footer-inner"><div><strong>Greek TT Archive</strong><p>${esc(t('siteFooter'))}</p></div><div><div class="footer-code">${esc(t('openData'))}</div><p>${external('https://app.ttscore.io/customer/24','TTScore')} · ${link('#about',t('dataTransparency'))}</p></div></div></footer>`;}
+function footer(){return `<footer class="footer"><div class="container footer-inner"><div><strong>Greek TT Archive</strong><p>${esc(t('siteFooter'))}</p></div><div><div class="footer-code">${esc(t('openData'))}${versionTag()}</div><p>${external('https://app.ttscore.io/customer/24','TTScore')} · ${link('#about',t('dataTransparency'))}</p></div></div></footer>`;}
 // Home search: a few athletes, competitions and clubs for the typed text, each a link.
 // A number alone is also tried as a federation registration number.
 function homeSearch(){

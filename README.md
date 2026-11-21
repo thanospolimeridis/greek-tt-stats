@@ -80,23 +80,51 @@ Names alone never justify merging athletes. Club IDs based on names remain provi
 
 The repository includes PR validation and a Pages deployment workflow. Pushes to `main` validate the committed source data, build `dist/`, and deploy. No TTScore secrets or service credentials are required by Actions.
 
-New work is staged on `develop`. Commit and push there: the validation workflow runs, and nothing is published. `main` is the public site, so it moves only when a release is wanted:
+New work is staged on `develop`. Commit and push there: the validation workflow runs, and nothing is published. `main` is the public site, so it moves only when a release is wanted, and only to a numbered release (see [Releases and versions](#releases-and-versions)):
 
 ```
-PUBLISH=1 git push origin develop:main
+python3 scripts/release.py patch
+PUBLISH=1 git push --atomic origin develop develop:main vX.Y.Z
 ```
 
-That fast-forwards `main` to `develop` and starts the deployment. If Git rejects the push as non-fast-forward, `main` holds commits that `develop` lacks; merge `origin/main` into `develop` first.
+The first command cuts the release on `develop` and prints the second, which fast-forwards `main` to it, sends its tag and starts the deployment. If Git rejects the push as non-fast-forward, `main` holds commits that `develop` lacks; the release script checks for that before it tags anything.
 
-`scripts/hooks/pre-push` guards this: it refuses any push to `main` that is not made with `PUBLISH=1`. A hook is local to a clone, so install it once per clone (its worktrees share it):
+`scripts/hooks/pre-push` guards this. It refuses any push to `main` that is not made with `PUBLISH=1`, and any push whose commit is not a release: the tag `vX.Y.Z` named by that commit's `VERSION` has to point at it, and has to be in the push or already on the remote. A hook is local to a clone, so install it once per clone (its worktrees share it):
 
 ```
 cp scripts/hooks/pre-push "$(git rev-parse --git-common-dir)/hooks/pre-push"
 ```
 
-The unattended collector (`scripts/continue_archive.py`) is the one exception to staging: it must run on `main` and pushes there itself, so each batch it finishes is published. With the guard installed it has to be started with `PUBLISH=1`.
+The unattended collector (`scripts/continue_archive.py`) predates both staging and releases: it must run on `main` and pushes each finished batch there itself, with no release. The guard refuses those pushes, with or without `PUBLISH=1`, so the collector has to be adapted to stage its batches on `develop` before it is run again.
 
 GitHub Pages supports public repositories on GitHub Free: [official documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages). Use the default `github.io` address; no purchased domain is required. The application has no hosted backend or recurring service dependency.
+
+## Releases and versions
+
+Every public state of the site is a numbered release. `VERSION` holds the number as `MAJOR.MINOR.PATCH` and is the only place it is set. The build stamps it into both pages and into `version.json`; the footer shows it, linked to [`CHANGELOG.md`](CHANGELOG.md); and a copy of the site left open names the newer release once one is published. The number identifies a release of the site. It says nothing about how complete the data are, and `dataset_sha256` remains the identity of the data.
+
+| Part | Raised for |
+| --- | --- |
+| `patch` | Fixes, wording, and refreshes of data that were already covered |
+| `minor` | New features, and newly covered competitions, seasons or tables |
+| `major` | Redesigns, and changes that break saved links or the published file formats |
+
+Branches and commits on `develop` leave `VERSION` and `CHANGELOG.md` alone, so parallel work never conflicts over them. A release is cut on `develop` when one is wanted:
+
+```sh
+python3 scripts/release.py          # the current version and the commits waiting since the last release
+python3 scripts/release.py minor    # or patch, major, or a version named outright such as 1.0.0
+```
+
+The script refuses unless the checkout is on `develop`, has no uncommitted changes and already contains `origin/develop` and `origin/main`. It then raises `VERSION`, adds a `CHANGELOG.md` section listing the subject of every commit since the previous release, commits the two files as `Release X.Y.Z` and tags that commit `vX.Y.Z`. Nothing is pushed: it prints the publishing command and stops. Until that command is run the release can be withdrawn by deleting the tag and the commit.
+
+Because every release is tagged, an earlier one can be put back on the public site. The guard allows it, since the commit is a release:
+
+```sh
+PUBLISH=1 git push --force origin 'vX.Y.Z^{commit}:main'
+```
+
+`develop` keeps the later work, and the next release moves `main` forward again.
 
 ## Project structure
 
@@ -123,7 +151,9 @@ GitHub Pages supports public repositories on GitHub Free: [official documentatio
 | `tests/` | Synthetic parser/validation regressions and frontend behavior checks |
 | `docs/` | Audit, observed source schema and remaining work |
 | `.github/workflows/` | Validation and free static deployment |
-| `scripts/hooks/pre-push` | Local guard that refuses pushes to `main` made without `PUBLISH=1` |
+| `scripts/hooks/pre-push` | Local guard that refuses pushes to `main` made without `PUBLISH=1` or of a commit that is not a tagged release |
+| `VERSION`, `CHANGELOG.md` | The site's release number and what each release changed; written only by `scripts/release.py` |
+| `scripts/release.py` | Cuts a release on `develop`: raises `VERSION`, extends `CHANGELOG.md`, commits and tags |
 
 The hosted site loads result files for the selected player, competition, or club. Whole-archive totals remain visible, and failed downloads are explicitly distinguished from empty histories. Player histories and coverage tables are paginated; the full request manifest is downloaded separately. The build also produces a complete, self-contained `index.html` for offline use, published as `offline.html` from the About page. No server or frontend dependency is needed for either version. Ranking rows are stored compactly in the site (snapshot date, category and source once per snapshot); each player's file carries their ranking history and each past snapshot date has its own file. Remaining work includes unchecked competitions, unresolved source issues, richer nonplayed outcomes and resolved tournament-doubles identities. Do not label those gaps complete.
 

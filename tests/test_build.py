@@ -35,6 +35,27 @@ class BuildTests(unittest.TestCase):
             self.assertEqual((root/'dist'/'offline.html').read_text(),portable)
             self.assertEqual(portable,build_site(root))
             self.assertEqual(hosted,(root/'dist'/'index.html').read_text())
+    def test_release_version_is_stamped_into_both_pages_and_the_marker(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);(root/'data').mkdir()
+            shutil.copytree(Path(__file__).resolve().parents[1]/'src',root/'src')
+            (root/'data'/'catalog.json').write_text(json.dumps({'meta':{'dataset_sha256':'abc'}}))
+            payload=lambda page:json.loads(re.search(r'id="site-data">(.*?)</script>',page,re.S)[1])
+            unversioned=build_site(root)
+            self.assertNotIn('version',payload(unversioned)['meta'])
+            self.assertNotIn('version',json.loads((root/'dist'/'version.json').read_text()))
+            (root/'VERSION').write_text('1.4.2\n')
+            portable=build_site(root)
+            hosted=payload((root/'dist'/'index.html').read_text())
+            marker=json.loads((root/'dist'/'version.json').read_text())
+            self.assertEqual((payload(portable)['meta']['version'],hosted['meta']['version'],marker['version']),('1.4.2',)*3)
+            self.assertEqual(marker,{'dataset_sha256':'abc','release_id':hosted['meta']['release_id'],'version':'1.4.2'})
+            # A release changes the page, so open copies of the previous one are told.
+            self.assertNotEqual(payload(unversioned)['meta'].get('release_id'),hosted['meta']['release_id'])
+            (root/'VERSION').write_text('1.4.3\n')
+            build_site(root)
+            self.assertNotEqual(json.loads((root/'dist'/'version.json').read_text())['release_id'],marker['release_id'])
+            self.assertFalse((root/'data'/'catalog.json').read_text().count('1.4'))
     def test_full_provenance_remains_downloadable_outside_page_payload(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);(root/'data').mkdir()
