@@ -53,6 +53,7 @@ check(second.html.includes('Walkover'),'Non-completed result visible in history'
 const h2h=render('h2h',sample,'en');h2h.change('h2h-player1','p2');h2h.change('h2h-player2','p1');
 check(h2h.html.includes('Player Two · 0'),'H2H excludes walkover');
 check(h2h.html.includes('✕ 1–3'),'H2H score orientation');
+check(h2h.html.includes('</table></div></div></main>')&&!/>\}</.test(h2h.html),'H2H results are not followed by a stray template brace');
 h2h.change('h2h-player2','p2');check(h2h.html.includes('two distinct'),'Self-comparison prevented');
 const rankings=render('rankings',sample,'en');
 check(rankings.html.includes('#15')&&!rankings.html.includes('#20'),'Latest snapshot default');
