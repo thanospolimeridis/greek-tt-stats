@@ -6,12 +6,12 @@ Free, open-source Greek table tennis statistics: **Python ingestion + a static, 
 
 - **518 publicly listed TTScore events**, reconciled across 2018–19 through 2026–27.
 - **1 additional legacy event** retained from the original prototype, labelled absent from the current catalog (519 displayed total).
-- **74,292 completed singles matches, 1,917 doubles matches and 6,492 team fixtures**, from 385 competitions across all nine listed seasons.
-- **3,376 athletes**, linked by federation registration number where available, and **190 exact club names**.
+- **80,480 completed singles matches, 2,222 doubles matches and 7,486 team fixtures**, from 432 competitions across all nine listed seasons.
+- **3,431 athletes**, linked by federation registration number where available, and **191 exact club names**.
 - **4,909 ranking records**: men and women, 1 August and 1 October 2026.
-- **952 doubles matches identify all four members**; 965 preserve source pair labels without invented athlete links.
-- **4,864 source issues** are recorded, including walkovers, unresolved fixtures and inconsistent scores. Coverage reports retain exclusion reasons and unplayed/bye counts.
-- The current resumable batch has checked **388 of 502 additional eligible competitions**. **114 remain queued**, and 5 listings remain explicitly deferred; the coverage report gives their reasons. Results from active or undated events are limited to explicit, validated scores dated on or before 20 November 2026 and remain partial snapshots.
+- **1,079 doubles matches identify all four members**; 1,143 preserve source pair labels without invented athlete links.
+- **5,159 source issues** are recorded, including walkovers, unresolved fixtures and inconsistent scores. Coverage reports retain exclusion reasons and unplayed/bye counts.
+- The current resumable batch has checked **438 of 502 additional eligible competitions**. **64 remain queued**, and 5 listings remain explicitly deferred; the coverage report gives their reasons. Results from active or undated events are limited to explicit, validated scores dated on or before 20 November 2026 and remain partial snapshots.
 
 **Historical results are incomplete.** Collection continues through the remaining queue, with validated checkpoints published periodically. Additional ranking snapshots also remain unimported. The season-by-season table on About shows the exact scope. No results are invented. Validation checks source consistency, not independent historical truth. The About page exposes scope and exclusions, with downloadable coverage and provenance reports.
 
