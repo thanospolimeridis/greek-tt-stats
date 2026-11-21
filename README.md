@@ -80,6 +80,14 @@ Names alone never justify merging athletes. Club IDs based on names remain provi
 
 The repository includes PR validation and a Pages deployment workflow. Pushes to `main` validate the committed source data, build `dist/`, and deploy. No TTScore secrets or service credentials are required by Actions.
 
+New work is staged on `develop`. Commit and push there: the validation workflow runs, and nothing is published. `main` is the public site, so it moves only when a release is wanted:
+
+```
+git push origin develop:main
+```
+
+That fast-forwards `main` to `develop` and starts the deployment. If the push is refused, `main` holds commits that `develop` lacks; merge `origin/main` into `develop` first. The unattended collector (`scripts/continue_archive.py`) is the one exception: it must run on `main` and pushes there itself, so each batch it finishes is published.
+
 GitHub Pages supports public repositories on GitHub Free: [official documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages). Use the default `github.io` address; no purchased domain is required. The application has no hosted backend or recurring service dependency.
 
 ## Project structure
