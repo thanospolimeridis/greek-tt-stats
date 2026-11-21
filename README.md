@@ -28,7 +28,7 @@ node tests/smoke.js
 
 Python 3.10+ is sufficient for ingestion/build. Node is only needed for the zero-dependency frontend tests (CI uses Python 3.12 and Node 22). Builds do not contact TTScore.
 
-Implemented views: Greek/English navigation, accent-insensitive Greek and transliterated/alias search, one competitions list for tournaments and leagues (type taken from the source's own result views, never guessed from names), competition pages with per-player summaries, match cards, phase/category filters, doubles and team fixtures, player profiles split by individual/team competitions with per-season tables, official ranking points over time across age categories, game-by-game histories, H2H, ranking snapshot selection, and club fixture statistics. Original names and category labels retain their source language. Player club labels are dated ranking observations, not inferred current membership.
+Implemented views: Greek/English navigation, accent-insensitive Greek and transliterated/alias search, one competitions list for tournaments and leagues (type taken from the source's own result views, never guessed from names), competition pages with per-player summaries, match cards, phase/category filters, doubles and team fixtures, league standings as the source publishes them (wins, losses, Disq and points per team; teams level on points share a position because the source gives no tie-break order), player profiles split by individual/team competitions with per-season tables, official ranking points over time across age categories, game-by-game histories, H2H, ranking snapshot selection, and club fixture statistics. Original names and category labels retain their source language. Player club labels are dated ranking observations, not inferred current membership.
 
 ## Data pipeline
 
@@ -100,6 +100,9 @@ GitHub Pages supports public repositories on GitHub Free: [official documentatio
 | `imports/ranking-history/` | Official ranking snapshots (yearly CSV shards) with their own provenance; never read or written by the batch collector |
 | `scripts/import_rankings.py` | Adds ranking snapshots to `imports/ranking-history/` (`--offline` replays the cache) |
 | `scripts/ranking_history.py` | Validates the ranking history and merges it at build time |
+| `imports/standings/` | League standings as TTScore publishes them, with their own provenance; never read or written by the batch collector |
+| `scripts/import_standings.py` | Rebuilds `imports/standings/` from the league overview pages (`--offline` replays a cache) |
+| `scripts/standings.py` | Reads the source's standings tables, validates the folder and adds it at build time |
 | `data/verified_events.json` | Original prototype's seed listings; not evidence of complete coverage |
 | `tests/` | Synthetic parser/validation regressions and frontend behavior checks |
 | `docs/` | Audit, observed source schema and remaining work |

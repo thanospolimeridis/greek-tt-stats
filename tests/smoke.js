@@ -159,6 +159,21 @@ rankSearch.change('ranking-date','latest');typeRanking('24084');
 check(rankSearch.html.includes('Third Player')&&rankSearch.html.includes('#40')&&!rankSearch.html.includes('Γιώργος Παίκτης'),'Rankings search accepts a registration number');
 typeRanking('nobody here');
 check(rankSearch.html.includes('There are no records matching this selection.'),'Empty search explains there is no match, not missing data');
+const row=(group,slot,points,club,extra={})=>({id:`ttscore-standing-${group}-${slot}`,event_id:'ttscore-777',group_id:group,category:'Men',slot,club_name:club,team_name:club,club_id:'',wins:1,losses:0,disqualified:0,points,as_of:'2026-11-20',source_id:'s',source_url:'https://app.ttscore.io/tournament_groups_league.php?event=777&customer=24',...extra});
+const league=structuredClone(sample);
+league.standings=[row('55',1,4,'Slot One'),row('55',2,9,'Test Club',{club_id:'c1',disqualified:3}),row('55',3,4,'Slot Three',{team_name:'Slot Three B'}),row('55',4,2,'A.C. Dotted',{team_name:'AC Dott'}),
+ row('56',1,0,'Unplayed One',{category:'Women',wins:0}),row('56',2,0,'<b>Unplayed</b>',{category:'Women',wins:0})];
+const table=render('event/ttscore-777',league,'en');
+const cells=html=>[...html.matchAll(/<tr><td><strong>([^<]*)<\/strong><\/td><td>(?:<a[^>]*>)?([^<]*)/g)].map(m=>m[1]+' '+m[2]);
+check(table.html.includes('id="tab-standings"')&&table.html.includes('aria-selected="true">Standings'),'League pages open on the standings tab');
+check(JSON.stringify(cells(table.html).slice(0,4))===JSON.stringify(['1 Test Club','2= Slot One','2= Slot Three','4 A.C. Dotted']),'Teams are ordered by the source points and level teams share a position');
+check(table.html.includes('href="#club/c1"')&&table.html.includes('<td>3</td><td><strong>9</strong>'),'Standings link known clubs and show the published Disq and points');
+check(table.html.includes('<div class="smalltext">Slot Three B</div>')&&!table.html.includes('AC Dott'),'A second team label is shown only when it adds to the club name');
+check(JSON.stringify(cells(table.html).slice(4))===JSON.stringify(['— Unplayed One','— &lt;b&gt;Unplayed&lt;/b&gt;'])&&table.html.includes('The source had published no results for this group.'),'A group without published results has no positions');
+check(table.html.includes('not calculated from the fixtures in this archive')&&table.html.includes('Retrieved from TTScore: 20 Nov 2026'),'Standings are labelled as the source table with its retrieval date');
+table.click('tab-players');check(table.html.includes('Γιώργος Παίκτης')&&!table.html.includes('Slot One'),'The other event tabs stay reachable');
+check(render('event/ttscore-777',league,'el').html.includes('>Βαθμολογία <span'),'Greek standings tab label');
+check(!render('event/ttscore-777',sample,'en').html.includes('tab-standings'),'Events without a published table have no standings tab');
 async function hostedChecks(){
  const hosted=structuredClone(sample);
  hosted.meta={...hosted.meta,verified_results:123,table_counts:{doubles:4},event_match_counts:{'ttscore-777':1},
@@ -184,6 +199,11 @@ async function hostedChecks(){
  const compare=render('h2h',hosted,'en',async()=>({ok:true,json:async()=>payload}));
  compare.change('h2h-player1','p2');compare.change('h2h-player2','p1');await flush();
  check(compare.html.includes('Player Two · 0')&&compare.html.includes('✕ 1–3'),'Hosted H2H uses complete first-player history and excludes walkovers');
+ const hostedLeague=render('event/ttscore-777',hosted,'en',async()=>({ok:true,json:async()=>({...payload,standings:league.standings})}));await flush();
+ check(hostedLeague.html.includes('Slot One')&&hostedLeague.html.includes('id="tab-standings"'),'Hosted league pages read standings from the event file');
+ hostedLeague.context.location.hash='#player/p1';hostedLeague.handlers.hashchange();await flush();
+ hostedLeague.context.location.hash='#event/ttscore-777';hostedLeague.handlers.hashchange();
+ check(hostedLeague.html.includes('id="tab-standings"'),'Standings survive leaving and reopening the event');
  hosted.meta.release_id='old-release';let interval=0;
  const updated=render('home',hosted,'en',async url=>({ok:true,json:async()=>({release_id:'new-release'})}),
   {setInterval(fn,delay){interval=delay;}});

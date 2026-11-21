@@ -12,6 +12,7 @@ Observed on 2026-11-20 from [customer 24](https://app.ttscore.io/customer/24), w
 | Events | POST `/customer_events.php`: `customer=24`, `season=<selector value>`, `getStats=1` | Empty season means All. Reconcile union of all season IDs against All. 518 IDs matched |
 | League categories | GET `/tournament_groups_league.php?event=777&customer=24` | `agecategoryid_league`; select values are discovered, never enumerated |
 | League groups | POST same PHP path: `event`, `customer`, `getStats=1`, `agecategoryid_league` | Follow `loadSchedule(group,…)` IDs in returned markup |
+| League standings | The same overview response | `div.groups[data-id]` table per group: `#`, Participant (`CLUB - TEAM`), Wins, Lost, Disq, Pts. `#` is a draw slot, not a rank; no tie-break order is published; Disq is sometimes counted inside Lost and sometimes not, so Pts is kept as published. `X - X - BYE` rows are empty draw slots. Kept in `imports/standings/` by `scripts/import_standings.py`, outside the collector |
 | Fixture list | GET `/tournament_groups_league.php?group=214221&customer=24` | `tr#game-ID` contains round, date, names and aggregate score |
 | Match sheet | GET `/game-team.php?game=244051&customer=24` | Public dialog exposes its own JSON request |
 | Individual rubbers | GET `/admin/ajax/team_games.php?game=244051&customer=24` | Public, unauthenticated endpoint despite the `/admin/` path; used by the public sheet. Contains `team_games`, player AM registration numbers, seven possible game scores, `Winner`, `Countable`, `Winsets`, `Score` |

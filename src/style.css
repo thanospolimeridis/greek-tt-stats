@@ -87,3 +87,6 @@ a.event-row:hover,a.player-row:hover{border-color:#acd5cd;transform:translateY(-
 details.rtable{max-width:none}
 @media (max-width:700px){.rchart-body{grid-template-columns:0 54px minmax(0,1fr);grid-template-rows:240px 28px}.rchart-ylabel{visibility:hidden}.rchart-yaxis span{font-size:11px;right:7px}.rchart-xaxis span{font-size:11px}}
 .rchart.dense .pt{width:6px;height:6px;margin:-3px 0 0 -3px}
+.standings-group+.standings-group{margin-top:34px}.standings-group .section-header{margin-top:6px}.standings-group td:nth-child(n+3),.standings-group th:nth-child(n+3){text-align:right;width:1%}.standings-group td:first-child,.standings-group th:first-child{width:1%}
+.th-short{display:none;text-decoration:none}
+@media (max-width:700px){.standings-group .th-full{display:none}.standings-group .th-short{display:inline}.standings-group th,.standings-group td{padding:11px 8px}.standings-group td:first-child,.standings-group th:first-child{padding-left:14px}.standings-group td:last-child,.standings-group th:last-child{padding-right:14px}}

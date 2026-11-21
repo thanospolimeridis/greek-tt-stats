@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import ranking_history  # noqa: E402
+import standings  # noqa: E402
 
 RANKING_FORMAT = 'ranking-snapshots-v1'
 
@@ -53,6 +54,9 @@ def partition_results(data, dist):
             else:
                 for ident in (row['home_club_id'], row['away_club_id']):
                     groups['club'][ident][kind].append(row)
+    # Only league files gain the key, so every other event file keeps its bytes.
+    for row in data.get('standings',[]):
+        groups['event'][row['event_id']].setdefault('standings',[]).append(row)
     folder=dist/'records';folder.mkdir(exist_ok=True)
     paths={kind:{} for kind in groups}
     for kind, entries in groups.items():
@@ -92,6 +96,9 @@ def build_site(root=ROOT):
     # Official ranking history lives outside the collector's imports (see ranking_history.py).
     history=ranking_history.load(root/'imports'/'ranking-history',data)
     ranking_history.merge(data,history)
+    # League standings as the source publishes them, also outside the collector (see standings.py).
+    table=standings.load(root/'imports'/'standings',data)
+    standings.merge(data,table)
     css = (root/'src'/'style.css').read_text(encoding='utf-8')
     js = (root/'src'/'app.js').read_text(encoding='utf-8')
     template = (root/'src'/'template.html').read_text(encoding='utf-8')
@@ -111,6 +118,7 @@ def build_site(root=ROOT):
             # Inline copy of the latest snapshot only; each player's file and each
             # snapshot date file carry the rest.
             'rankings':pack_rankings([r for r in data.get('rankings',[]) if r['date']==latest[r['category']]])}
+    if table:hosted['standings']=[]  # each league's file carries its own rows
     hosted['meta']['partitions']=partition_results(data,dist)
     dates_by_category={}
     for row in data.get('rankings',[]):
@@ -133,12 +141,13 @@ def build_site(root=ROOT):
                 temporary=report.with_suffix('.json.tmp')
                 temporary.write_text(serialized_report,encoding='utf-8')
                 temporary.replace(report)
-    if history:
-        # Published in dist/ only: an untracked file in the checkout would stop the collector.
-        report=dist/'ranking-history-provenance.json'
-        temporary=report.with_suffix('.json.tmp')
-        temporary.write_text(json.dumps(history['manifest'],ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
-        temporary.replace(report)
+    # Published in dist/ only: an untracked file in the checkout would stop the collector.
+    for name,extra in (('ranking-history-provenance.json',history),('standings-provenance.json',table)):
+        if extra:
+            report=dist/name
+            temporary=report.with_suffix('.json.tmp')
+            temporary.write_text(json.dumps(extra['manifest'],ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+            temporary.replace(report)
     for path,content in ((root/'index.html',html),(dist/'offline.html',html),(dist/'index.html',hosted_html)):
         temporary = path.with_suffix('.html.tmp')
         temporary.write_text(content,encoding='utf-8')
