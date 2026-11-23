@@ -4,6 +4,7 @@ import csv
 import datetime as dt
 import json
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -457,6 +458,23 @@ class StagingTests(unittest.TestCase):
                                              'imports/standings/standings.csv', 'imports/ranking-history/rankings-2026.csv']), [])
         self.assertEqual(refresh.unexpected(['imports/matches.csv', 'src/app.js', 'scripts/refresh.py', 'VERSION', 'imports/notes.txt']),
                          ['VERSION', 'imports/notes.txt', 'scripts/refresh.py', 'src/app.js'])
+
+    def test_changed_paths_reads_real_git_status(self):
+        """The first porcelain line of an unstaged change starts with a space that must survive."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            quiet = ['-c', 'core.hooksPath=/dev/null', '-c', 'commit.gpgsign=false', '-c', 'user.name=Test', '-c', 'user.email=test@example.invalid']
+            subprocess.run(['git', 'init', '-q'], cwd=root, check=True)
+            for name in ('README.md', 'data/import-plan.json'):
+                (root/name).parent.mkdir(parents=True, exist_ok=True)
+                (root/name).write_text('before\n')
+            subprocess.run(['git', *quiet, 'add', '.'], cwd=root, check=True)
+            subprocess.run(['git', *quiet, 'commit', '-q', '-m', 'start'], cwd=root, check=True)
+            for name in ('README.md', 'data/import-plan.json'):
+                (root/name).write_text('after\n')
+            (root/'notes.txt').write_text('new\n')
+            with patch.object(refresh, 'ROOT', root):
+                self.assertEqual(sorted(refresh.changed_paths()), ['README.md', 'data/import-plan.json', 'notes.txt'])
 
     def test_a_refresh_starts_at_the_staging_branch_with_a_clean_tree(self):
         with self.git(self.clean):

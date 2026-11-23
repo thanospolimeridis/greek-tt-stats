@@ -370,7 +370,8 @@ def git(*args):
     result = subprocess.run(['git', *args], cwd=ROOT, text=True, capture_output=True)
     if result.returncode:
         raise DataError(f"git {' '.join(args)} failed: {result.stderr.strip()}")
-    return result.stdout.strip()
+    # Only trailing whitespace: a `git status --porcelain` line for an unstaged change starts with a space.
+    return result.stdout.rstrip()
 
 
 def changed_paths():
