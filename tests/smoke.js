@@ -9,7 +9,7 @@ const published=JSON.parse(fs.readFileSync(path.join(root,'data','catalog.json')
 const db={events:JSON.parse(fs.readFileSync(path.join(root,'data','verified_events.json'),'utf8')),players:[],clubs:[],matches:[],fixtures:[],rankings:[],meta:{data_coverage:'event_catalog_only'}};
 let checks=0;
 function check(value,message){assert(value,message);checks++}
-function render(route,data=db,lang='el',fetcher,extras={}){
+function render(route,data=db,lang='el',fetcher,{source=script,...extras}={}){
   const container={innerHTML:''};
   const handlers={};
   const context={
@@ -18,7 +18,7 @@ function render(route,data=db,lang='el',fetcher,extras={}){
     localStorage:{getItem(){return lang},setItem(){}},
     location:{hash:'#'+route},Intl,URL,encodeURIComponent,decodeURIComponent,console,fetch:fetcher,...extras
   };
-  vm.runInNewContext(script,context,{timeout:5000});
+  vm.runInNewContext(source,context,{timeout:5000});
   return {get html(){return container.innerHTML},handlers,context,
     change(id,value){handlers.change({target:{id,value}})},
     click(id){handlers.click({target:{closest(sel){return sel==='#'+id?{}:null}}})},
@@ -414,6 +414,48 @@ async function hostedChecks(){
  check((packedProfile.html.match(/class="pt"/g)||[]).length===2&&packedProfile.html.includes('#15 Men'),'Compact ranking files decode into the profile chart');
  const packedRanks=render('rankings',packedHosted,'en',fetchPacked);packedRanks.change('ranking-date','2026-01-03');await flush();
  check(packedRanks.html.includes('#20')&&!packedRanks.html.includes('#15'),'Compact past snapshot files decode on the Rankings page');
+ // Feedback form: absent until the form service's key is set; with it, every page links to the form.
+ const keyLine=/const FEEDBACK_KEY='[^']*';/;
+ const noKey={source:script.replace(keyLine,"const FEEDBACK_KEY='';")},withKey={source:script.replace(keyLine,"const FEEDBACK_KEY='test-key';")};
+ check(keyLine.test(script)&&withKey.source.includes("FEEDBACK_KEY='test-key'"),'The test can switch the feedback form on and off');
+ check(!render('home',sample,'en',undefined,noKey).html.includes('#feedback')&&!render('about',sample,'en',undefined,noKey).html.includes('#feedback')&&render('feedback',sample,'en',undefined,noKey).html.includes('404'),'Without a form key there is no feedback link, panel or page');
+ const sent=[];let answer=async()=>({ok:true,json:async()=>({success:true})});
+ const post=(url,options)=>{sent.push({url,options});return answer();};
+ const type=(view,id,value)=>view.handlers.input({target:{id,value,matches(sel){return sel.split(',').includes('#'+id)}}});
+ const submit=view=>{let stopped=false;view.handlers.submit({target:{id:'feedback-form'},preventDefault(){stopped=true}});return stopped;};
+ check(render('home',sample,'en',post,withKey).html.includes('<a class="text-link" href="#feedback">Feedback</a>')&&render('about',sample,'el',post,withKey).html.includes('Στείλτε σχόλια →'),'The footer and About link to the feedback form');
+ const form=render('player/p1',sample,'en',post,withKey);
+ form.context.location.hash='#feedback';form.handlers.hashchange();
+ check(form.context.document.title==='Feedback · Greek TT Archive'&&form.html.includes('id="feedback-form"')&&form.html.includes('<textarea class="control" id="fb-message"')&&form.html.includes('the page you came from (#player/p1)'),'The feedback page shows the form and says which page is sent along');
+ check(submit(form)&&form.html.includes('Write a message before sending.')&&!sent.length,'An empty message is refused without a request');
+ type(form,'fb-message','  Add <club> logos  ');type(form,'fb-email','not-an-address');submit(form);
+ check(form.html.includes('The email address does not look right.')&&form.html.includes('Add &lt;club&gt; logos')&&!sent.length,'A malformed reply address is refused and the text is kept, escaped');
+ form.click('lang-switch');
+ check(form.html.includes('Το μήνυμά σας')&&form.html.includes('Add &lt;club&gt; logos')&&form.html.includes('value="not-an-address"'),'Switching language keeps what was typed');
+ form.click('lang-switch');
+ type(form,'fb-email','reader@example.org');form.change('fb-topic','broken');
+ let release;answer=()=>new Promise(resolve=>{release=resolve});
+ submit(form);
+ check(form.html.includes('<button class="primary-btn" type="submit" disabled>Sending…</button>'),'The button is disabled while the message is on its way');
+ submit(form);await flush();check(sent.length===1,'A second press while sending sends nothing more');
+ const posted=JSON.parse(sent[0].options.body);
+ check(sent[0].url==='https://api.web3forms.com/submit'&&sent[0].options.method==='POST'&&sent[0].options.headers['Content-Type']==='application/json','Feedback is posted as JSON to the form service');
+ check(posted.access_key==='test-key'&&posted.message==='Add <club> logos'&&posted.email==='reader@example.org'&&posted.topic==='Something does not work'&&posted.subject==='Greek TT Archive feedback: Something does not work'&&posted.page==='#player/p1'&&posted.language==='en','The request carries the message, topic, reply address, page and language');
+ release({ok:true,json:async()=>({success:true})});await flush();
+ check(form.html.includes('Thank you, your message was sent.')&&form.html.includes('href="#player/p1"')&&!form.html.includes('id="feedback-form"'),'A sent message is confirmed with a way back to the page the visitor came from');
+ form.click('fb-again');
+ check(form.html.includes('id="feedback-form"')&&!form.html.includes('Add &lt;club&gt; logos')&&form.html.includes('value="reader@example.org"'),'Another message starts from an empty text');
+ for(const [name,reply] of [['a refusal',async()=>({ok:false,json:async()=>({success:false})})],['a network failure',async()=>{throw new Error('offline')}],['an unreadable reply',async()=>({ok:true,json:async()=>{throw new Error('not JSON')}})]]){
+  const failing=render('feedback',sample,'en',reply,withKey);type(failing,'fb-message','Still here');submit(failing);await flush();
+  check(failing.html.includes('The message was not sent.')&&failing.html.includes('>Still here</textarea>')&&failing.html.includes('>Send feedback</button>'),'After '+name+' the form says so and keeps the text');
+ }
+ const direct=render('feedback',sample,'en',post,withKey);sent.length=0;answer=async()=>({ok:true,json:async()=>({success:true})});
+ check(!direct.html.includes('the page you came from'),'A form opened directly names no previous page');
+ type(direct,'fb-message','Hello');type(direct,'fb-website','https://spam.example');submit(direct);await flush();
+ check(!sent.length&&direct.html.includes('Thank you, your message was sent.'),'A filled hidden field sends nothing');
+ const leaving=render('feedback',sample,'en',post,withKey);type(leaving,'fb-message','Bye');submit(leaving);await flush();
+ leaving.context.location.hash='#home';leaving.handlers.hashchange();leaving.context.location.hash='#feedback';leaving.handlers.hashchange();
+ check(sent.length===1&&JSON.parse(sent[0].options.body).page==='(opened directly)'&&leaving.html.includes('id="feedback-form"'),'Coming back after a sent message shows an empty form again');
  console.log(`PASS: ${checks} total frontend behavior checks`);
 }
 hostedChecks().catch(error=>{console.error(error);process.exitCode=1;});
