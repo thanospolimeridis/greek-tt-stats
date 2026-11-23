@@ -4,6 +4,13 @@ What each public release of the site changed, newest first. `scripts/release.py`
 adds a section when a release is cut, one line per commit since the release
 before it. See "Releases and versions" in the README.
 
+## 1.3.0 — 2026-11-23
+
+- Add refresh cycles for competitions still in progress
+- Add a privacy notice to About that covers the feedback form
+- Keep the leading space of git status lines when staging a refresh
+- Refresh results through 2026-11-22: 88916 singles, 19 competitions checked
+
 ## 1.2.0 — 2026-11-23
 
 - Add a feedback form that emails visitors' suggestions
