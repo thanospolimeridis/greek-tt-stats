@@ -106,6 +106,20 @@ summary{cursor:pointer;color:var(--accent)}
 .control{appearance:none;padding:11px 13px;border:1px solid var(--line);background:var(--surface);border-radius:var(--r-md);color:var(--text-2);min-height:43px;font-weight:550}
 .control[type="search"]{min-width:260px;flex:1}
 .control:focus{outline:2px solid var(--accent-line);outline-offset:1px}
+.primary-btn{border-radius:var(--r-md);padding:12px 20px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;border:1px solid var(--accent);background:var(--accent);color:var(--on-accent);cursor:pointer}
+.primary-btn:hover{filter:brightness(1.08)}
+.primary-btn:focus-visible{outline:2px solid var(--accent-line);outline-offset:2px}
+.primary-btn[disabled]{opacity:.6;cursor:default}
+/* Feedback form */
+.feedback-panel{max-width:680px}
+.feedback-panel .field{margin-bottom:18px}
+.feedback-panel .field>label{display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px}
+.feedback-panel .field em{font-style:normal;font-weight:500;color:var(--muted)}
+.feedback-panel .field small{display:block;color:var(--muted);font-size:12px;margin-top:6px}
+.feedback-panel .control{display:block;width:100%;font:inherit;font-size:16px;font-weight:500;color:var(--text)}
+.feedback-panel textarea.control{min-height:160px;resize:vertical;line-height:1.5}
+.feedback-panel .primary-btn{margin-bottom:18px}
+.form-error{background:var(--loss-soft);color:var(--loss);border-radius:var(--r-md);padding:10px 13px;font-size:13px;font-weight:700;margin:0 0 16px}
 .chip{border:1px solid var(--line);background:var(--surface);color:var(--text-2);font-weight:700;padding:9px 13px;border-radius:999px;white-space:nowrap;font-size:12px}
 .chip.active,.chip:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-line)}
 .seg{display:inline-flex;gap:4px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:999px;margin:0 auto 18px;flex-wrap:wrap}
