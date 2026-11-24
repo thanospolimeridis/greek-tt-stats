@@ -5610,7 +5610,7 @@
         "category": "Έφηβοι",
         "date": "2026-10-01",
         "rows": 1131,
-        "source_id": "ca10d24c695bcf4f88a9edace60e81e98f5eef71940136e18e53bebe788d0827"
+        "source_id": "ae5db3d699e32c745c8b0b82e1a5cc9faa71db497dfc1844864ed110cca9a921"
       },
       {
         "category": "Κορασίδες",
@@ -5628,7 +5628,7 @@
         "category": "Μίνι Παμπαίδων",
         "date": "2026-10-01",
         "rows": 166,
-        "source_id": "c52724f5a755e2e523c7cebfabd859263dd8d9be9de66c5f62a2831aa959b82c"
+        "source_id": "14b4d91979be5681906ba720d46fade5ea6f8bda9e39ee0a777daad326decffd"
       },
       {
         "category": "Νέες Γυναίκες",
@@ -5640,7 +5640,7 @@
         "category": "Νέοι Άνδρες",
         "date": "2026-10-01",
         "rows": 1234,
-        "source_id": "07397844cf5252f8f416d2e810585c9dc9d74f0189d6174163c2127ed4cb837c"
+        "source_id": "16409cbbc9777464cf720dfb61cd18c0bcc650221f37159b830efafe98dbd975"
       },
       {
         "category": "Νεανίδες",
@@ -5652,7 +5652,7 @@
         "category": "Παίδες",
         "date": "2026-10-01",
         "rows": 676,
-        "source_id": "b05a55c71d7ea90d3792d8c570ec0d647305d9270fefd28772195ce4350edc23"
+        "source_id": "e4cc8b59f2ab82c33893a0713e30e778aa805c39427ce695e3f2a241d4048eef"
       },
       {
         "category": "Παγκορασίδες",
@@ -5664,12 +5664,48 @@
         "category": "Παμπαίδες",
         "date": "2026-10-01",
         "rows": 382,
+        "source_id": "a778553b072c12d5d32cdfb5ccde79f24d1cccf54466af89920dcca9272ebfdc"
+      },
+      {
+        "category": "Άνδρες",
+        "date": "2026-10-30",
+        "rows": 1993,
+        "source_id": "a677cb7d7b4c2cc64edd79b45dd19730b3661c28bcb2c04b32aaab86b1ed227e"
+      },
+      {
+        "category": "Έφηβοι",
+        "date": "2026-10-30",
+        "rows": 1132,
+        "source_id": "ca10d24c695bcf4f88a9edace60e81e98f5eef71940136e18e53bebe788d0827"
+      },
+      {
+        "category": "Μίνι Παμπαίδων",
+        "date": "2026-10-30",
+        "rows": 166,
+        "source_id": "c52724f5a755e2e523c7cebfabd859263dd8d9be9de66c5f62a2831aa959b82c"
+      },
+      {
+        "category": "Νέοι Άνδρες",
+        "date": "2026-10-30",
+        "rows": 1235,
+        "source_id": "07397844cf5252f8f416d2e810585c9dc9d74f0189d6174163c2127ed4cb837c"
+      },
+      {
+        "category": "Παίδες",
+        "date": "2026-10-30",
+        "rows": 677,
+        "source_id": "b05a55c71d7ea90d3792d8c570ec0d647305d9270fefd28772195ce4350edc23"
+      },
+      {
+        "category": "Παμπαίδες",
+        "date": "2026-10-30",
+        "rows": 382,
         "source_id": "74df13bb2ae131fad0f3823eadf1c4c4a69ef8fd8b444da83dedf85f061d33f1"
       }
     ]
   },
   "csv_sha256": {
-    "players.csv": "411885cd5ff3fbdb8dec6f6fb6a8831c6a0dd984c2cbe834c6ab2d534f8016fa",
+    "players.csv": "4355f61c78e3cbc690150542b387592a74c20746cefa4005f896a30ed5d9f3cf",
     "rankings-2018.csv": "12eb00b2d4f86f783a2897ee0d7cf16a690a741a6efce1b1bb3ddf5de6c8f7dd",
     "rankings-2019.csv": "a01d169430eab832fb5e25f1582e9beb6ccedc04af53e6e8d593ab73024428c8",
     "rankings-2020.csv": "ed1f8350c7120e86ca1b8f742e2283b9056e3497f9e4c3d79abe231a083df022",
@@ -5678,7 +5714,7 @@
     "rankings-2023.csv": "811900ef63aba857ed7ddd44d464c77b8f4bd4e8c5305adb800b8a9063085772",
     "rankings-2024.csv": "131fa94e2b34503421ed7a9ac21d1de57883443d08e787fab2872a04762af81e",
     "rankings-2025.csv": "b8cfc9c6529b068c5fba54d9d028b60fb97b22ea6df46e45ccdd8cdb900a8bec",
-    "rankings-2026.csv": "3bc2d640bdc42788a34a52d76ce9fa129f1b86ab96907ad565c28f57e5a20e7a"
+    "rankings-2026.csv": "3cb247ff4b6ddc12cbc3904ef158323d4796b999dbfb4afc702bd5724b5cbc84"
   },
   "requests": {
     "002775dd6439120a8299d72d75ad6d2d0d864f0dd9608b301c7ea85a82fbb570": {
@@ -6114,7 +6150,7 @@
       "status": 200
     },
     "07397844cf5252f8f416d2e810585c9dc9d74f0189d6174163c2127ed4cb837c": {
-      "bytes": 218261,
+      "bytes": 218604,
       "request": {
         "form": {
           "agecategoryid": "14",
@@ -6125,8 +6161,8 @@
         "method": "POST",
         "url": "https://app.ttscore.io/customer_ranking.php"
       },
-      "retrieved_at": "2026-11-20T20:05:57+00:00",
-      "sha256": "1302ee104bd97e531fe4a3d8db4fe1ae65848d8fe425a602ce14456f6e6d3b92",
+      "retrieved_at": "2026-11-24T13:19:27+00:00",
+      "sha256": "0fb5a5c25e1e6156ebb58e7389806e1bdf314fe22ec495fe7542ef3bdee729a2",
       "status": 200
     },
     "074c76065be47f68e3a9c28a2c30ffb4d665a5970d1d4a8bc92114ae454f1967": {
@@ -6849,6 +6885,22 @@
       "sha256": "aa33c0e4e0057e88fa60dba5acda228941e1f5c4812caea13336f90f7b4bb52d",
       "status": 200
     },
+    "14b4d91979be5681906ba720d46fade5ea6f8bda9e39ee0a777daad326decffd": {
+      "bytes": 29271,
+      "request": {
+        "form": {
+          "agecategoryid": "18",
+          "customer": "24",
+          "getStats": "1",
+          "select-date": "2026-10-01"
+        },
+        "method": "POST",
+        "url": "https://app.ttscore.io/customer_ranking.php"
+      },
+      "retrieved_at": "2026-11-24T13:18:38+00:00",
+      "sha256": "c852b09fc99d13bcd1cadc14c239b49ed2292606ef8fd51bd0453fce5179bdea",
+      "status": 200
+    },
     "14cd0abf5d0703477cc2418223e1303d043a42cb24ba9bbf6ba38ab741f7ef69": {
       "bytes": 187838,
       "request": {
@@ -6975,6 +7027,22 @@
       },
       "retrieved_at": "2026-11-20T20:11:10+00:00",
       "sha256": "ef406309f144d97cd7497ec374e991b450a2fe2a894742fdd7e76e2f2ffea937",
+      "status": 200
+    },
+    "16409cbbc9777464cf720dfb61cd18c0bcc650221f37159b830efafe98dbd975": {
+      "bytes": 218261,
+      "request": {
+        "form": {
+          "agecategoryid": "14",
+          "customer": "24",
+          "getStats": "1",
+          "select-date": "2026-10-01"
+        },
+        "method": "POST",
+        "url": "https://app.ttscore.io/customer_ranking.php"
+      },
+      "retrieved_at": "2026-11-24T13:18:45+00:00",
+      "sha256": "34203580659e97e3eae6ab9415d8d458af5e5545dbdcf5929e61491d03ae64ba",
       "status": 200
     },
     "1651ca27ec773fcf1064bec44e42fc5e7232da59664a71951b8e83a53d030ac2": {
@@ -12786,7 +12854,7 @@
       "status": 200
     },
     "74df13bb2ae131fad0f3823eadf1c4c4a69ef8fd8b444da83dedf85f061d33f1": {
-      "bytes": 67555,
+      "bytes": 67630,
       "request": {
         "form": {
           "agecategoryid": "11",
@@ -12797,8 +12865,8 @@
         "method": "POST",
         "url": "https://app.ttscore.io/customer_ranking.php"
       },
-      "retrieved_at": "2026-11-20T20:06:06+00:00",
-      "sha256": "74fef9b332a14fd3a364cda1c6c388bba8bec643e475b11312c76e3b5cc01792",
+      "retrieved_at": "2026-11-24T13:19:36+00:00",
+      "sha256": "979680e56a1a88d511eaa3bc1459ec450bef0a0e4c07626de96e626b0d96f47e",
       "status": 200
     },
     "74e58750b2e8181d04ca6de25505f84b5c08c7d7faf8163c231a43d5dbb9d480": {
@@ -15457,6 +15525,22 @@
       "sha256": "88c77709d9f5962d5e2f1a0b23bc272472d6f0aed09e4426aeadd3a8ef2c7c52",
       "status": 200
     },
+    "a677cb7d7b4c2cc64edd79b45dd19730b3661c28bcb2c04b32aaab86b1ed227e": {
+      "bytes": 351914,
+      "request": {
+        "form": {
+          "agecategoryid": "15",
+          "customer": "24",
+          "getStats": "1",
+          "select-date": "0"
+        },
+        "method": "POST",
+        "url": "https://app.ttscore.io/customer_ranking.php"
+      },
+      "retrieved_at": "2026-11-24T13:19:25+00:00",
+      "sha256": "f14d47c9c8c8aa327ba3226ca9697cccc0433f43dd2f997c36da5d07c7397743",
+      "status": 200
+    },
     "a67edcda8446b2ecc4a5271f2baf93e7e8fdebf49642554d954229a58485d98b": {
       "bytes": 200574,
       "request": {
@@ -15535,6 +15619,22 @@
       },
       "retrieved_at": "2026-11-20T19:46:15+00:00",
       "sha256": "74e8f1f9f8a9c9df2f17eecdb2f53e0dc0e3799ab273b1ded169c4d1e351c603",
+      "status": 200
+    },
+    "a778553b072c12d5d32cdfb5ccde79f24d1cccf54466af89920dcca9272ebfdc": {
+      "bytes": 67555,
+      "request": {
+        "form": {
+          "agecategoryid": "11",
+          "customer": "24",
+          "getStats": "1",
+          "select-date": "2026-10-01"
+        },
+        "method": "POST",
+        "url": "https://app.ttscore.io/customer_ranking.php"
+      },
+      "retrieved_at": "2026-11-24T13:18:56+00:00",
+      "sha256": "7738260f857a68aaca5ce110e94e9bc53108ee6872a25af480aeb6b5af828f8e",
       "status": 200
     },
     "a77ea69f647ed691294b9dbd67e19c9afee72412aef9e3ffcb2dc30b3615ccb8": {
@@ -16001,6 +16101,22 @@
       "sha256": "24a80933af7f5a14590ff933b5f837153d4111b784feb6045d31c799a3460d45",
       "status": 200
     },
+    "ae5db3d699e32c745c8b0b82e1a5cc9faa71db497dfc1844864ed110cca9a921": {
+      "bytes": 199907,
+      "request": {
+        "form": {
+          "agecategoryid": "13",
+          "customer": "24",
+          "getStats": "1",
+          "select-date": "2026-10-01"
+        },
+        "method": "POST",
+        "url": "https://app.ttscore.io/customer_ranking.php"
+      },
+      "retrieved_at": "2026-11-24T13:18:06+00:00",
+      "sha256": "6bbd857ef8222a84a8f37e14f8a45c0240b1fe1e6f242ed6e01f16e21017ee05",
+      "status": 200
+    },
     "aef5d6a3b1818ffac9d5fbeb6a168c408b65c3bfb82d930d2706815bbbdf44ca": {
       "bytes": 19102,
       "request": {
@@ -16050,7 +16166,7 @@
       "status": 200
     },
     "b05a55c71d7ea90d3792d8c570ec0d647305d9270fefd28772195ce4350edc23": {
-      "bytes": 119658,
+      "bytes": 119972,
       "request": {
         "form": {
           "agecategoryid": "12",
@@ -16061,8 +16177,8 @@
         "method": "POST",
         "url": "https://app.ttscore.io/customer_ranking.php"
       },
-      "retrieved_at": "2026-11-20T20:06:01+00:00",
-      "sha256": "2c91f8e62497cbe1f4ca33ebf845dbe2ade60899c4e5c4d95a320ace9818d514",
+      "retrieved_at": "2026-11-24T13:19:34+00:00",
+      "sha256": "cd3be44d21b0b4a6be4a5f9c79a7ecdfaa20f8a9620c9bf76e6ea259b4a4c651",
       "status": 200
     },
     "b0d8c55664a8349ca6cd57e715b560f9a80583ee5813caa15d48da9758115f59": {
@@ -16834,14 +16950,14 @@
       "status": 200
     },
     "bb4ea675f82d2308d4d07097e36b6fc4a96bd99bc0ba4dbd29b2aaadd9fae7b8": {
-      "bytes": 18006,
+      "bytes": 18150,
       "request": {
         "form": null,
         "method": "GET",
         "url": "https://app.ttscore.io/customer_ranking.php?customer=24"
       },
-      "retrieved_at": "2026-11-23T06:44:12+00:00",
-      "sha256": "065e774513dca6ecc9a7d94dfd803dfa52110281c04b1f14bdca9c0e6b319461",
+      "retrieved_at": "2026-11-24T13:18:03+00:00",
+      "sha256": "749e857f208a32d12be920c1414ad2d6e0a71a173ca52e03e16df8d334ac0cbf",
       "status": 200
     },
     "bb96b327645e6654bab04e20705ed680302bcaddade1c4ffb299e6b5f0b08358": {
@@ -17299,7 +17415,7 @@
         "method": "GET",
         "url": "https://app.ttscore.io/robots.txt"
       },
-      "retrieved_at": "2026-11-23T06:44:09+00:00",
+      "retrieved_at": "2026-11-24T13:18:00+00:00",
       "sha256": "8fa3036c68bfcbd32365f6225d24333264093b7cd38d306e106b4dbdc934fd5b",
       "status": 200
     },
@@ -17432,7 +17548,7 @@
       "status": 200
     },
     "c52724f5a755e2e523c7cebfabd859263dd8d9be9de66c5f62a2831aa959b82c": {
-      "bytes": 29271,
+      "bytes": 29308,
       "request": {
         "form": {
           "agecategoryid": "18",
@@ -17443,8 +17559,8 @@
         "method": "POST",
         "url": "https://app.ttscore.io/customer_ranking.php"
       },
-      "retrieved_at": "2026-11-20T20:06:09+00:00",
-      "sha256": "bc79473eddcaca22851d9f7296c1035a08e12c5e7538e122da6d675ca8396dc8",
+      "retrieved_at": "2026-11-24T13:19:21+00:00",
+      "sha256": "239015a3edac09b49705acf6fab56ad9f09fc072fa4144b785389ec5fe4ab21f",
       "status": 200
     },
     "c55b37f615ba2bcf6e58bdce6c94151d03be7b700476ef832fdbcb125dca501f": {
@@ -17752,7 +17868,7 @@
       "status": 200
     },
     "ca10d24c695bcf4f88a9edace60e81e98f5eef71940136e18e53bebe788d0827": {
-      "bytes": 199907,
+      "bytes": 200249,
       "request": {
         "form": {
           "agecategoryid": "13",
@@ -17763,8 +17879,8 @@
         "method": "POST",
         "url": "https://app.ttscore.io/customer_ranking.php"
       },
-      "retrieved_at": "2026-11-20T20:05:59+00:00",
-      "sha256": "16f29ede9ef4b49b8924109af4481f9d561f95eeb3f44579ca10708bba3a22c7",
+      "retrieved_at": "2026-11-24T13:19:31+00:00",
+      "sha256": "5a007a6c93c8397df97a9185b3abcb471776ccaf6bcf941c175b827f56f35330",
       "status": 200
     },
     "ca92aeb8e2d2e9674371940f28b8b9236b2e127d35187cb68079c89a9be1cdb0": {
@@ -19205,6 +19321,22 @@
       },
       "retrieved_at": "2026-11-20T20:16:06+00:00",
       "sha256": "75000f04e3f23f4355d420bf0eabd4336e2edb87a9bb272113e9c02058ed9fb7",
+      "status": 200
+    },
+    "e4cc8b59f2ab82c33893a0713e30e778aa805c39427ce695e3f2a241d4048eef": {
+      "bytes": 119658,
+      "request": {
+        "form": {
+          "agecategoryid": "12",
+          "customer": "24",
+          "getStats": "1",
+          "select-date": "2026-10-01"
+        },
+        "method": "POST",
+        "url": "https://app.ttscore.io/customer_ranking.php"
+      },
+      "retrieved_at": "2026-11-24T13:18:51+00:00",
+      "sha256": "bff596e2ac821172764c66c82b2f064bed2c93cc30882ce9133f09c2f8978aff",
       "status": 200
     },
     "e510e1a7557e31ae35af966e894cd6cd95188bcb17171d6cabb2fae37ce6438f": {
