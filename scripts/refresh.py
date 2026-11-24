@@ -337,7 +337,7 @@ def release(cycle):
 
 
 def refresh_rankings(cycle, offline=False):
-    """Add official ranking snapshots published since the last one. Returns the importer's last line."""
+    """Add official ranking snapshots published since the last one. Returns what the importer did."""
     history = cycle.destination/'ranking-history'
     manifest = json.loads((history/'provenance.json').read_text(encoding='utf-8'))
     categories = sorted({r['request']['form']['agecategoryid'] for r in manifest['requests'].values()
@@ -349,7 +349,13 @@ def refresh_rankings(cycle, offline=False):
         command += ['--category', category]
     if offline:
         command.append('--offline')
-    return cycle.run(*command).strip().splitlines()[0]
+    result = json.loads(cycle.run(*command).strip().splitlines()[-1])
+    text = f"{result['snapshots_added']} snapshot(s) added"
+    if result.get('re_cited'):
+        text += f", {result['re_cited']} earlier one(s) moved to their dated request"
+    if result['rejected']:
+        text += f", {result['rejected']} REJECTED (listed in ranking-history coverage; see {cycle.log})"
+    return text
 
 
 def refresh_standings(cycle, plan, folder=None):

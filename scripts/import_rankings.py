@@ -51,6 +51,43 @@ def merge_player(old, new):
     return {**base, 'aliases': '|'.join(sorted(names - {base['name']}))}
 
 
+def superseded_latest(manifest, dates):
+    """Held snapshots that cite the "latest" request although the source now lists their date.
+
+    The newest snapshot can only be requested as "latest" (select-date=0). Once a newer
+    one is published, that same request returns the newer snapshot, so a row citing it
+    would point at a response that no longer holds it.
+    """
+    listed = {date for date, request in dates if request != 'latest'}
+    def form(key):
+        return (manifest['requests'].get(key) or {}).get('request', {}).get('form') or {}
+    return [held for held in manifest['coverage']['rankings']
+            if held['date'] in listed and form(held['source_id']).get('select-date') == '0']
+
+
+def comparable(rows):
+    return sorted(tuple(row[k] for k in ranking_history.COLUMNS if k != 'source_id') for row in rows)
+
+
+def recite(folder, moved):
+    """Point rows of a superseded snapshot, and players first seen in it, at its dated request.
+
+    moved maps (old source_id, category, date) to the new source_id.
+    """
+    by_key = {}
+    for (old, _, _), new in moved.items():
+        if by_key.setdefault(old, new) != new:
+            raise DataError(f'Request {old[:12]} was cited by several snapshots; review by hand')
+    for path in sorted(folder.glob('*.csv')):
+        rows = read_rows(path)
+        if path.name == 'players.csv':
+            columns, target = ranking_history.PLAYER_COLUMNS, lambda r: by_key.get(r['source_id'])
+        else:
+            columns, target = ranking_history.COLUMNS, lambda r: moved.get((r['source_id'], r['category'], r['date']))
+        if any(target(r) for r in rows):
+            write_rows(path, columns, [{**r, 'source_id': target(r) or r['source_id']} for r in rows])
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--imports', type=Path, default=ROOT/'imports', help='Collector imports (read only)')
@@ -77,6 +114,27 @@ def main():
     # The newest snapshot is offered only as "latest" (value 0); its label carries the date.
     dates = sorted((re.search(r'\d{4}-\d{2}-\d{2}', label)[0], 'latest' if value == '0' else value)
                    for value, label in options(selector, 'select-date'))
+    # Before "latest" is asked for again: move held snapshots that cite it to their dated
+    # request, after checking that the source still returns exactly the published rows.
+    # Only the categories asked for now: "latest" is requested again for those alone.
+    moved, ids = {}, {label: value for value, label in names.items()}
+    for held in superseded_latest(manifest, dates):
+        if ids.get(held['category']) not in args.category:
+            continue
+        snapshot = Importer(client)
+        try:
+            snapshot.ranking(ids[held['category']], held['date'])
+        except (DataError, KeyError) as exc:
+            raise SystemExit(f"Could not read the {held['category']} ranking of {held['date']} by its date: {exc}")
+        published = [r for r in read_rows(args.history/ranking_history.shard_name(held['date']))
+                     if r['category'] == held['category'] and r['date'] == held['date'] and r['source_id'] == held['source_id']]
+        if comparable(published) != comparable(snapshot.data['rankings'].values()):
+            raise SystemExit(f"The {held['category']} ranking of {held['date']} no longer matches the published rows; "
+                             'nothing was written, review before importing')
+        new_key = snapshot.coverage['rankings'][-1]['source_id']
+        moved[(held['source_id'], held['category'], held['date'])] = new_key
+        held['source_id'] = new_key
+        print('Re-cited', held['category'], held['date'], 'to its dated request', flush=True)
     todo = [(c, d, request) for d, request in dates for c in args.category if d >= args.since and (names[c], d) not in have]
     if args.limit is not None:
         todo = todo[:args.limit]
@@ -108,6 +166,7 @@ def main():
             for path in args.history.iterdir():
                 if path.is_file():
                     shutil.copy2(path, staging/path.name)
+        recite(staging, moved)  # before new rows, which may cite the "latest" request again
         shards = {}
         for row in rankings.values():
             shards.setdefault(ranking_history.shard_name(row['date']), []).append(row)
@@ -135,7 +194,7 @@ def main():
                 temporary.write_bytes(path.read_bytes())
                 temporary.replace(target)
     print(json.dumps({'snapshots_added': len(coverage), 'rejected': len(rejected), 'ranking_rows': len(rankings),
-                      'players_added': len(added)}), flush=True)
+                      'players_added': len(added), 're_cited': len(moved)}), flush=True)
 
 
 if __name__ == '__main__':
