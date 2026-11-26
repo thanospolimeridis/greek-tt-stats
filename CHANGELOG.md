@@ -4,6 +4,11 @@ What each public release of the site changed, newest first. `scripts/release.py`
 adds a section when a release is cut, one line per commit since the release
 before it. See "Releases and versions" in the README.
 
+## 1.3.2 — 2026-11-26
+
+- Let the ranking import replace a snapshot the source has corrected
+- Take over the source's correction of the 30 October men's ranking
+
 ## 1.3.1 — 2026-11-24
 
 - Move older rankings off the "latest" request before asking for it again
