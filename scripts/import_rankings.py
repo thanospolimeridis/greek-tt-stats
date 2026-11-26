@@ -28,6 +28,7 @@ from import_csv import build  # noqa: E402
 import ranking_history  # noqa: E402
 
 ADAPTER = 'ttscore-ranking-history-v1'
+EXCEPTIONS = ROOT/'data'/'ranking-source-exceptions.json'
 
 
 def read_rows(path):
@@ -65,8 +66,55 @@ def superseded_latest(manifest, dates):
             if held['date'] in listed and form(held['source_id']).get('select-date') == '0']
 
 
-def comparable(rows):
-    return sorted(tuple(row[k] for k in ranking_history.COLUMNS if k != 'source_id') for row in rows)
+def comparable(rows, masked=frozenset()):
+    """Rows as published, for comparison; the club of a row in masked is left out."""
+    return sorted(tuple('' if k == 'club_id' and row['id'] in masked else row[k]
+                        for k in ranking_history.COLUMNS if k != 'source_id') for row in rows)
+
+
+def load_exceptions(path):
+    """Reviewed source errors in the ranking lists, keyed by (athlete, club as the source shows it).
+
+    data/ranking-source-exceptions.json lists clubs the source shows for an athlete that a
+    person reviewed and found to be wrong, with the evidence. Where the source shows exactly
+    that club for that athlete, the row is published without a club, and the provenance
+    records it. Once the source corrects it, the entry no longer matches and does nothing.
+    """
+    if not path.exists():
+        return {}
+    spec = json.loads(path.read_text(encoding='utf-8'))
+    if spec.get('version') != 1 or set(spec) - {'version', 'note', 'clubs'}:
+        raise DataError(f'{path.name}: unsupported format')
+    result = {}
+    for entry in spec.get('clubs', []):
+        fields = ('player_id', 'source_club', 'reviewed', 'evidence')
+        if set(entry) != set(fields) or not all(isinstance(entry[f], str) and entry[f].strip() for f in fields):
+            raise DataError(f'{path.name}: each club entry needs exactly {", ".join(fields)}')
+        if (entry['player_id'], entry['source_club']) in result:
+            raise DataError(f"{path.name}: {entry['player_id']} listed twice for {entry['source_club']!r}")
+        result[(entry['player_id'], entry['source_club'])] = entry
+    return result
+
+
+def read_snapshot(client, category, request, exceptions):
+    """One ranking snapshot with reviewed source errors applied: the importer and what was applied."""
+    snapshot = Importer(client)
+    snapshot.ranking(category, request)
+    clubs, applied = snapshot.data['clubs'], []
+    for row in snapshot.data['rankings'].values():
+        shown = clubs.get(row['club_id'], {}).get('name', '')
+        if (row['player_id'], shown) in exceptions:
+            applied.append({'category': row['category'], 'date': row['date'], 'player_id': row['player_id'],
+                            'row': row['id'], 'source_club': shown, 'published_club_id': ''})
+            row['club_id'] = ''
+    if applied:
+        used = {row['club_id'] for row in snapshot.data['rankings'].values()}
+        for ident in [c for c in clubs if c not in used]:
+            del clubs[ident]
+        for player in snapshot.data['players'].values():
+            if player.get('club_id') and player['club_id'] not in clubs:
+                player.update(club_id='', club_as_of='')
+    return snapshot, applied
 
 
 def recite(folder, moved):
@@ -98,12 +146,14 @@ def main():
     ap.add_argument('--limit', type=int, help='Stop after this many snapshots (probe)')
     ap.add_argument('--delay', type=float, default=3, help='Seconds between network requests')
     ap.add_argument('--offline', action='store_true')
+    ap.add_argument('--exceptions', type=Path, default=EXCEPTIONS, help='Reviewed source errors (default: %(default)s)')
     ap.add_argument('--replace', action='append', default=[], metavar='CATEGORY:DATE',
                     help='Read a held history snapshot again and replace it whole, after the source corrected it '
                          '(e.g. 15:2026-10-30; the category must also be given with --category)')
     args = ap.parse_args()
 
     catalog = build(args.imports, ROOT/'data'/'verified_events.json')
+    exceptions = load_exceptions(args.exceptions)
     manifest_path = args.history/'provenance.json'
     manifest = (json.loads(manifest_path.read_text(encoding='utf-8')) if manifest_path.exists()
                 else {'adapter': ADAPTER, 'coverage': {'rankings': []}, 'requests': {}, 'csv_sha256': {}})
@@ -131,20 +181,26 @@ def main():
     # Before "latest" is asked for again: move held snapshots that cite it to their dated
     # request, after checking that the source still returns exactly the published rows.
     # Only the categories asked for now: "latest" is requested again for those alone.
-    moved, ids = {}, {label: value for value, label in names.items()}
+    # A reviewed source error found in a dated list is not a change: the published row keeps
+    # the club from the earlier retrieval, and the exception record says where it came from.
+    moved, ids, applied = {}, {label: value for value, label in names.items()}, []
     for held in superseded_latest(manifest, dates):
         if ids.get(held['category']) not in args.category:
             continue
-        snapshot = Importer(client)
         try:
-            snapshot.ranking(ids[held['category']], held['date'])
+            snapshot, found = read_snapshot(client, ids[held['category']], held['date'], exceptions)
         except (DataError, KeyError) as exc:
             raise SystemExit(f"Could not read the {held['category']} ranking of {held['date']} by its date: {exc}")
         published = [r for r in read_rows(args.history/ranking_history.shard_name(held['date']))
                      if r['category'] == held['category'] and r['date'] == held['date'] and r['source_id'] == held['source_id']]
-        if comparable(published) != comparable(snapshot.data['rankings'].values()):
+        masked = {item['row'] for item in found}
+        if comparable(published, masked) != comparable(snapshot.data['rankings'].values(), masked):
             raise SystemExit(f"The {held['category']} ranking of {held['date']} no longer matches the published rows; "
                              'nothing was written, review before importing')
+        earlier = manifest['requests'].get(held['source_id'], {})
+        kept = {r['id']: r['club_id'] for r in published}
+        applied += [{**item, 'published_club_id': kept[item['row']],
+                     'published_club_from': {k: earlier.get(k) for k in ('retrieved_at', 'sha256')}} for item in found]
         new_key = snapshot.coverage['rankings'][-1]['source_id']
         moved[(held['source_id'], held['category'], held['date'])] = new_key
         held['source_id'] = new_key
@@ -158,9 +214,8 @@ def main():
     rankings, players, coverage, rejected = {}, {}, [], []
     known_clubs = {c['id'] for c in catalog['clubs']}
     for category, date, request in todo:
-        snapshot = Importer(client)  # isolated, so a rejected snapshot leaves nothing behind
-        try:
-            snapshot.ranking(category, request)
+        try:  # each snapshot is isolated, so a rejected one leaves nothing behind
+            snapshot, found = read_snapshot(client, category, request, exceptions)
         except DataError as exc:
             rejected.append({'category': names[category], 'date': date, 'reason': str(exc)})
             print('Rejected', names[category], date, exc, flush=True)
@@ -173,6 +228,7 @@ def main():
         for ident, row in snapshot.data['players'].items():
             players[ident] = merge_player(players[ident], row) if ident in players else row
         coverage += snapshot.coverage['rankings']
+        applied += found
         print('Added', names[category], date, snapshot.coverage['rankings'][-1]['rows'], flush=True)
 
     unread = sorted(set(replaced)-{(c['category'], c['date']) for c in coverage})
@@ -214,6 +270,10 @@ def main():
         manifest['adapter'] = ADAPTER
         manifest['requests'].update(client.records)
         manifest['coverage']['rankings'] = sorted(manifest['coverage']['rankings']+coverage, key=lambda r: (r['date'], r['category']))
+        if applied or manifest['coverage'].get('source_exceptions'):
+            redone = {(c['category'], c['date']) for c in coverage} | {(c, d) for _, c, d in moved}
+            kept = [e for e in manifest['coverage'].get('source_exceptions', []) if (e['category'], e['date']) not in redone]
+            manifest['coverage']['source_exceptions'] = sorted(kept+applied, key=lambda e: (e['date'], e['category'], e['row']))
         if rejected or manifest['coverage'].get('ranking_rejections'):
             manifest['coverage']['ranking_rejections'] = sorted(manifest['coverage'].get('ranking_rejections', [])+rejected,
                                                                 key=lambda r: (r['date'], r['category']))
@@ -228,7 +288,7 @@ def main():
                 temporary.write_bytes(path.read_bytes())
                 temporary.replace(target)
     print(json.dumps({'snapshots_added': len(coverage), 'rejected': len(rejected), 'ranking_rows': len(rankings),
-                      'players_added': len(added), 're_cited': len(moved), 'replaced': len(replaced)}), flush=True)
+                      'players_added': len(added), 're_cited': len(moved), 'replaced': len(replaced), 'exceptions_applied': len(applied)}), flush=True)
 
 
 if __name__ == '__main__':

@@ -18,8 +18,9 @@ CLUB = Importer(None).club('Club')
 
 
 def table(rows):
-    return '<table>'+''.join(f'<tr><td>{rank}</td><td></td><td>{number}</td><td>{name}</td><td>Club</td><td></td><td></td><td>{points}</td></tr>'
-                             for rank, number, name, points in rows)+'</table>'
+    """Ranking rows as (rank, number, name, points[, club]); the club defaults to "Club"."""
+    return '<table>'+''.join(f'<tr><td>{rank}</td><td></td><td>{number}</td><td>{name}</td><td>{(club or ["Club"])[0]}</td><td></td><td></td><td>{points}</td></tr>'
+                             for rank, number, name, points, *club in rows)+'</table>'
 
 
 def key(path, form=None):
@@ -178,6 +179,60 @@ class LatestSnapshotTests(unittest.TestCase):
             folder = Path(tmp)/'ranking-history'
             held(folder)
             self.replace(folder, OCTOBER, '--replace', '10:2026-10-01')
+
+    def with_exception(self, tmp, player='httf-102'):
+        path = Path(tmp)/'exceptions.json'
+        path.write_text(json.dumps({'version': 1, 'clubs': [{'player_id': player, 'source_club': '2010',
+                                                             'reviewed': '2026-11-26', 'evidence': 'a year in the club field'}]}))
+        return path
+
+    def test_a_reviewed_source_club_error_is_published_without_a_club_and_recorded(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)/'ranking-history'
+            held(folder)
+            # The source now shows "2010" for httf-102 in the new list and in its dated 1 October list.
+            pages = self.pages([(1, '101', 'One', '900.5'), (2, '102', 'Two', '800.0', '2010')])
+            pages[LATEST] = table([(1, '102', 'Two', '950.0', '2010'), (2, '101', 'One', '910.0')])
+            source = FakeSource(pages)
+            argv = ['import_rankings.py', '--imports', tmp, '--history', str(folder), '--cache', tmp+'/cache', '--category', '15',
+                    '--since', '2026-10-01', '--exceptions', str(self.with_exception(tmp))]
+            with patch.object(sys, 'argv', argv), patch.object(import_rankings, 'build', lambda *a: CATALOG), \
+                    patch.object(import_rankings, 'Client', lambda *a: source), patch('builtins.print'):
+                import_rankings.main()
+            manifest = json.loads((folder/'provenance.json').read_text())
+            with (folder/'rankings-2026.csv').open(encoding='utf-8', newline='') as f:
+                clubs = {(r['date'], r['player_id']): (r['club_id'], r['source_id']) for r in csv.DictReader(f)}
+            ranking_history.load(folder, CATALOG)
+        self.assertEqual(clubs, {('2026-10-01', 'httf-101'): (CLUB, DATED), ('2026-10-01', 'httf-102'): (CLUB, DATED),
+                                 ('2026-10-30', 'httf-101'): (CLUB, LATEST), ('2026-10-30', 'httf-102'): ('', LATEST)})
+        self.assertEqual(manifest['coverage']['source_exceptions'], [
+            {'category': 'Men', 'date': '2026-10-01', 'player_id': 'httf-102', 'row': 'httf-ranking-2026-10-01-15-102',
+             'source_club': '2010', 'published_club_id': CLUB,
+             'published_club_from': {'retrieved_at': '2026-11-20T10:00:00+00:00', 'sha256': 'old'}},
+            {'category': 'Men', 'date': '2026-10-30', 'player_id': 'httf-102', 'row': 'httf-ranking-2026-10-30-15-102',
+             'source_club': '2010', 'published_club_id': ''}])
+
+    def test_without_a_reviewed_exception_the_club_error_still_stops_or_rejects(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)/'ranking-history'
+            held(folder)
+            pages = self.pages([(1, '101', 'One', '900.5'), (2, '102', 'Two', '800.0', '2010')])
+            with self.assertRaisesRegex(SystemExit, 'no longer matches the published rows'):
+                argv_exceptions = str(self.with_exception(tmp, player='httf-101'))  # an entry for someone else does not apply
+                source = FakeSource(pages)
+                argv = ['import_rankings.py', '--imports', tmp, '--history', str(folder), '--cache', tmp+'/cache', '--category', '15',
+                        '--since', '2026-10-01', '--exceptions', argv_exceptions]
+                with patch.object(sys, 'argv', argv), patch.object(import_rankings, 'build', lambda *a: CATALOG), \
+                        patch.object(import_rankings, 'Client', lambda *a: source), patch('builtins.print'):
+                    import_rankings.main()
+
+    def test_exception_entries_must_be_complete(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp)/'exceptions.json'
+            path.write_text(json.dumps({'version': 1, 'clubs': [{'player_id': 'httf-1', 'source_club': '2010', 'reviewed': '2026-11-26'}]}))
+            with self.assertRaisesRegex(import_rankings.DataError, 'needs exactly'):
+                import_rankings.load_exceptions(path)
+            self.assertEqual(import_rankings.load_exceptions(Path(tmp)/'absent.json'), {})
 
     def test_a_snapshot_still_offered_only_as_latest_stays_put(self):
         manifest = {'requests': {LATEST: {'request': {'form': {'select-date': '0'}}}},

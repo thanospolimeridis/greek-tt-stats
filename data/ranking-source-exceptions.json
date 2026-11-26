@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "note": "Clubs that the official ranking lists show for an athlete and that a person reviewed and found to be source errors, with the evidence. scripts/import_rankings.py publishes those rows without a club and records each use in imports/ranking-history/provenance.json (coverage.source_exceptions). An entry applies only where the source shows exactly source_club for that athlete, so it stops applying once the source corrects it. A list that was published before the error appeared keeps the club it had then.",
+  "clubs": [
+    {
+      "player_id": "httf-28362",
+      "source_club": "2010",
+      "reviewed": "2026-11-26",
+      "evidence": "From the 30 October 2026 lists on, the source shows the club \"2010\" for this athlete in all six women's and girls' categories, and now also in its own 1 October 2026 lists, which showed ΑΟ ΑΧΑΙΑΣ Η ΓΑΛΗΝΗ when they were first retrieved. No club of that name exists in the archive; it looks like a year typed into the club field. Checked on 24 and 26 November 2026; the user chose to publish her rows without a club until the source corrects it."
+    }
+  ]
+}
