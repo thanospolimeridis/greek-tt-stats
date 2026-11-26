@@ -5669,7 +5669,7 @@
       {
         "category": "Άνδρες",
         "date": "2026-10-30",
-        "rows": 1993,
+        "rows": 1994,
         "source_id": "a677cb7d7b4c2cc64edd79b45dd19730b3661c28bcb2c04b32aaab86b1ed227e"
       },
       {
@@ -5714,7 +5714,7 @@
     "rankings-2023.csv": "811900ef63aba857ed7ddd44d464c77b8f4bd4e8c5305adb800b8a9063085772",
     "rankings-2024.csv": "131fa94e2b34503421ed7a9ac21d1de57883443d08e787fab2872a04762af81e",
     "rankings-2025.csv": "b8cfc9c6529b068c5fba54d9d028b60fb97b22ea6df46e45ccdd8cdb900a8bec",
-    "rankings-2026.csv": "3cb247ff4b6ddc12cbc3904ef158323d4796b999dbfb4afc702bd5724b5cbc84"
+    "rankings-2026.csv": "4de5375dcdd24d2577b3c395704aba85eef4bd4a1c5c6637189eadf2b9f1d832"
   },
   "requests": {
     "002775dd6439120a8299d72d75ad6d2d0d864f0dd9608b301c7ea85a82fbb570": {
@@ -15526,7 +15526,7 @@
       "status": 200
     },
     "a677cb7d7b4c2cc64edd79b45dd19730b3661c28bcb2c04b32aaab86b1ed227e": {
-      "bytes": 351914,
+      "bytes": 352087,
       "request": {
         "form": {
           "agecategoryid": "15",
@@ -15537,8 +15537,8 @@
         "method": "POST",
         "url": "https://app.ttscore.io/customer_ranking.php"
       },
-      "retrieved_at": "2026-11-24T13:19:25+00:00",
-      "sha256": "f14d47c9c8c8aa327ba3226ca9697cccc0433f43dd2f997c36da5d07c7397743",
+      "retrieved_at": "2026-11-26T20:29:07+00:00",
+      "sha256": "de2868979897c3df4e06154777051d7544bd61a4ed00ba220cea43200847a30d",
       "status": 200
     },
     "a67edcda8446b2ecc4a5271f2baf93e7e8fdebf49642554d954229a58485d98b": {
@@ -16956,7 +16956,7 @@
         "method": "GET",
         "url": "https://app.ttscore.io/customer_ranking.php?customer=24"
       },
-      "retrieved_at": "2026-11-24T13:18:03+00:00",
+      "retrieved_at": "2026-11-26T20:28:53+00:00",
       "sha256": "749e857f208a32d12be920c1414ad2d6e0a71a173ca52e03e16df8d334ac0cbf",
       "status": 200
     },
@@ -17415,7 +17415,7 @@
         "method": "GET",
         "url": "https://app.ttscore.io/robots.txt"
       },
-      "retrieved_at": "2026-11-24T13:18:00+00:00",
+      "retrieved_at": "2026-11-26T20:28:50+00:00",
       "sha256": "8fa3036c68bfcbd32365f6225d24333264093b7cd38d306e106b4dbdc934fd5b",
       "status": 200
     },
