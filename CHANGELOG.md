@@ -4,6 +4,12 @@ What each public release of the site changed, newest first. `scripts/release.py`
 adds a section when a release is cut, one line per commit since the release
 before it. See "Releases and versions" in the README.
 
+## 1.4.0 — 2026-11-26
+
+- Publish reviewed source errors in ranking lists without the wrong club
+- Add the 30 October 2026 rankings for the six women's categories
+- Choose the athlete list by category tab and by year and month
+
 ## 1.3.2 — 2026-11-26
 
 - Let the ranking import replace a snapshot the source has corrected
