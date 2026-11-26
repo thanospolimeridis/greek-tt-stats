@@ -230,6 +230,9 @@ summary{cursor:pointer;color:var(--accent)}
 .subtabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin:10px 0 22px;flex-wrap:wrap}
 .subtab{background:none;border:none;border-bottom:2px solid transparent;padding:12px 15px;color:var(--muted);font-size:13px;font-weight:700;white-space:nowrap}
 .subtab.active{border-color:var(--accent);color:var(--accent)}
+/* Category tabs on the Athletes page: one scrolling line at every width. */
+.roster-tabs{flex-wrap:nowrap;overflow-x:auto;margin:-6px 0 14px;scrollbar-width:thin}
+.snap-pick{display:flex;gap:9px;align-items:center}
 .tabcount{display:inline-block;margin-left:4px;padding:1px 7px;border-radius:999px;background:var(--surface-2);color:var(--muted);font-size:11px}
 .subtab.active .tabcount{background:var(--accent-soft);color:var(--accent)}
 .profile-head{display:flex;gap:20px;align-items:center}
@@ -434,6 +437,9 @@ details.rtable{max-width:none}
  .search-hit{flex-direction:column;gap:0}
  .search-hit .listmeta{text-align:left;max-width:none}
  .subtabs{flex-wrap:nowrap;overflow-x:auto}
+ .snap-pick{width:100%;flex-wrap:wrap}
+ .snap-pick #roster-year{flex:0 0 96px}
+ .snap-pick #roster-latest{flex:1 0 100%}
  .detailhead{padding:20px}
  .detailhead-top{flex-direction:column}
  .metric{padding:15px 10px}
