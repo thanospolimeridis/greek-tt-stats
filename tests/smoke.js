@@ -165,6 +165,15 @@ check(order(months,'Woman First')&&absent(months,'Man First')&&months.html.inclu
 months.click('roster-tab-1');months.change('roster-month','2026-10-01');months.context.location.hash='#home';months.handlers.hashchange();months.context.location.hash='#players';months.handlers.hashchange();
 check(months.html.includes('Άνδρες · 30 Oct 2026'),'Coming back to Athletes opens the latest snapshot again');
 check(render('players',history,'el').html.includes('>Οκτώβριος · 30</option>'),'Greek month names stand alone');
+// Movement since the category's previous list, on the Rankings table and the Athletes list.
+const moves=structuredClone(listed);
+moves.rankings=[['a',1,3],['b',2,2],['c',3,0],['d',4,undefined]].map(([player_id,rank,previous_rank])=>({id:'mv-'+player_id,player_id,category:'Άνδρες',date:'2026-10-30',rank,points:1,source_url:'https://app.ttscore.io/test',...(previous_rank===undefined?{}:{previous_rank})}));
+const moveTable=render('rankings',moves,'en');
+check(moveTable.html.includes('<th scope="col">Change</th>')&&moveTable.html.includes('class="move up" title="Up 2 places since the previous list (#3)"><span aria-hidden="true">▲2</span>')&&moveTable.html.includes('class="move same"')&&moveTable.html.includes('<span aria-hidden="true">NEW</span>')&&(moveTable.html.match(/class="move /g)||[]).length===3,'Rankings show places moved since the previous list, new entries, and nothing without an earlier list');
+const moveRoster=render('players',moves,'el');
+check(moveRoster.html.includes('<div class="rank-num">1<span class="move up" title="2 θέσεις πάνω από την προηγούμενη λίστα (#3)">')&&moveRoster.html.includes('<span aria-hidden="true">ΝΕΟΣ</span>'),'The Athletes list shows the movement under each position');
+const moveDown=structuredClone(moves);moveDown.rankings[0].previous_rank=0;moveDown.rankings[1].previous_rank=1;
+check(render('rankings',moveDown,'en').html.includes('<span aria-hidden="true">▼1</span><span class="sr-only">Down 1 place since the previous list (#1)</span>'),'A drop is shown with its own wording');
 const many=structuredClone(db);many.players=Array.from({length:60},(_,i)=>({id:'p'+i,name:'Player '+String(i).padStart(2,'0')}));
 const paging=render('players',many,'en');
 check(paging.html.includes('Player 49')&&!paging.html.includes('Player 50'),'Player pagination first page');
@@ -431,6 +440,8 @@ async function hostedChecks(){
  const fetchPacked=async url=>({ok:true,json:async()=>packedFiles[url]});
  const packedProfile=render('player/p1',packedHosted,'en',fetchPacked);await flush();
  check((packedProfile.html.match(/class="pt"/g)||[]).length===2&&packedProfile.html.includes('#15 Men'),'Compact ranking files decode into the profile chart');
+ const packedMoves=structuredClone(packedHosted);packedMoves.rankings.rows[0].push(17);
+ check(render('rankings',packedMoves,'en').html.includes('<span aria-hidden="true">▲2</span>'),'Compact ranking rows carry the previous position');
  const packedRanks=render('rankings',packedHosted,'en',fetchPacked);packedRanks.change('ranking-date','2026-01-03');await flush();
  check(packedRanks.html.includes('#20')&&!packedRanks.html.includes('#15'),'Compact past snapshot files decode on the Rankings page');
  const rosterHosted=render('players',rankHosted,'en',fetchRankFile);

@@ -15,9 +15,33 @@ import standings  # noqa: E402
 RANKING_FORMAT = 'ranking-snapshots-v1'
 
 
+def ranking_moves(rows):
+    """Give each ranking row the athlete's position in their category's previous list.
+
+    previous_rank is the rank in the category's previous published list, 0 when the
+    athlete was not in it, and None for a category's first list. Only lists of the
+    same category are compared, at its consecutive published dates.
+    """
+    from collections import defaultdict
+    lists = defaultdict(dict)
+    for row in rows:
+        lists[(row['category'], row['date'])][row['player_id']] = row
+    dates = defaultdict(list)
+    for category, date in lists:
+        dates[category].append(date)
+    for category, published in dates.items():
+        published.sort()
+        for before, date in zip([None]+published[:-1], published):
+            earlier = lists[(category, before)] if before else None
+            for player, row in lists[(category, date)].items():
+                row['previous_rank'] = None if earlier is None else earlier[player]['rank'] if player in earlier else 0
+    return rows
+
+
 def pack_rankings(rows):
     """Compact ranking rows for the site: per-snapshot fields (date, category, source)
-    are stored once and clubs by index. Row ids are omitted; the CSVs keep them."""
+    are stored once and clubs by index. Row ids are omitted; the CSVs keep them. A row
+    ends with its previous_rank when it has one (see ranking_moves)."""
     snapshots, clubs, by_snapshot, by_club, packed = [], [], {}, {}, []
     for r in rows:
         key = (r['date'], r['category'], r.get('source_id', ''), r.get('source_url', ''))
@@ -28,7 +52,10 @@ def pack_rankings(rows):
         if club not in by_club:
             by_club[club] = len(clubs)
             clubs.append(club)
-        packed.append([by_snapshot[key], r['player_id'], r['rank'], r.get('points'), by_club[club]])
+        row = [by_snapshot[key], r['player_id'], r['rank'], r.get('points'), by_club[club]]
+        if r.get('previous_rank') is not None:
+            row.append(r['previous_rank'])
+        packed.append(row)
     return {'format': RANKING_FORMAT, 'snapshots': snapshots, 'clubs': clubs, 'rows': packed}
 
 
@@ -235,6 +262,8 @@ def build_site(root=ROOT):
     # (see identity_corrections.py). Everything below counts corrected identities.
     corrections=identity_corrections.load(root/'data'/'identity-corrections.json',data)
     identity_corrections.apply(data,corrections)
+    # Movement since each category's previous list, on the corrected identities.
+    ranking_moves(data.get('rankings',[]))
     data['meta']['event_player_counts'], data['meta']['player_summary'] = list_summaries(data)
     through = data_through(data)
     if through:

@@ -6,7 +6,7 @@ import tempfile
 import unittest
 import re
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
-from build import build_site, club_players, data_through, match_ranks, pack_match_ranks
+from build import build_site, club_players, data_through, match_ranks, pack_match_ranks, pack_rankings, ranking_moves
 
 class BuildTests(unittest.TestCase):
     def test_hosted_partitions_preserve_results_and_membership(self):
@@ -117,6 +117,29 @@ def ranked_catalog():
              single('one','2025-01-15','px','p1'),single('none','2025-01-15','px','py'),single('mixed','2025-01-15','p1','w1'),
              single('walkover','2025-01-15','p1','p2',status='walkover')]
     return {'rankings':rankings,'matches':matches,'doubles':[],'fixtures':[],'players':[],'clubs':[],'events':[],'meta':{}}
+
+class RankingMoveTests(unittest.TestCase):
+    def rows(self):
+        def row(player, category, date, rank):
+            return {'id': f'{player}-{category}-{date}', 'player_id': player, 'category': category, 'date': date, 'rank': rank,
+                    'points': 1.0, 'club_id': '', 'source_id': 's', 'source_url': 'u'}
+        return [row('a', 'Men', '2026-08-01', 1), row('b', 'Men', '2026-08-01', 2),
+                row('a', 'Men', '2026-10-01', 2), row('b', 'Men', '2026-10-01', 1), row('c', 'Men', '2026-10-01', 3),
+                row('a', 'Men', '2026-10-30', 2), row('c', 'Men', '2026-10-30', 1),
+                row('a', 'Boys', '2026-10-30', 4)]  # another category is never compared with Men
+
+    def test_each_row_gets_its_place_in_the_category_previous_list(self):
+        moved = {r['id']: r['previous_rank'] for r in ranking_moves(self.rows())}
+        self.assertEqual(moved, {'a-Men-2026-08-01': None, 'b-Men-2026-08-01': None,   # the first list has nothing to compare
+                                 'a-Men-2026-10-01': 1, 'b-Men-2026-10-01': 2, 'c-Men-2026-10-01': 0,  # c is new
+                                 'a-Men-2026-10-30': 2, 'c-Men-2026-10-30': 3,  # the list just before, not the first one
+                                 'a-Boys-2026-10-30': None})
+
+    def test_packed_rows_carry_the_previous_rank_only_when_there_is_one(self):
+        packed = pack_rankings(ranking_moves(self.rows()))
+        self.assertEqual([len(r) for r in packed['rows']], [5, 5, 6, 6, 6, 6, 6, 5])
+        self.assertEqual(packed['rows'][4][5], 0)
+
 
 class MatchRankTests(unittest.TestCase):
     def test_positions_come_from_the_ranking_in_force_on_the_match_day(self):

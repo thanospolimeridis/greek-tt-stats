@@ -304,6 +304,12 @@ a.event-row:focus-visible,a.player-row:focus-visible{outline-offset:-3px}
 .player-row .listname{display:block;overflow-wrap:anywhere}
 .player-row .text-link{justify-self:end}
 .rank-num{font-size:14px;font-weight:750;text-align:right;font-variant-numeric:tabular-nums}
+/* Movement since the previous list (rankMove). */
+.move{display:inline-block;font-size:11px;font-weight:750;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--muted)}
+.move.up{color:var(--win)}
+.move.down{color:var(--loss)}
+.move.new{color:var(--accent);letter-spacing:.04em}
+.rank-num .move{display:block;margin-top:2px}
 .points{text-align:right;min-width:0;font-variant-numeric:tabular-nums}
 .points b{display:block;font-size:14px;font-weight:750}
 .points .smalltext{display:block}
