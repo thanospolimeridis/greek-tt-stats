@@ -137,6 +137,48 @@ class LatestSnapshotTests(unittest.TestCase):
         self.assertEqual([(c['category'], c['date'], c['source_id']) for c in manifest['coverage']['rankings']],
                          [('Men', '2026-10-01', LATEST), ('Women', '2026-10-30', women)])
 
+    def replace(self, folder, latest_rows, *extra):
+        pages = {SELECTOR_KEY: SELECTOR.format(latest='2026-10-01', older=''), LATEST: table(latest_rows)}
+        source = FakeSource(pages)
+        argv = ['import_rankings.py', '--imports', str(folder.parent), '--history', str(folder), '--cache', str(folder.parent/'cache'),
+                '--category', '15', '--since', '2026-10-30', '--replace', '15:2026-10-01', *extra]
+        with patch.object(sys, 'argv', argv), patch.object(import_rankings, 'build', lambda *a: CATALOG), \
+                patch.object(import_rankings, 'Client', lambda *a: source), patch('builtins.print'):
+            import_rankings.main()
+        return source
+
+    def test_a_corrected_snapshot_replaces_the_held_one_whole(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)/'ranking-history'
+            held(folder)
+            corrected = [(1, '101', 'One', '900.5'), (2, '103', 'Three', '850.0'), (3, '102', 'Two', '800.0')]
+            source = self.replace(folder, corrected)
+            manifest = json.loads((folder/'provenance.json').read_text())
+            with (folder/'rankings-2026.csv').open(encoding='utf-8', newline='') as f:
+                rows = {r['player_id']: (r['rank'], r['source_id']) for r in csv.DictReader(f)}
+            with (folder/'players.csv').open(encoding='utf-8', newline='') as f:
+                players = sorted(r['id'] for r in csv.DictReader(f))
+            ranking_history.load(folder, CATALOG)
+        self.assertEqual(rows, {'httf-101': ('1', LATEST), 'httf-103': ('2', LATEST), 'httf-102': ('3', LATEST)})
+        self.assertEqual(players, ['httf-102', 'httf-103'])
+        self.assertEqual(manifest['coverage']['rankings'], [{'category': 'Men', 'date': '2026-10-01', 'rows': 3, 'source_id': LATEST}])
+        self.assertEqual(manifest['requests'][LATEST], source.records[LATEST])
+
+    def test_a_replacement_that_drops_a_ranking_only_player_or_is_rejected_writes_nothing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)/'ranking-history'
+            held(folder)
+            before = {p.name: p.read_bytes() for p in folder.iterdir()}
+            with self.assertRaisesRegex(SystemExit, 'httf-102 citing a response without them'):
+                self.replace(folder, [(1, '101', 'One', '900.5')])
+            with self.assertRaisesRegex(SystemExit, 'Could not read Men 2026-10-01 again'):  # a malformed row rejects it whole
+                self.replace(folder, [(1, '101', 'One', '900.5'), (2, '102', 'Two', '800.0'), ('x', '105', 'Five', '1.0')])
+            self.assertEqual({p.name: p.read_bytes() for p in folder.iterdir()}, before)
+        with tempfile.TemporaryDirectory() as tmp, self.assertRaisesRegex(SystemExit, 'pass --category 10'):
+            folder = Path(tmp)/'ranking-history'
+            held(folder)
+            self.replace(folder, OCTOBER, '--replace', '10:2026-10-01')
+
     def test_a_snapshot_still_offered_only_as_latest_stays_put(self):
         manifest = {'requests': {LATEST: {'request': {'form': {'select-date': '0'}}}},
                     'coverage': {'rankings': [{'category': 'Men', 'date': '2026-10-01', 'source_id': LATEST}]}}

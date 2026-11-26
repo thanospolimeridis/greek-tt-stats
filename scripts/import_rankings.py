@@ -98,13 +98,15 @@ def main():
     ap.add_argument('--limit', type=int, help='Stop after this many snapshots (probe)')
     ap.add_argument('--delay', type=float, default=3, help='Seconds between network requests')
     ap.add_argument('--offline', action='store_true')
+    ap.add_argument('--replace', action='append', default=[], metavar='CATEGORY:DATE',
+                    help='Read a held history snapshot again and replace it whole, after the source corrected it '
+                         '(e.g. 15:2026-10-30; the category must also be given with --category)')
     args = ap.parse_args()
 
     catalog = build(args.imports, ROOT/'data'/'verified_events.json')
     manifest_path = args.history/'provenance.json'
     manifest = (json.loads(manifest_path.read_text(encoding='utf-8')) if manifest_path.exists()
                 else {'adapter': ADAPTER, 'coverage': {'rankings': []}, 'requests': {}, 'csv_sha256': {}})
-    have = {(r['category'], r['date']) for r in catalog['meta']['provenance']['coverage']['rankings']+manifest['coverage']['rankings']}
     client = Client(args.cache, args.offline, args.delay)
     selector, _ = client.get('/customer_ranking.php?customer=24')
     names = dict(options(selector, 'agecategoryid'))
@@ -114,6 +116,18 @@ def main():
     # The newest snapshot is offered only as "latest" (value 0); its label carries the date.
     dates = sorted((re.search(r'\d{4}-\d{2}-\d{2}', label)[0], 'latest' if value == '0' else value)
                    for value, label in options(selector, 'select-date'))
+    # A held snapshot the source has corrected since is read again and replaced whole.
+    replaced = {}
+    for item in args.replace:
+        category, _, date = item.partition(':')
+        if category not in args.category:
+            raise SystemExit(f'--replace {item}: pass --category {category} as well')
+        held = [s for s in manifest['coverage']['rankings'] if s['category'] == names[category] and s['date'] == date]
+        if len(held) != 1:
+            raise SystemExit(f'--replace {item}: {args.history} holds no {names[category]} snapshot of {date}')
+        replaced[(names[category], date)] = held[0]
+    manifest['coverage']['rankings'] = [s for s in manifest['coverage']['rankings'] if (s['category'], s['date']) not in replaced]
+    have = {(r['category'], r['date']) for r in catalog['meta']['provenance']['coverage']['rankings']+manifest['coverage']['rankings']}
     # Before "latest" is asked for again: move held snapshots that cite it to their dated
     # request, after checking that the source still returns exactly the published rows.
     # Only the categories asked for now: "latest" is requested again for those alone.
@@ -135,7 +149,8 @@ def main():
         moved[(held['source_id'], held['category'], held['date'])] = new_key
         held['source_id'] = new_key
         print('Re-cited', held['category'], held['date'], 'to its dated request', flush=True)
-    todo = [(c, d, request) for d, request in dates for c in args.category if d >= args.since and (names[c], d) not in have]
+    todo = [(c, d, request) for d, request in dates for c in args.category
+            if (d >= args.since or (names[c], d) in replaced) and (names[c], d) not in have]
     if args.limit is not None:
         todo = todo[:args.limit]
     print(f'{len(todo)} snapshots to add', flush=True)
@@ -160,6 +175,10 @@ def main():
         coverage += snapshot.coverage['rankings']
         print('Added', names[category], date, snapshot.coverage['rankings'][-1]['rows'], flush=True)
 
+    unread = sorted(set(replaced)-{(c['category'], c['date']) for c in coverage})
+    if unread:
+        raise SystemExit(f'Could not read {unread[0][0]} {unread[0][1]} again to replace it; nothing was written')
+
     with tempfile.TemporaryDirectory() as tmp:
         staging = Path(tmp)
         if args.history.exists():
@@ -167,6 +186,21 @@ def main():
                 if path.is_file():
                     shutil.copy2(path, staging/path.name)
         recite(staging, moved)  # before new rows, which may cite the "latest" request again
+        for (category, date), held in sorted(replaced.items()):
+            path = staging/ranking_history.shard_name(date)
+            rows = read_rows(path)
+            old = {r['id']: r for r in rows if (r['category'], r['date']) == (category, date)}
+            new = {i: r for i, r in rankings.items() if (r['category'], r['date']) == (category, date)}
+            write_rows(path, ranking_history.COLUMNS, [r for r in rows if r['id'] not in old])
+            # A player first seen in the old snapshot must still be in the response its row cites.
+            lost = [p['id'] for p in read_rows(staging/'players.csv') if p['source_id'] == held['source_id']
+                    and held['source_id'] in client.records and p['id'] not in {r['player_id'] for r in new.values()}]
+            if lost:
+                raise SystemExit(f'Replacing {category} {date} would leave {lost[0]} citing a response without them; nothing was written')
+            fields = [c for c in ranking_history.COLUMNS if c not in ('id', 'source_id')]
+            changed = sum(any(old[i][c] != new[i][c] for c in fields) for i in set(old) & set(new))
+            print(f'Replaced {category} {date}: {len(old)} -> {len(new)} rows, {len(set(new)-set(old))} added, '
+                  f'{len(set(old)-set(new))} removed, {changed} changed', flush=True)
         shards = {}
         for row in rankings.values():
             shards.setdefault(ranking_history.shard_name(row['date']), []).append(row)
@@ -194,7 +228,7 @@ def main():
                 temporary.write_bytes(path.read_bytes())
                 temporary.replace(target)
     print(json.dumps({'snapshots_added': len(coverage), 'rejected': len(rejected), 'ranking_rows': len(rankings),
-                      'players_added': len(added), 're_cited': len(moved)}), flush=True)
+                      'players_added': len(added), 're_cited': len(moved), 'replaced': len(replaced)}), flush=True)
 
 
 if __name__ == '__main__':
